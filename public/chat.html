@@ -1104,19 +1104,16 @@
     isTyping: false,
 
     partnerCountry: null,
-    iceServers: [
-  { urls: "stun:stun.l.google.com:19302" },
-  {
-    urls: [
-      "turn:openrelay.metered.ca:80?transport=udp",
-      "turn:openrelay.metered.ca:443?transport=tcp",
-      "turns:openrelay.metered.ca:443"
-    ],
-    username: "openrelayproject",
-    credential: "openrelayproject"
-  }
-]
-
+    iceServers: {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    }
+  ]
+}
 
   };
   function recoverRemoteVideo() {
@@ -1460,10 +1457,7 @@ const constraints = {
 
       
       state.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      state.localStream.getAudioTracks().forEach(track => {
-  track.enabled = true; // 🔥 REQUIRED for iOS
-});
-
+      
       // Apply to local video
       elements.localVideo.srcObject = state.localStream;
       elements.localStatus.style.display = "none";
@@ -1491,9 +1485,8 @@ const constraints = {
   try {
     state.peerConnection = new RTCPeerConnection(state.iceServers);
     // 🔥 REQUIRED for desktop browsers
-    state.peerConnection.addTransceiver("video");
-state.peerConnection.addTransceiver("audio");
-
+state.peerConnection.addTransceiver("video", { direction: "sendrecv" });
+state.peerConnection.addTransceiver("audio", { direction: "sendrecv" });
 
 
     // 🔁 ICE recovery
@@ -1526,22 +1519,20 @@ state.peerConnection.addTransceiver("audio");
 
     // 🎥 Remote stream
     state.peerConnection.ontrack = (event) => {
-  if (!event.streams?.[0]) return;
+      if (!event.streams?.[0]) return;
 
-  elements.remoteVideo.muted = true;
-  elements.remoteVideo.playsInline = true;
-  elements.remoteVideo.autoplay = true;
+      elements.remoteVideo.srcObject = event.streams[0];
+      elements.remoteVideo.muted = true;
+      elements.remoteVideo.playsInline = true;
+      elements.remoteVideo.autoplay = true;
 
-  elements.remoteVideo.srcObject = event.streams[0];
+      elements.remoteStatus.style.display = "none";
 
-  event.streams[0].getVideoTracks().forEach(t => t.enabled = true);
-
-  elements.remoteStatus.style.display = "none";
-  elements.remoteVideo.play().catch(() => {});
-};
-
-
-
+      setTimeout(() => {
+        elements.remoteVideo.muted = false;
+        elements.remoteVideo.play().catch(() => {});
+      }, 300);
+    };
 
     // ❄ ICE candidates
     state.peerConnection.onicecandidate = (event) => {
@@ -1559,11 +1550,6 @@ state.peerConnection.addTransceiver("audio");
 }
 
 
-document.body.addEventListener("click", () => {
-  if (elements.remoteVideo?.paused) {
-    elements.remoteVideo.play().catch(() => {});
-  }
-}, { once: true });
 
 
   async function handleRemoteSDP(sdp) {
@@ -2002,22 +1988,17 @@ clearTypingIndicator();
   await new Promise(r => setTimeout(r, 150));
 
   let offer = await state.peerConnection.createOffer({
-  offerToReceiveAudio: true,
-  offerToReceiveVideo: true
-});
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true
+  });
 
-// ✅ iOS Safari needs H264
-if (shouldForceVP8()) {
-  offer.sdp = forceVP8(offer.sdp);
+  // 🔥 Force a stable codec for laptops
   function shouldForceVP8() {
-  // ❌ Safari (iPhone/iPad) must use H264
   return !/iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-}
 
-await state.peerConnection.setLocalDescription(offer);
-
+  await state.peerConnection.setLocalDescription(offer);
 
   socket.emit("signal", {
     room: state.roomId,
