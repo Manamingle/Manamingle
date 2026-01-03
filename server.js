@@ -419,9 +419,7 @@ function findMatchForUser(selfSocketId, mode, userTags = []) {
   }
   
   // For group modes, we need to find/create a group
-  if (mode.startsWith('group_')) {
-    return findGroupForUser(selfSocketId, mode, userTags);
-  }
+  
   
   // For 1-on-1 modes (text, video, audio)
   // FIRST: Try to find interest match (fast priority)
@@ -489,37 +487,32 @@ function findMatchForUser(selfSocketId, mode, userTags = []) {
 }
 
 function findGroupForUser(selfSocketId, mode, userTags = []) {
-  // First, try to find an existing group with space
+
+  // 1️⃣ First: try to find an existing active group with space
   for (const [roomId, room] of state.rooms) {
-    if (room.mode === mode && 
-        room.status === "active" && 
-        !room.isBanned &&
-        room.users.size < ROOM_MAX_SIZE[mode]) {
-      
-      // Check if room has similar tags (optional)
-      if (userTags.length === 0 || hasCommonInterest(userTags, room.tags || [])) {
+    if (
+      room.mode === mode &&
+      room.status === "active" &&
+      !room.isBanned &&
+      room.users.size < ROOM_MAX_SIZE[mode]
+    ) {
+      // Optional interest matching
+      if (
+        userTags.length === 0 ||
+        hasCommonInterest(userTags, room.tags || [])
+      ) {
         return { roomId, room };
       }
     }
   }
-  
-  // If no existing group found, check waiting users to start a new group
-  const waitingUsers = Array.from(state.waiting[mode].entries());
-  if (waitingUsers.length >= 2) { // Need at least 2 others to start a group
-    const potentialGroup = waitingUsers
-      .filter(([socketId]) => socketId !== selfSocketId)
-      .slice(0, ROOM_MAX_SIZE[mode] - 1); // Get required number for group
-    
-    if (potentialGroup.length >= 2) {
-      return { 
-        newGroup: true, 
-        members: potentialGroup.map(([socketId, userData]) => ({ socketId, userData }))
-      };
-    }
-  }
-  
-  return null;
+
+  // 2️⃣ No group found → CREATE A NEW GROUP WITH THIS USER ONLY
+  return {
+    newGroup: true,
+    members: [] // 👈 empty means group starts with 1 user
+  };
 }
+
 
 function createRoom(mode, creatorSocketId, creatorData, ...otherUsers) {
   const roomId = generateRoomId();
@@ -1030,91 +1023,53 @@ socket.queuedAt = null;
   
   function handleGroupJoin(socket, mode, userData) {
     const group = findGroupForUser(socket.id, mode, userData.tags);
-    
-    if (group) {
-      let roomId;
-      
-      if (group.roomId) {
-        // Join existing group
-        roomId = group.roomId;
-        addUserToRoom(socket.id, roomId, userData);
-        state.waiting[mode].delete(socket.id);
-      } else if (group.newGroup) {
-        // Create new group with waiting users
-        const allMembers = [
-          { socketId: socket.id, data: userData },
-          ...group.members
-        ];
-        
-        roomId = createRoom(mode, socket.id, userData, ...group.members);
-        
-        // Remove all from waiting
-        state.waiting[mode].delete(socket.id);
-        group.members.forEach(member => {
-          state.waiting[mode].delete(member.socketId);
-        });
-        
-        // Add room to all users' data and join them
-        allMembers.forEach(member => {
-          const memberUser = state.users.get(member.socketId);
-          if (memberUser) {
-            memberUser.rooms.add(roomId);
-          }
-          
-          const memberSocket = io.sockets.sockets.get(member.socketId);
-          if (memberSocket) {
-            memberSocket.join(roomId);
-          }
-        });
-      }
-      
-      if (roomId) {
-        userData.rooms.add(roomId);
-        socket.join(roomId);
-        
-        // Notify user and room
-        const room = state.rooms.get(roomId);
-        const participantNames = room.participants.map(p => p.name);
-        
-        socket.emit("group-joined", {
-          roomId,
-          mode,
-          participants: participantNames,
-          participantCount: room.users.size,
-          maxSize: ROOM_MAX_SIZE[mode]
-        });
-        
-        // Notify others in room
-        socket.to(roomId).emit("user-joined-group", {
-          userId: userData.id,
-          userName: userData.name,
-          participantCount: room.users.size
-        });
-        socket.to(roomId).emit("user-joined", {
-          userId: userData.id,
-          nickname: userData.name,
-          userName: userData.name,
-          participantCount: room.users.size
-        });
-        
-        logSecurityEvent('GROUP_JOINED', {
-          roomId,
-          userId: userData.id,
-          userName: userData.name,
-          mode,
-          groupSize: room.users.size
-        });
-      }
+    let roomId;
+  
+    if (group?.roomId) {
+      // Join existing group
+      roomId = group.roomId;
+      addUserToRoom(socket.id, roomId, userData);
+    } else if (group?.newGroup) {
+      // Create new group with single user
+      roomId = createRoom(mode, socket.id, userData);
     } else {
-      // No group available, wait
+      // Should never happen now, but keep fallback
       state.waiting[mode].set(socket.id, userData);
-      socket.emit("waiting", { 
-        mode, 
-        estimatedWait: Math.max(10, state.waiting[mode].size * 3),
-        waitingForGroup: true 
-      });
+      socket.emit("waiting", { mode });
+      return;
     }
+  
+    // ✅ SINGLE join + SINGLE room add
+    state.waiting[mode].delete(socket.id);
+    userData.rooms.add(roomId);
+    socket.join(roomId);
+  
+    const room = state.rooms.get(roomId);
+  
+    socket.emit("group-joined", {
+      roomId,
+      mode,
+      participants: room.participants.map(p => p.name),
+      participantCount: room.users.size,
+      maxSize: ROOM_MAX_SIZE[mode]
+    });
+  
+    socket.to(roomId).emit("user-joined", {
+      userId: userData.id,
+      nickname: userData.name,
+      userName: userData.name,
+      participantCount: room.users.size
+    });
+  
+    logSecurityEvent('GROUP_JOINED', {
+      roomId,
+      userId: userData.id,
+      userName: userData.name,
+      mode,
+      groupSize: room.users.size
+    });
   }
+  
   
   /* ===== MESSAGE HANDLING ===== */
   socket.on("send_message", (data) => {
