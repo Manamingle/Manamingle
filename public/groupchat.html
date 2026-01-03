@@ -1173,7 +1173,8 @@ body{
 </style>
 
 <!-- Three.js for 3D Background -->
-<script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+<script src="/vendor/three.min.js" defer></script>
+
 
 </head>
 
@@ -2217,7 +2218,12 @@ body{
       img.style.cursor = 'pointer';
       img.onclick = () => {
         const win = window.open();
-        win.document.write(`<img src="${data.dataUrl}" style="max-width:100%;max-height:100%;">`);
+        const img = win.document.createElement('img');
+img.src = data.dataUrl;
+img.style.maxWidth = '100%';
+img.style.maxHeight = '100%';
+win.document.body.appendChild(img);
+
       };
       fileContent.appendChild(img);
     } else {
