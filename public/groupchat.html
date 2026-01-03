@@ -13,6 +13,7 @@
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self' https://cdn.socket.io https://fonts.googleapis.com https://ipapi.co;
   script-src 'self' 'unsafe-inline' https://cdn.socket.io https://unpkg.com;
+  script-src-attr 'unsafe-inline';
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com;
   connect-src *;
@@ -20,6 +21,7 @@
   media-src 'self' blob:;
   object-src 'none';
 ">
+
 
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2&display=swap" rel="stylesheet">
 
@@ -1646,38 +1648,26 @@ body{
   }
 
   function saveNickname() {
-    const nick = document.getElementById('nickname').value.trim();
-    const nickError = document.getElementById('nickError');
-    
-    if (!nick) {
-      nickError.textContent = 'Please enter a nickname';
-      nickError.style.display = 'block';
-      return;
-    }
-    
-    nickname = nick;
-    document.getElementById('nickModal').style.display = 'none';
-    
-    // Join or create group for text chat
-    if (roomId) {
-      // Join existing room
-      socket.emit('join-group', {
-        roomId,
-        mode: inviteMode,
-        nickname,
-        interests: userInterests,
-        isVIP: isVIP
-      });
-    } else {
-      // Create new room
-      socket.emit('create-group', {
-        mode: inviteMode,
-        nickname,
-        interests: userInterests,
-        isVIP: isVIP
-      });
-    }
+  if (!socket || !socket.connected) {
+    showNotification('Connecting to server, please wait…', 'warning');
+    return;
   }
+
+  const nick = document.getElementById('nickname').value.trim();
+  if (!nick) return;
+
+  nickname = nick;
+  document.getElementById('nickModal').style.display = 'none';
+
+  socket.emit(roomId ? 'join-group' : 'create-group', {
+    roomId,
+    mode: inviteMode,
+    nickname,
+    interests: userInterests,
+    isVIP
+  });
+}
+
 
   function goBack() {
     console.log('Going back...');
