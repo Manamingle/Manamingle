@@ -514,6 +514,7 @@ body{
   min-height:0;
   min-width:0;
   background: #000;
+  aspect-ratio: 4/3;
 }
 
 .video-card video{
@@ -630,6 +631,9 @@ body{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  display:flex;
+  align-items:center;
+  gap:5px;
 }
 
 /* ===== MODAL ===== */
@@ -704,6 +708,93 @@ body{
 
 .modal-box button:active{
   transform:scale(0.98);
+}
+
+/* Payment Modal */
+.payment-modal .modal-box {
+  max-width: 380px;
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.payment-option {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payment-option:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--accent);
+}
+
+.payment-option.selected {
+  background: rgba(0,198,255,0.1);
+  border-color: var(--accent);
+}
+
+.payment-icon {
+  font-size: 1.5rem;
+  margin-right: 10px;
+}
+
+.payment-details {
+  flex: 1;
+}
+
+.payment-details h4 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+}
+
+.payment-details p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.upi-id-input {
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+}
+
+.upi-id-input label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.upi-id-input input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.card-details {
+  margin: 15px 0;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 /* VIP Modal */
@@ -827,6 +918,10 @@ body{
     padding:20px;
     max-width:90%;
   }
+  
+  .video-card {
+    aspect-ratio: 1/1;
+  }
 }
 
 @media (max-width: 360px) {
@@ -877,10 +972,11 @@ body{
   .chat-messages{
     padding:10px;
   }
+  
   button {
-  touch-action: manipulation;
-}
-
+    touch-action: manipulation;
+  }
+  
   .msg{
     padding:8px 12px;
     font-size:0.85rem;
@@ -1066,30 +1162,25 @@ body{
 
 /* Mobile Home Button */
 .mobile-home-btn {
-  display: none;
   position: fixed;
   top: env(safe-area-inset-top, 10px);
   left: env(safe-area-inset-left, 10px);
-
   background: rgba(0,0,0,0.9);
   border: 1px solid var(--border);
   color: white;
   padding: 10px 12px;
   border-radius: 12px;
   cursor: pointer;
-
-  z-index: 20000; /* 🔥 ABOVE ALL MODALS */
+  z-index: 20000;
   font-size: 0.9rem;
   min-width: 44px;
   min-height: 44px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   backdrop-filter: blur(10px);
+  display: none;
 }
-
 
 @media (max-width: 768px) {
   .mobile-home-btn {
@@ -1163,18 +1254,84 @@ body{
 /* iOS specific fixes */
 @supports (-webkit-touch-callout: none) {
   .chat-input input {
-    font-size: 16px !important; /* Prevent zoom on iOS */
+    font-size: 16px !important;
   }
   
   .modal-box input {
     font-size: 16px !important;
   }
 }
+
+/* Payment Status */
+.payment-status {
+  text-align: center;
+  padding: 20px;
+}
+
+.payment-success {
+  color: var(--green);
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.payment-error {
+  color: var(--danger);
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+/* Test Payment Notice */
+.test-notice {
+  background: rgba(255, 159, 67, 0.1);
+  border: 1px solid var(--orange);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 15px 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* VIP History */
+.vip-history {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 15px 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.vip-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.vip-history-item:last-child {
+  border-bottom: none;
+}
+
+.vip-history-status {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+.vip-history-status.active {
+  background: rgba(0, 209, 154, 0.2);
+  color: var(--green);
+}
+
+.vip-history-status.expired {
+  background: rgba(255, 118, 117, 0.2);
+  color: var(--danger);
+}
 </style>
 
 <!-- Three.js for 3D Background -->
-<script src="three.min.js" defer></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 </head>
 
@@ -1201,6 +1358,10 @@ body{
       <span>🎥</span>
       <span>Group Video Chat</span>
     </button>
+    <button id="viewVIPBtn" class="vip-btn">
+      <span>💎</span>
+      <span>View VIP Status</span>
+    </button>
     <button id="homeBtn" class="home-btn">
       <span>🏠</span>
       <span>Home</span>
@@ -1214,6 +1375,7 @@ body{
     <div class="room-info">
       <h1 id="roomTitle">Group Chat</h1>
       <span class="participant-count" id="participantCount">0 online</span>
+      <span class="vip-badge" id="myVipBadge" style="display:none;">VIP</span>
     </div>
     <div class="invite-bar">
       <button id="copyInviteBtn" title="Copy Invite Link">📋</button>
@@ -1274,8 +1436,8 @@ body{
 <!-- VIP Modal -->
 <div class="modal vip-modal" id="vipModal" style="display:none;">
   <div class="modal-box">
-    <h3 style="color:var(--vip);">⭐ VIP ACCESS REQUIRED</h3>
-    <p style="text-align:center; margin:10px 0;" id="vipMessage">This feature requires VIP membership.</p>
+    <h3 style="color:var(--vip);">⭐ VIP ACCESS</h3>
+    <p style="text-align:center; margin:10px 0;" id="vipMessage">Upgrade to VIP for exclusive features!</p>
     
     <div class="vip-feature">
       <span>✅</span>
@@ -1293,11 +1455,156 @@ body{
       <span>✅</span>
       <span>Priority matching</span>
     </div>
+    <div class="vip-feature">
+      <span>✅</span>
+      <span>VIP Badge visible to all</span>
+    </div>
     
-    <div class="vip-price">$9.99 / month</div>
+    <div class="vip-price" id="vipPrice">$9.99 / month</div>
     
-    <button id="buyVIPBtn" class="vip-btn">💎 BUY VIP ACCESS</button>
+    <button id="buyVIPBtn" class="vip-btn">💎 UPGRADE TO VIP</button>
+    <button id="vipHistoryBtn" style="margin-top:10px; background:rgba(255,255,255,0.1); border:1px solid var(--border);">View Purchase History</button>
     <button id="cancelVIPBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
+  </div>
+</div>
+
+<!-- VIP History Modal -->
+<div class="modal vip-modal" id="vipHistoryModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="color:var(--vip);">⭐ VIP PURCHASE HISTORY</h3>
+    
+    <div class="vip-history" id="vipHistoryList">
+      <!-- History items will be added here -->
+    </div>
+    
+    <div id="noVipHistory" style="text-align:center; padding:20px; color:rgba(255,255,255,0.5);">
+      No VIP purchase history found.
+    </div>
+    
+    <button id="backToVIPBtn" style="margin-top:20px;">Back to VIP</button>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal payment-modal" id="paymentModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="color:var(--vip);">💳 PAYMENT OPTIONS</h3>
+    
+    <div class="test-notice">
+      <strong>TEST MODE:</strong> This is a demonstration. No real payments are processed.
+    </div>
+    
+    <div class="payment-options">
+      <div class="payment-option" data-method="upi">
+        <div style="display:flex; align-items:center;">
+          <div class="payment-icon">📱</div>
+          <div class="payment-details">
+            <h4>UPI Payment</h4>
+            <p>Pay using PhonePe, Google Pay, Paytm, etc.</p>
+          </div>
+        </div>
+        <div>▶</div>
+      </div>
+      
+      <div class="payment-option" data-method="card">
+        <div style="display:flex; align-items:center;">
+          <div class="payment-icon">💳</div>
+          <div class="payment-details">
+            <h4>Credit/Debit Card</h4>
+            <p>Visa, MasterCard, RuPay, American Express</p>
+          </div>
+        </div>
+        <div>▶</div>
+      </div>
+      
+      <div class="payment-option" data-method="netbanking">
+        <div style="display:flex; align-items:center;">
+          <div class="payment-icon">🏦</div>
+          <div class="payment-details">
+            <h4>Net Banking</h4>
+            <p>All major Indian banks supported</p>
+          </div>
+        </div>
+        <div>▶</div>
+      </div>
+    </div>
+    
+    <div id="paymentDetails" style="display:none;">
+      <!-- Payment details will be shown here -->
+    </div>
+    
+    <button id="processPaymentBtn" class="vip-btn" style="display:none;">💳 PROCESS PAYMENT</button>
+    <button id="cancelPaymentBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
+  </div>
+</div>
+
+<!-- UPI Payment Modal -->
+<div class="modal" id="upiModal" style="display:none;">
+  <div class="modal-box">
+    <h3>📱 UPI PAYMENT</h3>
+    
+    <div class="test-notice">
+      <strong>TEST MODE:</strong> Use any UPI ID for testing.
+    </div>
+    
+    <div style="text-align:center; margin:20px 0;">
+      <div style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:10px;">Scan QR Code or Pay to:</div>
+      <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; border:1px solid var(--border); margin-bottom:20px;">
+        <div style="font-size:1.2rem; font-weight:bold; color:var(--vip);">manamingle.site@okhdfcbank</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:5px;">ManaMingle VIP Subscription</div>
+      </div>
+      
+      <div style="margin:20px 0;">
+        <div style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:10px;">Or enter your UPI ID:</div>
+        <input type="text" id="upiIdInput" placeholder="yourname@upi" style="width:100%;">
+        <button id="simulateUPIPaymentBtn" class="vip-btn" style="margin-top:15px;">Simulate UPI Payment</button>
+      </div>
+    </div>
+    
+    <button id="backToPaymentBtn">Back to Payment Options</button>
+  </div>
+</div>
+
+<!-- Card Payment Modal -->
+<div class="modal" id="cardModal" style="display:none;">
+  <div class="modal-box">
+    <h3>💳 CARD PAYMENT</h3>
+    
+    <div class="test-notice">
+      <strong>TEST MODE:</strong> Use test card: 4111 1111 1111 1111
+    </div>
+    
+    <div class="card-details">
+      <input type="text" id="cardNumber" placeholder="Card Number" style="width:100%; margin-bottom:10px;">
+      <div class="card-row">
+        <input type="text" id="cardExpiry" placeholder="MM/YY">
+        <input type="text" id="cardCvv" placeholder="CVV">
+      </div>
+      <input type="text" id="cardName" placeholder="Cardholder Name" style="width:100%; margin-bottom:10px;">
+    </div>
+    
+    <button id="simulateCardPaymentBtn" class="vip-btn">Simulate Card Payment</button>
+    <button id="backToPaymentBtn2" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Back to Payment Options</button>
+  </div>
+</div>
+
+<!-- Payment Processing Modal -->
+<div class="modal" id="paymentProcessingModal" style="display:none;">
+  <div class="modal-box payment-status">
+    <div class="loading-spinner" style="width:40px; height:40px; margin:0 auto 20px;"></div>
+    <h3>Processing Payment...</h3>
+    <p id="paymentStatusText">Please wait while we process your payment</p>
+  </div>
+</div>
+
+<!-- Payment Success Modal -->
+<div class="modal" id="paymentSuccessModal" style="display:none;">
+  <div class="modal-box payment-status">
+    <div class="payment-success">✅</div>
+    <h3>Payment Successful!</h3>
+    <p>Your VIP membership has been activated.</p>
+    <p style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-top:10px;">Valid until: <span id="vipExpiryDate"></span></p>
+    <button id="closeSuccessBtn" class="vip-btn" style="margin-top:20px;">Continue</button>
   </div>
 </div>
 
@@ -1344,13 +1651,17 @@ body{
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' }
   ];
+  
+  // Payment tracking
+  let vipHistory = [];
+  let currentPaymentMethod = null;
 
   /* ===== INITIALIZATION ===== */
   document.addEventListener('DOMContentLoaded', function () {
     console.log('ManaMingle Group Chat - Initializing...');
     
-    // Initialize 3D Background
-    init3DBackground();
+    // Initialize VIP history from localStorage
+    loadVipHistory();
     
     // Parse URL parameters
     const params = new URLSearchParams(window.location.search);
@@ -1405,7 +1716,7 @@ body{
       
       // Create particles
       const particlesGeometry = new THREE.BufferGeometry();
-      const particlesCount = 300; // Reduced for mobile performance
+      const particlesCount = 300;
       const posArray = new Float32Array(particlesCount * 3);
       
       for(let i = 0; i < particlesCount * 3; i++) {
@@ -1455,7 +1766,7 @@ body{
 
   function createCSSParticles() {
     const container = document.getElementById('threeContainer');
-    for (let i = 0; i < 30; i++) { // Reduced for mobile
+    for (let i = 0; i < 30; i++) {
       const particle = document.createElement('div');
       particle.className = 'animation-particle';
       particle.style.width = Math.random() * 15 + 5 + 'px';
@@ -1470,10 +1781,7 @@ body{
 
   function setupMobileHandlers() {
     // Prevent double-tap zoom
-    
-    
-    // Prevent context menu on buttons
-    document.addEventListener('contextmenu', function(e) {
+    document.addEventListener('dblclick', function(e) {
       if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
         e.preventDefault();
       }
@@ -1490,6 +1798,182 @@ body{
     window.addEventListener('orientationchange', setVH);
   }
 
+  /* ===== VIP MANAGEMENT ===== */
+  function loadVipHistory() {
+    const history = localStorage.getItem('manamingle_vip_history');
+    if (history) {
+      try {
+        vipHistory = JSON.parse(history);
+        console.log('Loaded VIP history:', vipHistory);
+      } catch (e) {
+        console.warn('Invalid VIP history data');
+        vipHistory = [];
+      }
+    }
+  }
+
+  function saveVipHistory() {
+    localStorage.setItem('manamingle_vip_history', JSON.stringify(vipHistory));
+  }
+
+  function checkVIPStatus() {
+    const vipData = localStorage.getItem('manamingle_vip');
+    if (vipData) {
+      try {
+        const { expiry, active, transactionId, purchased } = JSON.parse(vipData);
+        const now = new Date();
+        const expiryDate = new Date(expiry);
+        
+        if (active && expiryDate > now) {
+          isVIP = true;
+          console.log('✅ VIP user detected, expires:', expiryDate);
+          
+          // Show VIP badge
+          const vipBadge = document.getElementById('myVipBadge');
+          if (vipBadge) vipBadge.style.display = 'inline-block';
+          
+          // Show recording button for VIP users
+          const recordBtn = document.querySelector('[data-action="recordScreen"]');
+          if (recordBtn) recordBtn.style.display = 'flex';
+          
+          return true;
+        } else {
+          // VIP expired
+          isVIP = false;
+          localStorage.removeItem('manamingle_vip');
+          return false;
+        }
+      } catch (e) {
+        console.log('Invalid VIP data');
+        return false;
+      }
+    }
+    return false;
+  }
+
+  function updateVIPBadge() {
+    const vipBadge = document.getElementById('myVipBadge');
+    if (vipBadge) {
+      vipBadge.style.display = isVIP ? 'inline-block' : 'none';
+    }
+  }
+
+  function showVipHistory() {
+    const historyList = document.getElementById('vipHistoryList');
+    const noHistory = document.getElementById('noVipHistory');
+    
+    if (vipHistory.length === 0) {
+      historyList.innerHTML = '';
+      noHistory.style.display = 'block';
+    } else {
+      noHistory.style.display = 'none';
+      historyList.innerHTML = '';
+      
+      vipHistory.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'vip-history-item';
+        
+        const date = new Date(item.date);
+        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        
+        const status = item.active && new Date(item.expiry) > new Date() ? 'active' : 'expired';
+        
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:bold;">VIP Membership</div>
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">${formattedDate}</div>
+            <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">ID: ${item.transactionId.substring(0, 8)}...</div>
+          </div>
+          <div class="vip-history-status ${status}">${status.toUpperCase()}</div>
+        `;
+        
+        historyList.appendChild(div);
+      });
+    }
+    
+    document.getElementById('vipModal').style.display = 'none';
+    document.getElementById('vipHistoryModal').style.display = 'flex';
+  }
+
+  /* ===== PAYMENT SYSTEM ===== */
+  function showPaymentModal() {
+    document.getElementById('vipModal').style.display = 'none';
+    document.getElementById('paymentModal').style.display = 'flex';
+  }
+
+  function showUPIModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('upiModal').style.display = 'flex';
+  }
+
+  function showCardModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('cardModal').style.display = 'flex';
+  }
+
+  function processPayment(method, details = {}) {
+    currentPaymentMethod = method;
+    
+    // Show processing modal
+    document.getElementById('cardModal').style.display = 'none';
+    document.getElementById('upiModal').style.display = 'none';
+    document.getElementById('paymentProcessingModal').style.display = 'flex';
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      // Generate fake transaction ID
+      const transactionId = 'TXN' + Date.now() + Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Calculate expiry date (30 days from now)
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 30);
+      
+      // Create VIP data
+      const vipData = {
+        active: true,
+        expiry: expiry.toISOString(),
+        purchased: new Date().toISOString(),
+        transactionId: transactionId,
+        paymentMethod: method,
+        amount: 9.99,
+        currency: 'USD'
+      };
+      
+      // Save VIP data
+      localStorage.setItem('manamingle_vip', JSON.stringify(vipData));
+      
+      // Add to history
+      vipHistory.push({
+        ...vipData,
+        date: new Date().toISOString(),
+        status: 'completed'
+      });
+      saveVipHistory();
+      
+      // Update VIP status
+      isVIP = true;
+      updateVIPBadge();
+      
+      // Show recording button
+      const recordBtn = document.querySelector('[data-action="recordScreen"]');
+      if (recordBtn) recordBtn.style.display = 'flex';
+      
+      // Notify server
+      if (socket) {
+        socket.emit('vip-upgraded', vipData);
+      }
+      
+      // Show success modal
+      document.getElementById('paymentProcessingModal').style.display = 'none';
+      document.getElementById('vipExpiryDate').textContent = expiry.toLocaleDateString();
+      document.getElementById('paymentSuccessModal').style.display = 'flex';
+      
+      showNotification('🎉 VIP Activated! Your VIP badge is now visible to everyone.', 'success');
+      
+    }, 2000); // Simulate 2 second payment processing
+  }
+
+  /* ===== DISPLAY FUNCTIONS ===== */
   function displayInterests(interests, containerId) {
     const container = document.getElementById(containerId);
     if (!container || !interests.length) return;
@@ -1501,24 +1985,6 @@ body{
       span.textContent = tag;
       container.appendChild(span);
     });
-  }
-
-  function checkVIPStatus() {
-    const vipData = localStorage.getItem('manamingle_vip');
-    if (vipData) {
-      try {
-        const { expiry, active } = JSON.parse(vipData);
-        if (active && new Date(expiry) > new Date()) {
-          isVIP = true;
-          console.log('✅ VIP user detected');
-          // Show recording button for VIP users
-          const recordBtn = document.querySelector('[data-action="recordScreen"]');
-          if (recordBtn) recordBtn.style.display = 'flex';
-        }
-      } catch (e) {
-        console.log('Invalid VIP data');
-      }
-    }
   }
 
   /* ===== SOCKET.IO INITIALIZATION ===== */
@@ -1567,15 +2033,17 @@ body{
       // File Events
       socket.on('file_received', handleFileReceived);
       
-      // WebRTC Events
+      // WebRTC Events - FIXED: Handle group video connections properly
       socket.on('signal', handleWebRTCSignal);
-      socket.on('existing-streams', handleExistingStreams);
+      socket.on('existing-users', handleExistingUsers);
+      socket.on('user-ready', handleUserReady);
       
       // VIP Events
       socket.on('vip-activated', handleVIPActivated);
       socket.on('vip-removed', handleVIPRemoved);
       socket.on('vip-expired', handleVIPExpired);
       socket.on('feature-restricted', handleFeatureRestricted);
+      socket.on('vip-status', handleVIPStatus);
       
       // System Events
       socket.on('room-ended', handleRoomEnded);
@@ -1639,6 +2107,12 @@ body{
     participantCount = data.participantCount || 1;
     updateParticipantCount();
     
+    // Update room title
+    const title = document.getElementById('roomTitle');
+    if (title) {
+      title.textContent = `${isVideoMode ? 'Video' : 'Text'} Chat`;
+    }
+    
     // Show common interests if any
     if (data.commonInterests && data.commonInterests.length > 0) {
       showNotification(`Common interests: ${data.commonInterests.join(', ')}`, 'info');
@@ -1646,15 +2120,29 @@ body{
     
     showNotification(`Joined ${data.mode} group with ${participantCount} participants`, 'success');
     
-    // For video chat, set up peer connections for existing users
-    if (isVideoMode && data.participants) {
-      setTimeout(() => {
-        data.participants.forEach(participant => {
-          if (participant.id !== socket.id) {
-            createPeerConnection(participant.id);
-          }
-        });
-      }, 1000);
+    // For video chat, request existing users
+    if (isVideoMode && socket) {
+      socket.emit('get-existing-users', { roomId: roomId });
+    }
+  }
+
+  function handleExistingUsers(data) {
+    console.log('👥 Existing users:', data.users);
+    if (isVideoMode && data.users) {
+      data.users.forEach(userId => {
+        if (userId !== socket.id && !peers[userId]) {
+          setTimeout(() => {
+            createPeerConnection(userId);
+          }, 1000);
+        }
+      });
+    }
+  }
+
+  function handleUserReady(data) {
+    console.log('👤 User ready:', data.userId);
+    if (isVideoMode && data.userId !== socket.id && !peers[data.userId]) {
+      createPeerConnection(data.userId);
     }
   }
 
@@ -1662,12 +2150,18 @@ body{
     console.log('👤 User joined:', data);
     participantCount = data.participantCount || participantCount + 1;
     updateParticipantCount();
-    showNotification(`${data.nickname || 'Someone'} joined the group`, 'info');
+    
+    const userName = data.nickname || 'Someone';
+    const isVIPUser = data.isVIP || false;
+    
+    showNotification(`${userName} ${isVIPUser ? '⭐ ' : ''}joined the group`, 'info');
     
     // Create peer connection for new user in video chat
     if (isVideoMode && data.userId !== socket.id && localStream) {
       setTimeout(() => {
-        createPeerConnection(data.userId);
+        if (!peers[data.userId]) {
+          createPeerConnection(data.userId);
+        }
       }, 500);
     }
   }
@@ -1702,6 +2196,20 @@ body{
     showNotification(`⭐ ${data.nickname} (VIP) joined the group`, 'info');
   }
 
+  function handleVIPStatus(data) {
+    console.log('⭐ VIP status update:', data);
+    // Update UI to show VIP status of other users
+    if (data.userId !== socket.id) {
+      const videoLabel = document.querySelector(`#video-${data.userId} .video-label`);
+      if (videoLabel && data.isVIP) {
+        const vipSpan = document.createElement('span');
+        vipSpan.textContent = '⭐';
+        vipSpan.style.color = 'var(--vip)';
+        videoLabel.appendChild(vipSpan);
+      }
+    }
+  }
+
   function handleRoomFull(data) {
     console.log('🚫 Room full:', data);
     showVIPModal(data.message || 'This group is full. Upgrade to VIP for instant access.');
@@ -1731,6 +2239,8 @@ body{
 
   async function handleWebRTCSignal(data) {
     console.log('📡 Signal received from:', data.from, 'type:', data.type);
+    
+    if (data.from === socket.id) return; // Ignore self
     
     let pc = peers[data.from];
     if (!pc) {
@@ -1764,24 +2274,29 @@ body{
     }
   }
 
-  function handleExistingStreams(data) {
-    console.log('📹 Existing streams:', data);
-    // Handle existing streams
-  }
-
   function handleVIPActivated(data) {
     console.log('⭐ VIP activated:', data);
     isVIP = true;
-    showNotification('🎉 VIP Activated! You now have VIP features.', 'success');
+    updateVIPBadge();
+    showNotification('🎉 VIP Activated! Your VIP badge is now visible to everyone.', 'success');
     
     // Show recording button
     const recordBtn = document.querySelector('[data-action="recordScreen"]');
     if (recordBtn) recordBtn.style.display = 'flex';
+    
+    // Notify others in the room
+    if (socket && roomId) {
+      socket.emit('vip-status-update', {
+        roomId: roomId,
+        isVIP: true
+      });
+    }
   }
 
   function handleVIPRemoved(data) {
     console.log('❌ VIP removed:', data);
     isVIP = false;
+    updateVIPBadge();
     showNotification('Your VIP status has been removed', 'warning');
     
     // Hide recording button
@@ -1792,6 +2307,7 @@ body{
   function handleVIPExpired(data) {
     console.log('⏰ VIP expired:', data);
     isVIP = false;
+    updateVIPBadge();
     showNotification('Your VIP subscription has expired', 'warning');
     
     // Hide recording button
@@ -2219,11 +2735,10 @@ body{
       img.onclick = () => {
         const win = window.open();
         const img = win.document.createElement('img');
-img.src = data.dataUrl;
-img.style.maxWidth = '100%';
-img.style.maxHeight = '100%';
-win.document.body.appendChild(img);
-
+        img.src = data.dataUrl;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        win.document.body.appendChild(img);
       };
       fileContent.appendChild(img);
     } else {
@@ -2252,7 +2767,7 @@ win.document.body.appendChild(img);
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  /* ===== VIDEO FUNCTIONS ===== */
+  /* ===== VIDEO FUNCTIONS - FIXED ===== */
   async function startCamera() {
     try {
       const constraints = {
@@ -2269,12 +2784,17 @@ win.document.body.appendChild(img);
         }
       };
       
-      // Try for optimal quality first
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log('Camera started successfully');
       addVideo('me', localStream, true);
       initActiveSpeaker();
+      
+      // Notify server we're ready
+      if (socket && roomId) {
+        socket.emit('user-ready', { roomId: roomId });
+      }
+      
       return localStream;
       
     } catch (error) {
@@ -2326,7 +2846,18 @@ win.document.body.appendChild(img);
     
     const label = document.createElement('div');
     label.className = 'video-label';
-    label.textContent = isLocal ? 'You' : (userId.substring(0, 8) + '...');
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = isLocal ? 'You' : (userId === socket.id ? 'You' : userId.substring(0, 8) + '...');
+    label.appendChild(nameSpan);
+    
+    // Add VIP badge if applicable
+    if (isLocal && isVIP) {
+      const vipBadge = document.createElement('span');
+      vipBadge.textContent = '⭐';
+      vipBadge.style.color = 'var(--vip)';
+      label.appendChild(vipBadge);
+    }
     
     const watermark = document.createElement('div');
     watermark.className = 'video-watermark';
@@ -2360,6 +2891,11 @@ win.document.body.appendChild(img);
   function createPeerConnection(peerId) {
     console.log('Creating peer connection for:', peerId);
     
+    if (peerId === socket.id || peers[peerId]) {
+      console.log('Peer connection already exists or is self');
+      return peers[peerId];
+    }
+    
     try {
       const pc = new RTCPeerConnection({
         iceServers: iceServers,
@@ -2368,10 +2904,12 @@ win.document.body.appendChild(img);
         rtcpMuxPolicy: 'require'
       });
       
+      // Add local stream tracks
       if (localStream) {
         localStream.getTracks().forEach(track => {
           try {
             pc.addTrack(track, localStream);
+            console.log('Added local track:', track.kind);
           } catch (e) {
             console.error('Error adding track:', e);
           }
@@ -2402,13 +2940,12 @@ win.document.body.appendChild(img);
         console.log(`ICE connection state for ${peerId}: ${pc.iceConnectionState}`);
         if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
           console.log(`ICE connection failed for ${peerId}`);
-          // Try to restart ICE
           setTimeout(() => {
             if (pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'checking') {
-              console.log(`Restarting ICE for ${peerId}`);
-              pc.restartIce();
+              console.log(`Attempting to reconnect to ${peerId}`);
+              createPeerConnection(peerId);
             }
-          }, 1000);
+          }, 2000);
         }
       };
       
@@ -2422,26 +2959,25 @@ win.document.body.appendChild(img);
         }
       };
       
-      // Only create offer if we're the "lower" ID
-      if (socket.id < peerId) {
-        setTimeout(async () => {
-          try {
-            const offer = await pc.createOffer({
-              offerToReceiveAudio: true,
-              offerToReceiveVideo: true
-            });
-            await pc.setLocalDescription(offer);
-            socket.emit('signal', {
-              to: peerId,
-              roomId: roomId,
-              sdp: pc.localDescription,
-              type: 'video'
-            });
-          } catch (error) {
-            console.error('Error creating offer:', error);
-          }
-        }, 500 + Math.random() * 500);
-      }
+      // Create offer if we're initiating the connection
+      setTimeout(async () => {
+        try {
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true
+          });
+          await pc.setLocalDescription(offer);
+          socket.emit('signal', {
+            to: peerId,
+            roomId: roomId,
+            sdp: pc.localDescription,
+            type: 'video'
+          });
+          console.log('Sent offer to:', peerId);
+        } catch (error) {
+          console.error('Error creating offer:', error);
+        }
+      }, 1000 + Math.random() * 500); // Random delay to avoid collision
       
       peers[peerId] = pc;
       return pc;
@@ -2676,13 +3212,6 @@ win.document.body.appendChild(img);
     if (countEl) {
       countEl.textContent = `${participantCount} online`;
     }
-    
-    const title = document.getElementById('roomTitle');
-    if (title && isVideoMode) {
-      const videoGrid = document.getElementById('videoGrid');
-      const videoCount = videoGrid ? videoGrid.querySelectorAll('.video-card').length : 0;
-      title.textContent = `Video Chat (${videoCount})`;
-    }
   }
 
   function updateGridLayout() {
@@ -2738,51 +3267,6 @@ win.document.body.appendChild(img);
     } catch (error) {
       console.error('Error initializing audio analysis:', error);
     }
-  }
-
-  /* ===== VIP FUNCTIONS ===== */
-  function showVIPModal(message) {
-    const vipModal = document.getElementById('vipModal');
-    const vipMessage = document.getElementById('vipMessage');
-    if (vipModal && vipMessage) {
-      if (message) vipMessage.textContent = message;
-      vipModal.style.display = 'flex';
-    }
-  }
-
-  function closeVIPModal() {
-    const vipModal = document.getElementById('vipModal');
-    if (vipModal) vipModal.style.display = 'none';
-  }
-
-  function buyVIP() {
-    showNotification('Processing payment...', 'info');
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 30);
-      
-      const vipData = {
-        active: true,
-        expiry: expiry.toISOString(),
-        purchased: new Date().toISOString(),
-        tier: 'premium'
-      };
-      
-      localStorage.setItem('manamingle_vip', JSON.stringify(vipData));
-      
-      isVIP = true;
-      closeVIPModal();
-      showNotification('🎉 VIP Activated! You now have VIP features.', 'success');
-      
-      const recordBtn = document.querySelector('[data-action="recordScreen"]');
-      if (recordBtn) recordBtn.style.display = 'flex';
-      
-      if (socket) {
-        socket.emit('vip-upgraded', vipData);
-      }
-    }, 1500);
   }
 
   /* ===== UTILITY FUNCTIONS ===== */
@@ -2875,19 +3359,102 @@ win.document.body.appendChild(img);
     // Button event listeners
     document.getElementById('startTextBtn').addEventListener('click', startTextMode);
     document.getElementById('startVideoBtn').addEventListener('click', startVideoMode);
+    document.getElementById('viewVIPBtn').addEventListener('click', () => {
+      document.getElementById('vipModal').style.display = 'flex';
+    });
     document.getElementById('homeBtn').addEventListener('click', goHome);
     document.getElementById('mobileHomeBtn').addEventListener('click', goHome);
     document.getElementById('modeTextBtn').addEventListener('click', startTextMode);
     document.getElementById('modeVideoBtn').addEventListener('click', startVideoMode);
     document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
     document.getElementById('saveNicknameBtn').addEventListener('click', saveNickname);
-    document.getElementById('buyVIPBtn').addEventListener('click', buyVIP);
-    document.getElementById('cancelVIPBtn').addEventListener('click', closeVIPModal);
+    document.getElementById('buyVIPBtn').addEventListener('click', showPaymentModal);
+    document.getElementById('vipHistoryBtn').addEventListener('click', showVipHistory);
+    document.getElementById('cancelVIPBtn').addEventListener('click', () => {
+      document.getElementById('vipModal').style.display = 'none';
+    });
+    document.getElementById('backToVIPBtn').addEventListener('click', () => {
+      document.getElementById('vipHistoryModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'flex';
+    });
     document.getElementById('retryBtn').addEventListener('click', () => location.reload());
-    document.getElementById('vipSkipBtn').addEventListener('click', showVIPModal);
+    document.getElementById('vipSkipBtn').addEventListener('click', () => {
+      document.getElementById('serverFullModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'flex';
+    });
     document.getElementById('copyInviteBtn').addEventListener('click', copyInvite);
     document.getElementById('backBtn').addEventListener('click', goBack);
     document.getElementById('fileUploadBtn').addEventListener('click', () => fileInput && fileInput.click());
+    
+    // Payment modal listeners
+    document.querySelectorAll('.payment-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        const method = this.dataset.method;
+        
+        if (method === 'upi') {
+          showUPIModal();
+        } else if (method === 'card') {
+          showCardModal();
+        } else if (method === 'netbanking') {
+          processPayment('netbanking');
+        }
+      });
+    });
+    
+    // UPI payment
+    document.getElementById('simulateUPIPaymentBtn').addEventListener('click', () => {
+      const upiId = document.getElementById('upiIdInput').value.trim();
+      if (!upiId) {
+        showNotification('Please enter your UPI ID', 'error');
+        return;
+      }
+      processPayment('upi', { upiId: upiId });
+    });
+    
+    // Card payment
+    document.getElementById('simulateCardPaymentBtn').addEventListener('click', () => {
+      const cardNumber = document.getElementById('cardNumber').value.trim();
+      const cardExpiry = document.getElementById('cardExpiry').value.trim();
+      const cardCvv = document.getElementById('cardCvv').value.trim();
+      const cardName = document.getElementById('cardName').value.trim();
+      
+      if (!cardNumber || !cardExpiry || !cardCvv || !cardName) {
+        showNotification('Please fill all card details', 'error');
+        return;
+      }
+      
+      processPayment('card', {
+        cardNumber: cardNumber,
+        cardExpiry: cardExpiry,
+        cardCvv: cardCvv,
+        cardName: cardName
+      });
+    });
+    
+    // Back buttons
+    document.getElementById('backToPaymentBtn').addEventListener('click', () => {
+      document.getElementById('upiModal').style.display = 'none';
+      document.getElementById('paymentModal').style.display = 'flex';
+    });
+    
+    document.getElementById('backToPaymentBtn2').addEventListener('click', () => {
+      document.getElementById('cardModal').style.display = 'none';
+      document.getElementById('paymentModal').style.display = 'flex';
+    });
+    
+    // Close success modal
+    document.getElementById('closeSuccessBtn').addEventListener('click', () => {
+      document.getElementById('paymentSuccessModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'none';
+    });
+    
+    // Cancel payment
+    document.getElementById('cancelPaymentBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'flex';
+    });
     
     // Message input events
     const msgInput = document.getElementById('msgInput');
@@ -3033,7 +3600,7 @@ win.document.body.appendChild(img);
     });
     
     // Handle touch events for mobile
-    
+    document.addEventListener('touchstart', function() {}, {passive: true});
   }
 
   // Global error handling
