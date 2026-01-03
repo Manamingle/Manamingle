@@ -9,17 +9,17 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<!-- FIXED CSP Meta Tag -->
+<!-- Fixed CSP -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self' https://cdn.socket.io https://fonts.googleapis.com https://ipapi.co;
-  script-src 'self' 'unsafe-inline' https://cdn.socket.io https://unpkg.com;
-  script-src-attr 'unsafe-inline';
+  script-src 'self' 'unsafe-inline' https://cdn.socket.io https://unpkg.com https://*.unpkg.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com;
-  connect-src *;
+  connect-src * 'self' ws: wss:;
   img-src 'self' data: blob: https:;
-  media-src 'self' blob:;
+  media-src 'self' blob: mediastream:;
   object-src 'none';
+  script-src-attr 'unsafe-inline';
 ">
 
 
@@ -502,6 +502,7 @@ body{
   min-height:0;
   min-width:0;
   position:relative;
+  background: rgba(0,0,0,0.2);
 }
 
 /* Video Card - FIXED */
@@ -515,6 +516,7 @@ body{
   flex-direction:column;
   min-height:0;
   min-width:0;
+  background: #000;
 }
 
 .video-card video{
@@ -526,10 +528,34 @@ body{
   min-width:0;
   flex:1;
   display:block;
+  transform: scaleX(1); /* Normal for others */
 }
 
 .video-card.me video{
-  transform:scaleX(-1);
+  transform: scaleX(-1); /* Mirror for self view */
+}
+
+/* Video placeholder when no stream */
+.video-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0c1220, #060a14);
+  color: rgba(255,255,255,0.5);
+  font-size: 1rem;
+  z-index: 1;
+}
+
+.video-placeholder i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: var(--accent);
 }
 
 /* Speaking indicator */
@@ -825,6 +851,10 @@ body{
 .video-grid.grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
 .video-grid.grid-3 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
 .video-grid.grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+.video-grid.grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.video-grid.grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.video-grid.grid-7 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
+.video-grid.grid-8 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
 
 /* Notification */
 .copy-notification{
@@ -951,14 +981,43 @@ body{
   display: flex;
   align-items: center;
   gap: 5px;
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
 }
 
 .file-upload-btn:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* Connection Status */
+.connection-status {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.8);
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-connected { background: var(--green); }
+.status-connecting { background: var(--orange); }
+.status-disconnected { background: var(--danger); }
 </style>
 
-<!-- Three.js for 3D Background -->
+<!-- Three.js for 3D Background - Using updated version -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 </head>
@@ -975,9 +1034,9 @@ body{
   <div class="start-card">
     <h1>ManaMingle Group Chat</h1>
     <div class="interest-tags" id="interestTags"></div>
-    <button onclick="startTextMode()" class="pulse-animation">💬 Group Text Chat</button>
-    <button onclick="startVideoMode()" class="pulse-animation">🎥 Group Video Chat</button>
-    <button class="home-btn" onclick="goHome()">🏠 Home</button>
+    <button id="startTextBtn" class="pulse-animation">💬 Group Text Chat</button>
+    <button id="startVideoBtn" class="pulse-animation">🎥 Group Video Chat</button>
+    <button id="homeBtn" class="home-btn">🏠 Home</button>
   </div>
 </div>
 
@@ -988,26 +1047,26 @@ body{
     <div class="invite-bar">
       <span class="invite-label">Invite</span>
       <input id="inviteLink" readonly value="https://manamingle.site/group-video-chat/">
-      <button onclick="copyInvite()">📋</button>
-      <button class="back-btn" onclick="goBack()">⬅ Back</button>
+      <button id="copyInviteBtn">📋</button>
+      <button class="back-btn" id="backBtn">⬅ Back</button>
     </div>
   </div>
 
   <!-- Mode selection (hidden when chat starts) -->
   <div class="mode-select" id="modeSelect">
-    <button class="mode-btn" onclick="startTextMode()">💬 Group Text Chat</button>
-    <button class="mode-btn" onclick="startVideoMode()">🎥 Group Video Chat</button>
+    <button id="modeTextBtn" class="mode-btn">💬 Group Text Chat</button>
+    <button id="modeVideoBtn" class="mode-btn">🎥 Group Video Chat</button>
   </div>
 
   <!-- Text Chat -->
   <div class="text-chat" id="textChat">
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
-      <div class="file-upload-btn" onclick="openFilePicker()" title="Upload file (max 5MB)">
+      <div class="file-upload-btn" id="fileUploadBtn" title="Upload file (max 5MB)">
         📎
       </div>
       <input id="msgInput" placeholder="Type a message… (Press Enter to send, ESC to leave)" autocomplete="off">
-      <button onclick="sendMessage()">Send</button>
+      <button id="sendMessageBtn">Send</button>
     </div>
     <div class="typing-indicator" id="typingIndicator"></div>
   </div>
@@ -1017,10 +1076,10 @@ body{
     <div class="video-grid" id="videoGrid"></div>
     <div class="video-header">
       <div class="video-controls" id="globalControls">
-        <button class="ctrl-btn" onclick="toggleMic(this)" title="Toggle Mic (M)">🔇</button>
-        <button class="ctrl-btn" onclick="toggleCam(this)" title="Toggle Camera (C)">📷</button>
-        <button class="ctrl-btn" onclick="toggleScreenShare(this)" title="Share Screen (S - VIP Only)">🖥️</button>
-        <button class="ctrl-btn" onclick="recordScreen(this)" title="Record Screen (R - VIP Only)" style="display:none;">🎬</button>
+        <button class="ctrl-btn" data-action="toggleMic" title="Toggle Mic (M)">🔇</button>
+        <button class="ctrl-btn" data-action="toggleCam" title="Toggle Camera (C)">📷</button>
+        <button class="ctrl-btn" data-action="toggleScreenShare" title="Share Screen (S - VIP Only)">🖥️</button>
+        <button class="ctrl-btn" data-action="recordScreen" title="Record Screen (R - VIP Only)" style="display:none;">🎬</button>
       </div>
     </div>
   </div>
@@ -1033,7 +1092,7 @@ body{
     <div class="error-message" id="nickError" style="display:none;"></div>
     <input id="nickname" placeholder="Your nickname" autocomplete="off">
     <div class="interest-tags" id="modalInterestTags"></div>
-    <button onclick="saveNickname()">Join Chat</button>
+    <button id="saveNicknameBtn">Join Chat</button>
   </div>
 </div>
 
@@ -1041,7 +1100,7 @@ body{
 <div class="modal vip-modal" id="vipModal" style="display:none;">
   <div class="modal-box">
     <h3 style="color:var(--vip);">⭐ VIP ACCESS REQUIRED</h3>
-    <p style="text-align:center; margin:10px 0;">This feature requires VIP membership.</p>
+    <p style="text-align:center; margin:10px 0;" id="vipMessage">This feature requires VIP membership.</p>
     
     <div class="vip-feature">
       <span>✅</span>
@@ -1062,8 +1121,8 @@ body{
     
     <div class="vip-price">$9.99 / month</div>
     
-    <button class="vip-btn" onclick="buyVIP()">💎 BUY VIP ACCESS</button>
-    <button onclick="closeVIPModal()" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
+    <button id="buyVIPBtn" class="vip-btn">💎 BUY VIP ACCESS</button>
+    <button id="cancelVIPBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
   </div>
 </div>
 
@@ -1072,9 +1131,15 @@ body{
   <div class="modal-box">
     <h3 style="color:var(--danger);">🚦 Server Full</h3>
     <p id="serverFullMessage" style="margin:15px 0;"></p>
-    <button onclick="location.reload()">Try Again</button>
-    <button onclick="showVIPModal()" class="vip-btn" style="margin-top:10px;">💎 Skip Queue with VIP</button>
+    <button id="retryBtn">Try Again</button>
+    <button id="vipSkipBtn" class="vip-btn" style="margin-top:10px;">💎 Skip Queue with VIP</button>
   </div>
+</div>
+
+<!-- Connection Status -->
+<div class="connection-status" id="connectionStatus" style="display:none;">
+  <span class="status-dot" id="statusDot"></span>
+  <span id="statusText">Connecting...</span>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -1096,6 +1161,13 @@ body{
   let threeScene = null;
   let typingTimeout = null;
   let fileInput = null;
+  let iceServers = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
+  ];
 
   /* ===== INITIALIZATION ===== */
   document.addEventListener('DOMContentLoaded', function () {
@@ -1235,7 +1307,7 @@ body{
           isVIP = true;
           console.log('✅ VIP user detected');
           // Show recording button for VIP users
-          const recordBtn = document.querySelector('.ctrl-btn[title*="Record"]');
+          const recordBtn = document.querySelector('[data-action="recordScreen"]');
           if (recordBtn) recordBtn.style.display = 'flex';
         }
       } catch (e) {
@@ -1248,21 +1320,27 @@ body{
   function initSocket() {
     if (socket && socket.connected) return;
     
+    updateConnectionStatus('connecting');
+    
     try {
       socket = io(window.location.origin, {
         transports: ['websocket', 'polling'],
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 10,
         reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
         query: {
           isVIP: isVIP,
-          interests: JSON.stringify(userInterests)
+          interests: JSON.stringify(userInterests),
+          nickname: nickname
         }
       });
       
       // Core Socket Event Handlers
       socket.on('connect', handleConnect);
       socket.on('disconnect', handleDisconnect);
+      socket.on('connect_error', handleConnectError);
       socket.on('error', handleSocketError);
       socket.on('server-full', handleServerFull);
       socket.on('queue-accepted', handleQueueAccepted);
@@ -1311,18 +1389,52 @@ body{
     } catch (error) {
       console.error('❌ Failed to initialize socket:', error);
       showNotification('Failed to initialize connection', 'error');
+      updateConnectionStatus('disconnected');
+    }
+  }
+
+  function updateConnectionStatus(status) {
+    const statusEl = document.getElementById('connectionStatus');
+    const dotEl = document.getElementById('statusDot');
+    const textEl = document.getElementById('statusText');
+    
+    if (!statusEl || !dotEl || !textEl) return;
+    
+    statusEl.style.display = 'flex';
+    
+    switch(status) {
+      case 'connected':
+        dotEl.className = 'status-dot status-connected';
+        textEl.textContent = 'Connected';
+        break;
+      case 'connecting':
+        dotEl.className = 'status-dot status-connecting';
+        textEl.textContent = 'Connecting...';
+        break;
+      case 'disconnected':
+        dotEl.className = 'status-dot status-disconnected';
+        textEl.textContent = 'Disconnected';
+        break;
     }
   }
 
   /* ===== SOCKET EVENT HANDLERS ===== */
   function handleConnect() {
     console.log('✅ Connected to server with ID:', socket.id);
+    updateConnectionStatus('connected');
     showNotification('Connected to server', 'success');
   }
 
   function handleDisconnect() {
     console.log('🔌 Disconnected from server');
+    updateConnectionStatus('disconnected');
     showNotification('Disconnected from server', 'warning');
+  }
+
+  function handleConnectError(error) {
+    console.error('❌ Connection error:', error);
+    updateConnectionStatus('disconnected');
+    showNotification('Connection error: ' + (error.message || 'Please check your connection'), 'error');
   }
 
   function handleSocketError(error) {
@@ -1344,12 +1456,13 @@ body{
 
   function handleQueuePosition(data) {
     console.log('Queue position:', data.position);
-    // Could show queue position UI if needed
+    showNotification(`Queue position: ${data.position}`, 'info');
   }
 
   function handleGroupJoined(data) {
     console.log('✅ Joined group:', data);
     roomId = data.roomId;
+    nickname = data.nickname || nickname;
     updateInviteLink();
     updateParticipantCount(data.participantCount);
     
@@ -1443,7 +1556,7 @@ body{
 
   /* ===== WEBRTC HANDLERS ===== */
   async function handleWebRTCSignal(data) {
-    console.log('📡 Signal received:', data);
+    console.log('📡 Signal received from:', data.from, 'type:', data.type);
     
     let pc = peers[data.from];
     if (!pc) {
@@ -1451,10 +1564,12 @@ body{
       peers[data.from] = pc;
     }
     
-    if (data.sdp) {
-      try {
+    try {
+      if (data.sdp) {
+        console.log('Setting remote SDP:', data.sdp.type);
         await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
         if (data.sdp.type === 'offer') {
+          console.log('Creating answer for offer from', data.from);
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           socket.emit('signal', {
@@ -1464,33 +1579,28 @@ body{
             type: 'video'
           });
         }
-      } catch (error) {
-        console.error('Error handling SDP:', error);
       }
-    }
-    
-    if (data.candidate) {
-      try {
+      
+      if (data.candidate) {
+        console.log('Adding ICE candidate from', data.from);
         await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-      } catch (error) {
-        console.error('Error adding ICE candidate:', error);
       }
+    } catch (error) {
+      console.error('Error handling WebRTC signal:', error);
     }
   }
 
   function handleExistingStreams(data) {
     console.log('📹 Existing streams:', data);
-    // Could handle existing streams display if needed
+    // Handle existing streams if needed
   }
 
   function handleUserStreamStarted(data) {
     console.log('🎬 User stream started:', data);
-    // Handle new stream display
   }
 
   function handleUserStreamEnded(data) {
     console.log('⏹️ User stream ended:', data);
-    // Handle stream removal
   }
 
   /* ===== VIP HANDLERS ===== */
@@ -1500,7 +1610,7 @@ body{
     showNotification('🎉 VIP Activated! You now have VIP features.', 'success');
     
     // Show recording button
-    const recordBtn = document.querySelector('.ctrl-btn[title*="Record"]');
+    const recordBtn = document.querySelector('[data-action="recordScreen"]');
     if (recordBtn) recordBtn.style.display = 'flex';
   }
 
@@ -1510,7 +1620,7 @@ body{
     showNotification('Your VIP status has been removed', 'warning');
     
     // Hide recording button
-    const recordBtn = document.querySelector('.ctrl-btn[title*="Record"]');
+    const recordBtn = document.querySelector('[data-action="recordScreen"]');
     if (recordBtn) recordBtn.style.display = 'none';
   }
 
@@ -1520,7 +1630,7 @@ body{
     showNotification('Your VIP subscription has expired', 'warning');
     
     // Hide recording button
-    const recordBtn = document.querySelector('.ctrl-btn[title*="Record"]');
+    const recordBtn = document.querySelector('[data-action="recordScreen"]');
     if (recordBtn) recordBtn.style.display = 'none';
   }
 
@@ -1531,18 +1641,15 @@ body{
 
   /* ===== ADMIN HANDLERS ===== */
   function handleAdminState(data) {
-    // Handle admin state updates if needed
     console.log('👮 Admin state updated');
   }
 
   function handleNewReport(data) {
     console.log('⚠️ New report:', data);
-    // Handle new reports if admin
   }
 
   function handleAdminActionLog(data) {
     console.log('📝 Admin action:', data);
-    // Log admin actions if needed
   }
 
   /* ===== SYSTEM HANDLERS ===== */
@@ -1614,7 +1721,7 @@ body{
     // Initialize socket
     initSocket();
     
-    // Start camera directly (no nickname modal for video chat)
+    // Start camera directly
     startCamera()
       .then(() => {
         // Generate random nickname for video chat
@@ -1648,26 +1755,29 @@ body{
   }
 
   function saveNickname() {
-  if (!socket || !socket.connected) {
-    showNotification('Connecting to server, please wait…', 'warning');
-    return;
+    if (!socket || !socket.connected) {
+      showNotification('Connecting to server, please wait…', 'warning');
+      return;
+    }
+
+    const nick = document.getElementById('nickname').value.trim();
+    if (!nick) {
+      document.getElementById('nickError').textContent = 'Please enter a nickname';
+      document.getElementById('nickError').style.display = 'block';
+      return;
+    }
+
+    nickname = nick;
+    document.getElementById('nickModal').style.display = 'none';
+
+    socket.emit(roomId ? 'join-group' : 'create-group', {
+      roomId,
+      mode: inviteMode,
+      nickname,
+      interests: userInterests,
+      isVIP
+    });
   }
-
-  const nick = document.getElementById('nickname').value.trim();
-  if (!nick) return;
-
-  nickname = nick;
-  document.getElementById('nickModal').style.display = 'none';
-
-  socket.emit(roomId ? 'join-group' : 'create-group', {
-    roomId,
-    mode: inviteMode,
-    nickname,
-    interests: userInterests,
-    isVIP
-  });
-}
-
 
   function goBack() {
     console.log('Going back...');
@@ -1678,12 +1788,22 @@ body{
     }
     
     // Close all peer connections
-    Object.values(peers).forEach(pc => pc.close());
+    Object.values(peers).forEach(pc => {
+      if (pc && typeof pc.close === 'function') {
+        try {
+          pc.close();
+        } catch (e) {
+          console.error('Error closing peer connection:', e);
+        }
+      }
+    });
     for (const id in peers) delete peers[id];
     
     // Stop media streams
     if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
+      localStream.getTracks().forEach(track => {
+        track.stop();
+      });
       localStream = null;
     }
     
@@ -1697,9 +1817,18 @@ body{
       mediaRecorder.stop();
     }
     
+    // Stop active speaker detection
+    if (speakerInterval) {
+      clearInterval(speakerInterval);
+      speakerInterval = null;
+    }
+    
     // Clear UI
-    videoGrid.innerHTML = '';
-    messages.innerHTML = '';
+    const videoGrid = document.getElementById('videoGrid');
+    if (videoGrid) videoGrid.innerHTML = '';
+    
+    const messages = document.getElementById('messages');
+    if (messages) messages.innerHTML = '';
     
     // Reset UI
     textChat.style.display = 'none';
@@ -1708,6 +1837,7 @@ body{
     isTextMode = false;
     isVideoMode = false;
     roomId = null;
+    updateConnectionStatus('disconnected');
     
     // Show start overlay or stay in app
     if (new URLSearchParams(window.location.search).has('room')) {
@@ -1752,6 +1882,8 @@ body{
 
   function addMessage(text, type, sender, isVIPUser = false) {
     const messages = document.getElementById('messages');
+    if (!messages) return;
+    
     const div = document.createElement('div');
     div.className = 'msg ' + type;
     
@@ -1829,13 +1961,7 @@ body{
     document.body.appendChild(fileInput);
   }
 
-  function openFilePicker() {
-    if (fileInput) {
-      fileInput.click();
-    }
-  }
-
-  async function handleFileSelect(event) {
+  function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file || !socket || !roomId) return;
     
@@ -1876,6 +2002,8 @@ body{
 
   function displayFile(data) {
     const messages = document.getElementById('messages');
+    if (!messages) return;
+    
     const div = document.createElement('div');
     div.className = 'msg ' + (data.senderId === socket.id ? 'me' : 'other');
     
@@ -1940,37 +2068,66 @@ body{
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
-  /* ===== VIDEO FUNCTIONS (from previous code) ===== */
+  /* ===== VIDEO FUNCTIONS ===== */
   async function startCamera() {
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({
+      const constraints = {
         video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          frameRate: { ideal: 24 },
-          facingMode: 'user'
+          width: { ideal: 1280, min: 640, max: 1920 },
+          height: { ideal: 720, min: 480, max: 1080 },
+          frameRate: { ideal: 30, min: 15 },
+          facingMode: 'user',
+          aspectRatio: { ideal: 1.7777777778 } // 16:9
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          channelCount: 2
         }
-      });
+      };
       
+      // Try for optimal quality first
+      localStream = await navigator.mediaDevices.getUserMedia(constraints)
+        .catch(async () => {
+          // Fallback to basic constraints
+          console.log('Falling back to basic constraints');
+          return await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+        });
+      
+      console.log('Camera started successfully');
       addVideo('me', localStream, true);
       initActiveSpeaker();
       return localStream;
       
     } catch (error) {
       console.error('Error accessing camera:', error);
-      showNotification('Camera permission required', 'error');
+      
+      if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        showNotification('No camera found on your device', 'error');
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        showNotification('Camera is already in use by another application', 'error');
+      } else if (error.name === 'OverconstrainedError') {
+        showNotification('Camera constraints cannot be met', 'error');
+      } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        showNotification('Camera permission denied. Please allow camera access.', 'error');
+      } else if (error.name === 'TypeError' || error.name === 'ConstraintNotSatisfiedError') {
+        showNotification('Camera error. Please check your camera settings.', 'error');
+      } else {
+        showNotification('Failed to access camera: ' + error.message, 'error');
+      }
+      
       throw error;
     }
   }
 
   function addVideo(userId, stream, isLocal = false) {
-    // Don't add duplicates
-    if (document.getElementById('video-' + userId)) return;
+    // Remove existing video for this user
+    const existing = document.getElementById('video-' + userId);
+    if (existing) existing.remove();
     
     const card = document.createElement('div');
     card.className = 'video-card' + (isLocal ? ' me' : '');
@@ -1980,14 +2137,33 @@ body{
     video.autoplay = true;
     video.playsInline = true;
     video.muted = isLocal;
-    video.srcObject = stream;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    
+    // Handle stream
+    if (stream) {
+      video.srcObject = stream;
+    }
     
     video.onloadedmetadata = () => {
+      console.log(`Video metadata loaded for ${userId}`);
       video.play().catch(e => console.log('Video play error:', e));
     };
-    setTimeout(() => {
+    
+    video.oncanplay = () => {
+      console.log(`Video can play for ${userId}`);
       video.play().catch(e => console.log('Video play error:', e));
+    };
+    
+    // Try to play after a short delay
+    setTimeout(() => {
+      video.play().catch(e => console.log('Video play error after timeout:', e));
     }, 100);
+    
+    // Add placeholder in case video doesn't load
+    const placeholder = document.createElement('div');
+    placeholder.className = 'video-placeholder';
+    placeholder.innerHTML = `<i>${isLocal ? '📷' : '👤'}</i><span>${isLocal ? 'You' : 'User'}</span>`;
     
     const label = document.createElement('div');
     label.className = 'video-label';
@@ -1998,78 +2174,126 @@ body{
     watermark.textContent = 'manamingle.site';
     
     card.appendChild(video);
+    card.appendChild(placeholder);
     card.appendChild(label);
     card.appendChild(watermark);
-    videoGrid.appendChild(card);
+    
+    const videoGrid = document.getElementById('videoGrid');
+    if (videoGrid) {
+      videoGrid.appendChild(card);
+    }
     
     updateGridLayout();
+    
+    // Hide placeholder when video starts playing
+    video.onplaying = () => {
+      placeholder.style.display = 'none';
+    };
+    
     return card;
   }
 
   function createPeerConnection(peerId) {
     console.log('Creating peer connection for:', peerId);
     
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-      ]
-    });
-    
-    if (localStream) {
-      localStream.getTracks().forEach(track => {
-        pc.addTrack(track, localStream);
+    try {
+      const pc = new RTCPeerConnection({
+        iceServers: iceServers,
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require',
+        iceTransportPolicy: 'all'
       });
-    }
-    
-    pc.ontrack = (event) => {
-      console.log('Received remote stream from:', peerId);
-      if (event.streams[0]) {
-        addVideo(peerId, event.streams[0]);
-      }
-    };
-    
-    pc.onicecandidate = (event) => {
-      if (event.candidate && socket) {
-        socket.emit('signal', {
-          to: peerId,
-          roomId: roomId,
-          candidate: event.candidate,
-          type: 'video'
+      
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          if (localStream.getTracks().some(t => t === track)) {
+            try {
+              pc.addTrack(track, localStream);
+            } catch (e) {
+              console.error('Error adding track:', e);
+            }
+          }
         });
       }
-    };
-    
-    pc.onconnectionstatechange = () => {
-      console.log(`Connection with ${peerId}: ${pc.connectionState}`);
-      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-        const videoCard = document.getElementById('video-' + peerId);
-        if (videoCard) videoCard.remove();
-        delete peers[peerId];
-        updateGridLayout();
-      }
-    };
-    
-    if (socket.id < peerId) {
-      setTimeout(async () => {
-        try {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
+      
+      pc.ontrack = (event) => {
+        console.log('Received remote stream from:', peerId, 'streams:', event.streams.length);
+        if (event.streams && event.streams[0]) {
+          setTimeout(() => {
+            addVideo(peerId, event.streams[0]);
+          }, 100);
+        }
+      };
+      
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socket) {
           socket.emit('signal', {
             to: peerId,
             roomId: roomId,
-            sdp: pc.localDescription,
+            candidate: event.candidate,
             type: 'video'
           });
-        } catch (error) {
-          console.error('Error creating offer:', error);
         }
-      }, 1000);
+      };
+      
+      pc.oniceconnectionstatechange = () => {
+        console.log(`ICE connection state for ${peerId}: ${pc.iceConnectionState}`);
+        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+          console.log(`ICE connection failed for ${peerId}, trying to restart...`);
+          // Try to restart ICE
+          setTimeout(() => {
+            if (pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'checking') {
+              console.log(`Restarting ICE for ${peerId}`);
+              pc.restartIce();
+            }
+          }, 1000);
+        }
+      };
+      
+      pc.onconnectionstatechange = () => {
+        console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
+        if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+          const videoCard = document.getElementById('video-' + peerId);
+          if (videoCard) videoCard.remove();
+          delete peers[peerId];
+          updateGridLayout();
+        }
+      };
+      
+      pc.onsignalingstatechange = () => {
+        console.log(`Signaling state for ${peerId}: ${pc.signalingState}`);
+      };
+      
+      // Only create offer if we're the "lower" ID (to avoid race condition)
+      if (socket.id < peerId) {
+        setTimeout(async () => {
+          try {
+            const offer = await pc.createOffer({
+              offerToReceiveAudio: true,
+              offerToReceiveVideo: true,
+              voiceActivityDetection: false
+            });
+            await pc.setLocalDescription(offer);
+            socket.emit('signal', {
+              to: peerId,
+              roomId: roomId,
+              sdp: pc.localDescription,
+              type: 'video'
+            });
+          } catch (error) {
+            console.error('Error creating offer:', error);
+          }
+        }, 500 + Math.random() * 500); // Add some random delay to avoid collisions
+      }
+      
+      peers[peerId] = pc;
+      return pc;
+      
+    } catch (error) {
+      console.error('Error creating peer connection:', error);
+      return null;
     }
-    
-    peers[peerId] = pc;
-    return pc;
   }
 
   /* ===== CONTROL FUNCTIONS ===== */
@@ -2080,8 +2304,16 @@ body{
     if (audioTrack) {
       audioTrack.enabled = !audioTrack.enabled;
       button.classList.toggle('off', !audioTrack.enabled);
-      button.textContent = audioTrack.enabled ? '🔇' : '🎤';
+      button.textContent = audioTrack.enabled ? '🎤' : '🔇';
       showNotification(audioTrack.enabled ? 'Microphone unmuted' : 'Microphone muted', 'info');
+      
+      // Update all peer connections
+      Object.values(peers).forEach(pc => {
+        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+        if (sender) {
+          sender.replaceTrack(audioTrack);
+        }
+      });
     }
   }
 
@@ -2094,6 +2326,14 @@ body{
       button.classList.toggle('off', !videoTrack.enabled);
       button.textContent = videoTrack.enabled ? '📷' : '📹';
       showNotification(videoTrack.enabled ? 'Camera shown' : 'Camera hidden', 'info');
+      
+      // Update all peer connections
+      Object.values(peers).forEach(pc => {
+        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) {
+          sender.replaceTrack(videoTrack);
+        }
+      });
     }
   }
 
@@ -2105,16 +2345,21 @@ body{
     
     try {
       if (!screenStream) {
+        // Start screen sharing
         screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: {
             cursor: "always",
-            displaySurface: "monitor"
+            displaySurface: "monitor",
+            frameRate: { ideal: 30, max: 30 },
+            width: { max: 1920 },
+            height: { max: 1080 }
           },
           audio: false
         });
         
         const videoTrack = screenStream.getVideoTracks()[0];
-        if (localStream && videoTrack) {
+        if (videoTrack) {
+          // Replace video track in all peer connections
           Object.values(peers).forEach(pc => {
             const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
             if (sender) {
@@ -2122,8 +2367,9 @@ body{
             }
           });
           
+          // Update local video display
           const meVideo = document.querySelector('#video-me video');
-          if (meVideo) {
+          if (meVideo && localStream) {
             const newStream = new MediaStream([videoTrack, ...localStream.getAudioTracks()]);
             meVideo.srcObject = newStream;
           }
@@ -2132,36 +2378,54 @@ body{
           button.textContent = '🛑';
           showNotification('Screen sharing started (VIP)', 'success');
           
+          // Handle when user stops sharing via browser UI
           videoTrack.onended = () => {
             toggleScreenShare(button);
           };
         }
       } else {
+        // Stop screen sharing
         screenStream.getTracks().forEach(track => track.stop());
         screenStream = null;
         
-        const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const cameraTrack = cameraStream.getVideoTracks()[0];
-        
-        Object.values(peers).forEach(pc => {
-          const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
-          if (sender && cameraTrack) {
-            sender.replaceTrack(cameraTrack);
+        // Switch back to camera
+        try {
+          const cameraStream = await navigator.mediaDevices.getUserMedia({ 
+            video: true,
+            audio: false 
+          });
+          const cameraTrack = cameraStream.getVideoTracks()[0];
+          
+          if (cameraTrack) {
+            // Replace video track in all peer connections
+            Object.values(peers).forEach(pc => {
+              const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+              if (sender) {
+                sender.replaceTrack(cameraTrack);
+              }
+            });
+            
+            // Update local stream and video display
+            if (localStream) {
+              const oldVideoTrack = localStream.getVideoTracks()[0];
+              if (oldVideoTrack) {
+                localStream.removeTrack(oldVideoTrack);
+                oldVideoTrack.stop();
+              }
+              localStream.addTrack(cameraTrack);
+            }
+            
+            const meVideo = document.querySelector('#video-me video');
+            if (meVideo) {
+              meVideo.srcObject = localStream;
+            }
           }
-        });
-        
-        const meVideo = document.querySelector('#video-me video');
-        if (meVideo && localStream) {
-          meVideo.srcObject = localStream;
-        }
-        
-        if (localStream && cameraTrack) {
-          const oldVideoTrack = localStream.getVideoTracks()[0];
-          if (oldVideoTrack) {
-            localStream.removeTrack(oldVideoTrack);
-            oldVideoTrack.stop();
-          }
-          localStream.addTrack(cameraTrack);
+          
+          cameraStream.getTracks().forEach(track => {
+            if (track.kind === 'audio') track.stop();
+          });
+        } catch (error) {
+          console.error('Error switching back to camera:', error);
         }
         
         button.classList.remove('off');
@@ -2170,7 +2434,9 @@ body{
       }
     } catch (error) {
       console.error('Screen share error:', error);
-      showNotification('Screen share cancelled or failed', 'error');
+      if (error.name !== 'NotAllowedError') {
+        showNotification('Screen share cancelled or failed', 'error');
+      }
     }
   }
 
@@ -2187,11 +2453,18 @@ body{
         showNotification('Recording stopped', 'info');
       } else {
         const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: { displaySurface: "monitor" },
+          video: { 
+            displaySurface: "monitor",
+            frameRate: { ideal: 30 }
+          },
           audio: false
         });
         
-        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: 'video/webm;codecs=vp9',
+          videoBitsPerSecond: 2500000
+        });
+        
         const recordedChunks = [];
         
         mediaRecorder.ondataavailable = (event) => {
@@ -2206,7 +2479,9 @@ body{
           const a = document.createElement('a');
           a.href = url;
           a.download = `manamingle-recording-${Date.now()}.webm`;
+          document.body.appendChild(a);
           a.click();
+          document.body.removeChild(a);
           URL.revokeObjectURL(url);
           showNotification('Recording saved (VIP)', 'success');
           
@@ -2216,10 +2491,20 @@ body{
         mediaRecorder.start();
         button.textContent = '⏹️';
         showNotification('Recording started (VIP)', 'success');
+        
+        // Auto-stop after 30 minutes
+        setTimeout(() => {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            button.textContent = '🎬';
+          }
+        }, 30 * 60 * 1000);
       }
     } catch (error) {
       console.error('Recording error:', error);
-      showNotification('Recording cancelled or failed', 'error');
+      if (error.name !== 'NotAllowedError') {
+        showNotification('Recording cancelled or failed', 'error');
+      }
     }
   }
 
@@ -2227,38 +2512,58 @@ body{
   function updateInviteLink() {
     if (!roomId) return;
     
-    const inviteUrl = `${window.location.origin}/groupchat.html?room=${roomId}&mode=${inviteMode}`;
+    const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&mode=${inviteMode}`;
     const inviteInput = document.getElementById('inviteLink');
-    inviteInput.value = inviteUrl;
-    inviteInput.title = inviteUrl;
+    if (inviteInput) {
+      inviteInput.value = inviteUrl;
+      inviteInput.title = inviteUrl;
+    }
   }
 
   function updateParticipantCount(count) {
     const title = document.getElementById('roomTitle');
-    if (count !== undefined) {
-      title.textContent = `Group Chat (${count} online)`;
-    } else {
-      const videoCount = videoGrid.querySelectorAll('.video-card').length;
-      title.textContent = `Group Chat (${videoCount} online)`;
+    if (title) {
+      if (count !== undefined) {
+        title.textContent = `Group Chat (${count} online)`;
+      } else {
+        const videoGrid = document.getElementById('videoGrid');
+        const videoCount = videoGrid ? videoGrid.querySelectorAll('.video-card').length : 0;
+        title.textContent = `Group Chat (${videoCount} online)`;
+      }
     }
   }
 
   function updateGridLayout() {
+    const videoGrid = document.getElementById('videoGrid');
+    if (!videoGrid) return;
+    
     const cards = videoGrid.querySelectorAll('.video-card');
     const count = cards.length;
     
+    // Reset grid classes
     videoGrid.className = 'video-grid';
     
+    // Set grid layout based on number of participants
     if (count <= 1) {
       videoGrid.classList.add('grid-1');
     } else if (count === 2) {
       videoGrid.classList.add('grid-2');
     } else if (count === 3) {
       videoGrid.classList.add('grid-3');
-    } else {
+    } else if (count === 4) {
       videoGrid.classList.add('grid-4');
+    } else if (count <= 6) {
+      videoGrid.classList.add('grid-6');
+    } else if (count <= 8) {
+      videoGrid.classList.add('grid-8');
+    } else {
+      // For more than 8, use 4xN grid
+      const rows = Math.ceil(count / 4);
+      videoGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+      videoGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     }
     
+    // Ensure videos maintain aspect ratio
     cards.forEach(card => {
       const video = card.querySelector('video');
       if (video) {
@@ -2270,7 +2575,7 @@ body{
   }
 
   function initActiveSpeaker() {
-    if (!localStream) return;
+    if (!localStream || speakerInterval) return;
     
     try {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -2278,6 +2583,7 @@ body{
       const source = audioContext.createMediaStreamSource(localStream);
       source.connect(analyser);
       analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
       
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       
@@ -2286,8 +2592,17 @@ body{
         const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
         const meCard = document.getElementById('video-me');
         if (meCard) {
-          meCard.classList.toggle('speaking', average > 30);
+          meCard.classList.toggle('speaking', average > 20);
         }
+        
+        // Check remote speakers if we have their audio streams
+        Object.keys(peers).forEach(peerId => {
+          const peerCard = document.getElementById('video-' + peerId);
+          if (peerCard) {
+            // In a real implementation, you would analyze remote audio streams
+            // This is a simplified version
+          }
+        });
       }, 200);
     } catch (error) {
       console.error('Error initializing audio analysis:', error);
@@ -2296,14 +2611,17 @@ body{
 
   /* ===== VIP FUNCTIONS ===== */
   function showVIPModal(message) {
-    document.getElementById('vipModal').style.display = 'flex';
-    if (message) {
-      document.querySelector('#vipModal .modal-box p').textContent = message;
+    const vipModal = document.getElementById('vipModal');
+    const vipMessage = document.getElementById('vipMessage');
+    if (vipModal && vipMessage) {
+      if (message) vipMessage.textContent = message;
+      vipModal.style.display = 'flex';
     }
   }
 
   function closeVIPModal() {
-    document.getElementById('vipModal').style.display = 'none';
+    const vipModal = document.getElementById('vipModal');
+    if (vipModal) vipModal.style.display = 'none';
   }
 
   function buyVIP() {
@@ -2323,7 +2641,7 @@ body{
       closeVIPModal();
       showNotification('🎉 VIP Activated! You now have VIP features.', 'success');
       
-      const recordBtn = document.querySelector('.ctrl-btn[title*="Record"]');
+      const recordBtn = document.querySelector('[data-action="recordScreen"]');
       if (recordBtn) recordBtn.style.display = 'flex';
       
       if (socket) {
@@ -2335,14 +2653,20 @@ body{
   /* ===== UTILITY FUNCTIONS ===== */
   function copyInvite() {
     const inviteInput = document.getElementById('inviteLink');
+    if (!inviteInput) return;
+    
     inviteInput.select();
     inviteInput.setSelectionRange(0, 99999);
     
     navigator.clipboard.writeText(inviteInput.value)
       .then(() => showNotification('Invite link copied!', 'success'))
       .catch(() => {
-        document.execCommand('copy');
-        showNotification('Invite link copied!', 'success');
+        try {
+          document.execCommand('copy');
+          showNotification('Invite link copied!', 'success');
+        } catch (err) {
+          showNotification('Failed to copy invite link', 'error');
+        }
       });
   }
 
@@ -2382,37 +2706,21 @@ body{
 
   /* ===== EVENT LISTENERS ===== */
   function setupEventListeners() {
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && (isTextMode || isVideoMode)) {
-        goBack();
-      }
-      
-      if (e.key === 'Enter' && isTextMode && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-      
-      if ((e.key === 'm' || e.key === 'M') && isVideoMode) {
-        const micBtn = document.querySelector('.ctrl-btn[title*="Mic"]');
-        if (micBtn) toggleMic(micBtn);
-      }
-      
-      if ((e.key === 'c' || e.key === 'C') && isVideoMode) {
-        const camBtn = document.querySelector('.ctrl-btn[title*="Camera"]');
-        if (camBtn) toggleCam(camBtn);
-      }
-      
-      if ((e.key === 's' || e.key === 'S') && isVideoMode && isVIP) {
-        const screenBtn = document.querySelector('.ctrl-btn[title*="Screen"]');
-        if (screenBtn) toggleScreenShare(screenBtn);
-      }
-      
-      if ((e.key === 'r' || e.key === 'R') && isVideoMode && isVIP) {
-        const recordBtn = document.querySelector('.ctrl-btn[title*="Record"]');
-        if (recordBtn) recordScreen(recordBtn);
-      }
-    });
+    // Button event listeners
+    document.getElementById('startTextBtn').addEventListener('click', startTextMode);
+    document.getElementById('startVideoBtn').addEventListener('click', startVideoMode);
+    document.getElementById('homeBtn').addEventListener('click', goHome);
+    document.getElementById('modeTextBtn').addEventListener('click', startTextMode);
+    document.getElementById('modeVideoBtn').addEventListener('click', startVideoMode);
+    document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+    document.getElementById('saveNicknameBtn').addEventListener('click', saveNickname);
+    document.getElementById('buyVIPBtn').addEventListener('click', buyVIP);
+    document.getElementById('cancelVIPBtn').addEventListener('click', closeVIPModal);
+    document.getElementById('retryBtn').addEventListener('click', () => location.reload());
+    document.getElementById('vipSkipBtn').addEventListener('click', showVIPModal);
+    document.getElementById('copyInviteBtn').addEventListener('click', copyInvite);
+    document.getElementById('backBtn').addEventListener('click', goBack);
+    document.getElementById('fileUploadBtn').addEventListener('click', () => fileInput && fileInput.click());
     
     // Message input events
     const msgInput = document.getElementById('msgInput');
@@ -2432,8 +2740,68 @@ body{
     }
     
     // Nickname input
-    document.getElementById('nickname').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') saveNickname();
+    const nicknameInput = document.getElementById('nickname');
+    if (nicknameInput) {
+      nicknameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveNickname();
+      });
+    }
+    
+    // Video controls delegation
+    const globalControls = document.getElementById('globalControls');
+    if (globalControls) {
+      globalControls.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-action]');
+        if (button) {
+          const action = button.dataset.action;
+          switch (action) {
+            case 'toggleMic':
+              toggleMic(button);
+              break;
+            case 'toggleCam':
+              toggleCam(button);
+              break;
+            case 'toggleScreenShare':
+              toggleScreenShare(button);
+              break;
+            case 'recordScreen':
+              recordScreen(button);
+              break;
+          }
+        }
+      });
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && (isTextMode || isVideoMode)) {
+        goBack();
+      }
+      
+      if (e.key === 'Enter' && isTextMode && !e.shiftKey && document.activeElement.id === 'msgInput') {
+        e.preventDefault();
+        sendMessage();
+      }
+      
+      if ((e.key === 'm' || e.key === 'M') && isVideoMode && !e.ctrlKey && !e.metaKey) {
+        const micBtn = document.querySelector('[data-action="toggleMic"]');
+        if (micBtn) toggleMic(micBtn);
+      }
+      
+      if ((e.key === 'c' || e.key === 'C') && isVideoMode && !e.ctrlKey && !e.metaKey) {
+        const camBtn = document.querySelector('[data-action="toggleCam"]');
+        if (camBtn) toggleCam(camBtn);
+      }
+      
+      if ((e.key === 's' || e.key === 'S') && isVideoMode && isVIP && !e.ctrlKey && !e.metaKey) {
+        const screenBtn = document.querySelector('[data-action="toggleScreenShare"]');
+        if (screenBtn) toggleScreenShare(screenBtn);
+      }
+      
+      if ((e.key === 'r' || e.key === 'R') && isVideoMode && isVIP && !e.ctrlKey && !e.metaKey) {
+        const recordBtn = document.querySelector('[data-action="recordScreen"]');
+        if (recordBtn) recordScreen(recordBtn);
+      }
     });
     
     // Window resize
@@ -2452,9 +2820,28 @@ body{
         socket.emit('leave-group', { roomId });
       }
     });
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && localStream) {
+        // Pause video when tab is hidden to save resources
+        const videos = document.querySelectorAll('video');
+        videos.forEach(video => {
+          if (video.paused) return;
+          video.pause();
+        });
+      } else if (!document.hidden && localStream) {
+        // Resume video when tab becomes visible
+        const videos = document.querySelectorAll('video');
+        videos.forEach(video => {
+          if (!video.paused) return;
+          video.play().catch(e => console.log('Video play error on visibility change:', e));
+        });
+      }
+    });  /* ===== ERROR HANDLING ===== */
+
   }
 
-  /* ===== ERROR HANDLING ===== */
   window.addEventListener('error', (e) => {
     console.error('Global error:', e.error);
     showNotification('An error occurred', 'error');
