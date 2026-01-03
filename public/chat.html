@@ -1432,58 +1432,62 @@ elements.toggleVideoChat?.addEventListener("click", () => {
   }
 
   async function createPeerConnection() {
-    if (state.peerConnection) return;
-    
-    try {
-      state.peerConnection = new RTCPeerConnection(state.iceServers);
-      
-      // Add local stream
-      if (state.localStream) {
-        state.localStream.getTracks().forEach(track => {
-          state.peerConnection.addTrack(track, state.localStream);
+  if (state.peerConnection) return;
+
+  try {
+    state.peerConnection = new RTCPeerConnection(state.iceServers);
+
+    // 🔹 ICE / connection debug
+    state.peerConnection.oniceconnectionstatechange = () => {
+      console.log(
+        "ICE:",
+        state.peerConnection.iceConnectionState,
+        "CONN:",
+        state.peerConnection.connectionState
+      );
+    };
+
+    // 🔹 Add local tracks
+    if (state.localStream) {
+      state.localStream.getTracks().forEach(track => {
+        state.peerConnection.addTrack(track, state.localStream);
+      });
+    }
+
+    // 🔹 Remote stream
+    state.peerConnection.ontrack = (event) => {
+      if (!event.streams || !event.streams[0]) return;
+
+      elements.remoteVideo.srcObject = event.streams[0];
+
+      // IMPORTANT for autoplay
+      elements.remoteVideo.muted = true; // 👈 REQUIRED
+      elements.remoteVideo.playsInline = true;
+      elements.remoteVideo.autoplay = true;
+
+      elements.remoteStatus.style.display = "none";
+
+      setTimeout(() => {
+        elements.remoteVideo.muted = false;
+        elements.remoteVideo.play().catch(() => {});
+      }, 300);
+    };
+
+    // 🔹 ICE candidates
+    state.peerConnection.onicecandidate = (event) => {
+      if (event.candidate && state.roomId) {
+        socket.emit("signal", {
+          room: state.roomId,
+          candidate: event.candidate
         });
       }
-      
-      // Handle remote stream
-      state.peerConnection.ontrack = (event) => {
-        if (event.streams && event.streams[0]) {
-          elements.remoteVideo.srcObject = event.streams[0];
-          elements.remoteStatus.style.display = "none";
-          
-          // Ensure remote video plays
-          elements.remoteVideo.play().catch(e => console.log('Remote video play error:', e));
-        }
-      };
-      
-      // ICE candidates
-      state.peerConnection.onicecandidate = (event) => {
-        if (event.candidate && state.roomId) {
-          socket.emit("signal", {
-            room: state.roomId,
-            candidate: event.candidate
-          });
-        }
-      };
-      
-      // Connection state
-      state.peerConnection.onconnectionstatechange = () => {
-        if (state.peerConnection.connectionState === "connected") {
-          setStatus("Connected", "connected");
-          showNotification("Video connected!", "success");
-        } else if (state.peerConnection.connectionState === "disconnected" || 
-                   state.peerConnection.connectionState === "failed") {
-          setStatus("Connection issues", "error");
-          showNotification("Video connection lost", "warning");
-        }
-      };
-      
-      // Create offer
-      
-      
-    } catch (error) {
-      console.error("Error creating peer connection:", error);
-    }
+    };
+
+  } catch (err) {
+    console.error("PeerConnection error:", err);
   }
+}
+
 
   async function handleRemoteSDP(sdp) {
     if (!state.peerConnection) {
@@ -1897,24 +1901,40 @@ clearTypingIndicator();
     
     // Initialize video if needed
     if (state.isVideoMode) {
+  // 1️⃣ Ensure media exists
   if (!state.localStream) {
     await initializeVideo();
   }
 
-  // Always create peer connection
-  await createPeerConnection();
+  // 2️⃣ Create peer connection
+  if (!state.peerConnection) {
+    await createPeerConnection();
+  }
 
-  // 🔥 Only initiator creates offer
-  if (state.isInitiator && state.peerConnection) {
-    const offer = await state.peerConnection.createOffer();
+  // 3️⃣ Ensure tracks are added BEFORE offer
+  const senders = state.peerConnection.getSenders();
+  if (senders.length === 0 && state.localStream) {
+    state.localStream.getTracks().forEach(track => {
+      state.peerConnection.addTrack(track, state.localStream);
+    });
+  }
+
+  // 4️⃣ Only ONE side creates offer
+  if (state.isInitiator === true) {
+    const offer = await state.peerConnection.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: true
+    });
+
     await state.peerConnection.setLocalDescription(offer);
 
     socket.emit("signal", {
       room: state.roomId,
-      sdp: state.peerConnection.localDescription
+      sdp: offer
     });
   }
 }
+
 
     
     showNotification(`${state.isInterestMatch ? 'Interest match!' : 'Connected!'}`, "success");
