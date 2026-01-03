@@ -56,7 +56,47 @@
     }
 
     /* =========== BACKGROUND ANIMATIONS =========== */
-    
+    .floating-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .pulse-dot {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: float 3s infinite ease-in-out;
+      opacity: 0.2;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) translateX(0);
+      }
+      33% {
+        transform: translateY(-20px) translateX(10px);
+      }
+      66% {
+        transform: translateY(10px) translateX(-10px);
+      }
+    }
+
+    @keyframes floatMessage {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
     /* =========== CONTAINER =========== */
     .chat-container {
       position: relative;
@@ -939,12 +979,7 @@
 </head>
 <body>
   <!-- Background Animations -->
-  <div class="floating-shapes">
-    <div class="shape-1"></div>
-    <div class="shape-2"></div>
-    <div class="shape-3"></div>
-    <div class="shape-4"></div>
-  </div>
+  <div class="floating-shapes"></div>
 
   <div class="chat-container">
     <!-- Finding Match Modal (only for video) -->
@@ -1508,20 +1543,24 @@
     try {
       elements.localStatus.style.display = "flex";
       
+      // Detect device type for better constraints
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
       // Get user media with appropriate constraints
       const constraints = {
         video: {
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
-          frameRate: { ideal: 30, max: 60 },
-          facingMode: "user"
+          width: { ideal: isMobile ? 480 : 640, max: 1280 },
+          height: { ideal: isMobile ? 640 : 480, max: 720 },
+          frameRate: { ideal: isMobile ? 24 : 30, max: 60 },
+          facingMode: "user",
+          aspectRatio: isMobile ? { ideal: 9/16 } : { ideal: 16/9 }
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
           sampleRate: 48000,
-          channelCount: 2
+          channelCount: 1
         }
       };
       
@@ -1556,11 +1595,20 @@
     // Ensure videos play on mobile
     elements.localVideo.setAttribute('playsinline', '');
     elements.localVideo.setAttribute('webkit-playsinline', '');
+    elements.localVideo.setAttribute('muted', '');
+    
     elements.remoteVideo.setAttribute('playsinline', '');
     elements.remoteVideo.setAttribute('webkit-playsinline', '');
     
-    // Force play
-    elements.localVideo.play().catch(e => console.warn("Local video play failed:", e));
+    // Force play and handle autoplay restrictions
+    const playPromise = elements.localVideo.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(e => {
+        console.warn("Local video play failed:", e);
+        // Show play button overlay if needed
+        elements.localVideo.controls = true;
+      });
+    }
   }
 
   function fallbackToTextMode() {
@@ -1585,7 +1633,15 @@
     }
     
     try {
-      state.peerConnection = new RTCPeerConnection(state.iceServers);
+      // Adjust ICE servers based on platform
+      const iceConfig = {
+        ...state.iceServers,
+        iceTransportPolicy: 'all',
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require'
+      };
+      
+      state.peerConnection = new RTCPeerConnection(iceConfig);
       state.pendingIceCandidates = [];
       
       // Add local tracks
@@ -1608,11 +1664,18 @@
           // Remote video should NOT be mirrored - NORMAL orientation
           elements.remoteVideo.style.transform = 'scaleX(1)';
           
-          // Ensure video plays
-          elements.remoteVideo.play().catch(e => {
-            console.warn("Remote video play failed, retrying...", e);
-            setTimeout(() => elements.remoteVideo.play().catch(() => {}), 100);
-          });
+          // Ensure video plays on mobile
+          const playPromise = elements.remoteVideo.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(e => {
+              console.warn("Remote video play failed, retrying...", e);
+              // Show play button if autoplay blocked
+              elements.remoteVideo.controls = true;
+              setTimeout(() => {
+                elements.remoteVideo.play().catch(() => {});
+              }, 100);
+            });
+          }
         }
       };
       
@@ -1634,14 +1697,20 @@
           setStatus("Connected", "connected");
           showNotification("Video connected!", "success");
           updateConnectionQuality("excellent");
+          
+          // Hide overlays
+          elements.localStatus.style.display = "none";
+          elements.remoteStatus.style.display = "none";
         } else if (state.peerConnection.connectionState === "disconnected") {
           setStatus("Disconnected", "error");
           showNotification("Connection lost", "warning");
           updateConnectionQuality("poor");
+          elements.remoteStatus.style.display = "flex";
         } else if (state.peerConnection.connectionState === "failed") {
           setStatus("Connection failed", "error");
           showNotification("Connection failed", "error");
           updateConnectionQuality("poor");
+          elements.remoteStatus.style.display = "flex";
           attemptReconnect();
         }
       };
@@ -1649,6 +1718,11 @@
       // ICE connection state
       state.peerConnection.oniceconnectionstatechange = () => {
         console.log("ICE connection state:", state.peerConnection.iceConnectionState);
+      };
+      
+      // ICE gathering state
+      state.peerConnection.onicegatheringstatechange = () => {
+        console.log("ICE gathering state:", state.peerConnection.iceGatheringState);
       };
       
       console.log("Peer connection created successfully");
@@ -1680,7 +1754,10 @@
       state.pendingIceCandidates = [];
       
       if (sdp.type === 'offer') {
-        const answer = await state.peerConnection.createAnswer();
+        const answer = await state.peerConnection.createAnswer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true
+        });
         await state.peerConnection.setLocalDescription(answer);
         
         socket.emit("signal", {
@@ -1796,7 +1873,10 @@
     }
     
     if (state.localStream) {
-      state.localStream.getTracks().forEach(track => track.stop());
+      state.localStream.getTracks().forEach(track => {
+        track.stop();
+        track.enabled = false;
+      });
       state.localStream = null;
     }
     
