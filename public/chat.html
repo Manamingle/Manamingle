@@ -251,6 +251,10 @@
       gap: 10px;
       z-index: 1;
     }
+    video {
+  image-rendering: auto;
+  filter: contrast(1.06) brightness(1.05);
+}
 
     .video-controls {
       display: flex;
@@ -1135,6 +1139,23 @@
     console.error("Recovery failed", e);
   }
 }
+/*video clarity*/
+function tuneVideoQuality(pc) {
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  pc.getSenders().forEach(sender => {
+    if (sender.track?.kind === "video") {
+      const params = sender.getParameters();
+      if (!params.encodings) params.encodings = [{}];
+
+      params.encodings[0].maxBitrate = isMobile ? 1_200_000 : 2_500_000;
+      params.encodings[0].maxFramerate = isMobile ? 24 : 30;
+      params.encodings[0].priority = "high";
+
+      sender.setParameters(params).catch(console.error);
+    }
+  });
+}
 
   // =========== DOM ELEMENTS ===========
   const elements = {
@@ -1418,21 +1439,28 @@ elements.toggleVideoChat?.addEventListener("click", () => {
     try {
       elements.localStatus.style.display = "flex";
       
-      const constraints = {
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: "user"
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      };
+      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+const constraints = {
+  video: {
+    width: { ideal: isMobile ? 640 : 1280 },
+    height: { ideal: isMobile ? 480 : 720 },
+    frameRate: { ideal: isMobile ? 24 : 30, max: 30 },
+    facingMode: "user"
+  },
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true
+  }
+};
+
       
       state.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+      state.localStream.getAudioTracks().forEach(track => {
+  track.enabled = true; // 🔥 REQUIRED for iOS
+});
+
       // Apply to local video
       elements.localVideo.srcObject = state.localStream;
       elements.localStatus.style.display = "none";
@@ -1459,6 +1487,11 @@ elements.toggleVideoChat?.addEventListener("click", () => {
 
   try {
     state.peerConnection = new RTCPeerConnection(state.iceServers);
+    // 🔥 REQUIRED for desktop browsers
+    state.peerConnection.addTransceiver("video");
+state.peerConnection.addTransceiver("audio");
+
+
 
     // 🔁 ICE recovery
     state.peerConnection.oniceconnectionstatechange = () => {
@@ -1476,6 +1509,7 @@ elements.toggleVideoChat?.addEventListener("click", () => {
       console.log("CONN:", conn);
 
       if (conn === "connected") {
+        tuneVideoQuality(state.peerConnection);
         setTimeout(recoverRemoteVideo, 500);
       }
     };
@@ -1489,20 +1523,20 @@ elements.toggleVideoChat?.addEventListener("click", () => {
 
     // 🎥 Remote stream
     state.peerConnection.ontrack = (event) => {
-      if (!event.streams?.[0]) return;
+  if (!event.streams?.[0]) return;
 
-      elements.remoteVideo.srcObject = event.streams[0];
-      elements.remoteVideo.muted = true;
-      elements.remoteVideo.playsInline = true;
-      elements.remoteVideo.autoplay = true;
+  // 🔥 SAFARI RULE: mute BEFORE srcObject
+  elements.remoteVideo.muted = true;
+  elements.remoteVideo.playsInline = true;
+  elements.remoteVideo.autoplay = true;
 
-      elements.remoteStatus.style.display = "none";
+  elements.remoteVideo.srcObject = event.streams[0];
+  elements.remoteStatus.style.display = "none";
 
-      setTimeout(() => {
-        elements.remoteVideo.muted = false;
-        elements.remoteVideo.play().catch(() => {});
-      }, 300);
-    };
+  // ❌ DO NOT AUTO-UNMUTE ON iOS
+  elements.remoteVideo.play().catch(() => {});
+};
+
 
     // ❄ ICE candidates
     state.peerConnection.onicecandidate = (event) => {
@@ -1520,6 +1554,11 @@ elements.toggleVideoChat?.addEventListener("click", () => {
 }
 
 
+document.body.addEventListener("click", () => {
+  if (elements.remoteVideo?.paused) {
+    elements.remoteVideo.play().catch(() => {});
+  }
+}, { once: true });
 
 
   async function handleRemoteSDP(sdp) {
@@ -1954,18 +1993,33 @@ clearTypingIndicator();
 
   // 4️⃣ Only ONE side creates offer
   if (state.isInitiator === true) {
-    const offer = await state.peerConnection.createOffer({
-      offerToReceiveAudio: true,
-      offerToReceiveVideo: true
-    });
+  // 🔥 Desktop browsers need time to bind transceivers
+  await new Promise(r => setTimeout(r, 150));
 
-    await state.peerConnection.setLocalDescription(offer);
+  let offer = await state.peerConnection.createOffer({
+  offerToReceiveAudio: true,
+  offerToReceiveVideo: true
+});
 
-    socket.emit("signal", {
-      room: state.roomId,
-      sdp: offer
-    });
-  }
+// ✅ iOS Safari needs H264
+if (shouldForceVP8()) {
+  offer.sdp = forceVP8(offer.sdp);
+  function shouldForceVP8() {
+  // ❌ Safari (iPhone/iPad) must use H264
+  return !/iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+}
+
+await state.peerConnection.setLocalDescription(offer);
+
+
+  socket.emit("signal", {
+    room: state.roomId,
+    sdp: offer
+  });
+}
+
 }
 
 
