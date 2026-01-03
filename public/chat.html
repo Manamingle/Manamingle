@@ -1045,7 +1045,11 @@
   <div class="chat-stats" id="chatStats">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <strong style="color: var(--blue);">Chat Statistics</strong>
-      <button onclick="document.getElementById('chatStats').classList.remove('show')" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem;">×</button>
+      <button id="closeStatsBtn"
+  style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem;">
+  ×
+</button>
+
     </div>
     <div class="stat-item">
       <span>Messages Sent:</span>
@@ -1219,30 +1223,39 @@
 
   // =========== COUNTRY DETECTION ===========
   async function detectUserCountry() {
-  // Only run on production domain
-  if (location.hostname !== "manamingle.site") return;
-
   try {
-    const response = await fetch("https://ipapi.co/json/");
-    const data = await response.json();
+    let country = null;
 
-    if (data.country_code) {
-      state.userCountry = data.country_code.toLowerCase();
-      updateCountryFlag("local", state.userCountry);
+    // 1️⃣ Try browser language (most reliable, instant)
+    const lang = navigator.language || navigator.userLanguage;
+    if (lang && lang.includes("-")) {
+      country = lang.split("-")[1].toLowerCase();
     }
-  } catch {
-    try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (timezone.includes("Asia/Kolkata")) state.userCountry = "in";
-      else if (timezone.includes("America")) state.userCountry = "us";
-      else if (timezone.includes("Europe/London")) state.userCountry = "gb";
 
-      if (state.userCountry) {
-        
-      }
-    } catch {}
+    // 2️⃣ Fallback to timezone detection
+    if (!country) {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      if (tz.includes("Asia/Kolkata")) country = "in";
+      else if (tz.includes("Asia")) country = "in";
+      else if (tz.includes("America")) country = "us";
+      else if (tz.includes("Europe/London")) country = "gb";
+      else if (tz.includes("Europe")) country = "eu";
+    }
+
+    // 3️⃣ Apply if detected
+    if (country && country.length === 2) {
+      state.userCountry = country;
+      updateCountryFlag("local", country);
+    } else {
+      state.userCountry = null;
+    }
+
+  } catch (err) {
+    console.warn("Country detection skipped:", err);
+    state.userCountry = null;
   }
 }
+
 function updateCountryFlag(type, countryCode) {
   const flag = getCountryFlag(countryCode);
   if (!flag) return;
@@ -1256,16 +1269,15 @@ function updateCountryFlag(type, countryCode) {
   }
 }
 
-  
+function getCountryFlag(countryCode) {
+  if (!countryCode || countryCode.length !== 2) return '';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt());
+  return String.fromCodePoint(...codePoints);
+}
 
-  function getCountryFlag(countryCode) {
-    if (!countryCode || countryCode.length !== 2) return '';
-    const codePoints = countryCode
-      .toUpperCase()
-      .split('')
-      .map(char => 127397 + char.charCodeAt());
-    return String.fromCodePoint(...codePoints);
-  }
 
   // =========== MATCHING LOGIC ===========
   function startMatching() {
@@ -1305,6 +1317,14 @@ elements.chatInput.addEventListener("focus", () => {
   // =========== EVENT LISTENERS ===========
   function setupEventListeners() {
 
+    const closeStatsBtn = document.getElementById("closeStatsBtn");
+if (closeStatsBtn) {
+  closeStatsBtn.addEventListener("click", () => {
+    document.getElementById("chatStats")?.classList.remove("show");
+  });
+}
+
+
     const backBtn = document.getElementById("backBtn");
   if (backBtn) {
     backBtn.addEventListener("click", goBackToHome);
@@ -1332,7 +1352,7 @@ elements.chatInput.addEventListener("focus", () => {
     });
 
     // Sound toggle
-    document.getElementById('soundToggle').addEventListener('click', toggleSound);
+    
     
     // Stats button
     document.getElementById('statsBtn').addEventListener('click', () => {
@@ -1345,11 +1365,13 @@ elements.chatInput.addEventListener("focus", () => {
     // Button events
     elements.sendBtn.addEventListener("click", sendMessage);
     elements.skipBtn.addEventListener("click", skipChat);
-    elements.toggleMic.addEventListener("click", toggleMute);
-    elements.toggleCam.addEventListener("click", toggleCamera);
-    elements.endCall.addEventListener("click", endVideoCall);
-    elements.toggleVideoChat.addEventListener("click", () => {
-      setTimeout(() => elements.chatInput.focus(), 100);
+    elements.toggleMic?.addEventListener("click", toggleMute);
+elements.toggleCam?.addEventListener("click", toggleCamera);
+elements.endCall?.addEventListener("click", endVideoCall);
+elements.toggleVideoChat?.addEventListener("click", () => {
+  setTimeout(() => elements.chatInput?.focus(), 100);
+
+
       showNotification("Type your message below", "info");
     });
 
@@ -1366,14 +1388,7 @@ elements.chatInput.addEventListener("focus", () => {
     setInterval(updateChatStats, 60000);
   }
 
-  function toggleSound() {
-    state.soundEnabled = !state.soundEnabled;
-    localStorage.setItem('soundEnabled', state.soundEnabled);
-    const toggle = document.getElementById('soundToggle');
-    toggle.classList.toggle('muted', !state.soundEnabled);
-    toggle.textContent = state.soundEnabled ? '🔊' : '🔇';
-    showNotification(state.soundEnabled ? 'Sound enabled' : 'Sound disabled', 'info');
-  }
+  
 
   // =========== VIDEO FUNCTIONS ===========
   async function initializeVideo() {
@@ -1805,15 +1820,11 @@ clearTypingIndicator();
 
   // =========== SOCKET.IO HANDLERS ===========
   socket.on("connect", () => {
-  console.log("Connected to server:", socket.id);
-
-  setStatus("Finding match...", "waiting");
-
-  // ✅ START MATCHING HERE (ONLY HERE)
   if (!state.roomId && state.isMatching) {
     startMatching();
   }
 });
+
 
 
   socket.on("connect_error", (error) => {
