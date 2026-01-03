@@ -390,26 +390,27 @@
     .finding-match * {
   pointer-events: none;
 }
-
-    .finding-match {
-  pointer-events: auto;
+.video-area + .chat-messages .welcome-banner {
   display: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 20px 30px;
-  border-radius: 15px;
-  border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
-  z-index: 10;
-  max-width: 90%;
 }
+
+.finding-match {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+
+  z-index: 10000; /* ABOVE EVERYTHING */
+}
+
 .finding-match.show {
-  display: block;
+  display: flex;
 }
+
 
 
     .finding-match .spinner {
@@ -1105,14 +1106,19 @@
 
     partnerCountry: null,
     iceServers: {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject"
-    }
-  ]
+      iceServers: [
+  { urls: "stun:stun.l.google.com:19302" },
+  {
+    urls: [
+      "turn:openrelay.metered.ca:80?transport=udp",
+      "turn:openrelay.metered.ca:443?transport=tcp",
+      "turns:openrelay.metered.ca:443"
+    ],
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  }
+]
+
 }
 
   };
@@ -1263,6 +1269,11 @@ function tuneVideoQuality(pc) {
 
   socket.disconnect();
   window.location.href ="index.html";
+}
+const welcomeBanner = document.querySelector(".welcome-banner");
+
+if (welcomeBanner && state.isVideoMode) {
+  welcomeBanner.style.display = "none";
 }
 
   // =========== COUNTRY DETECTION ===========
@@ -1457,7 +1468,10 @@ const constraints = {
 
       
       state.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
+      state.localStream.getAudioTracks().forEach(track => {
+  track.enabled = true;
+});
+
       // Apply to local video
       elements.localVideo.srcObject = state.localStream;
       elements.localStatus.style.display = "none";
@@ -1485,8 +1499,9 @@ const constraints = {
   try {
     state.peerConnection = new RTCPeerConnection(state.iceServers);
     // 🔥 REQUIRED for desktop browsers
-state.peerConnection.addTransceiver("video", { direction: "sendrecv" });
-state.peerConnection.addTransceiver("audio", { direction: "sendrecv" });
+    state.peerConnection.addTransceiver("video");
+state.peerConnection.addTransceiver("audio");
+
 
 
     // 🔁 ICE recovery
@@ -1519,20 +1534,25 @@ state.peerConnection.addTransceiver("audio", { direction: "sendrecv" });
 
     // 🎥 Remote stream
     state.peerConnection.ontrack = (event) => {
-      if (!event.streams?.[0]) return;
+  if (!event.streams?.[0]) return;
 
-      elements.remoteVideo.srcObject = event.streams[0];
-      elements.remoteVideo.muted = true;
-      elements.remoteVideo.playsInline = true;
-      elements.remoteVideo.autoplay = true;
+  const stream = event.streams[0];
 
-      elements.remoteStatus.style.display = "none";
+  // REQUIRED for Android + iOS autoplay
+  elements.remoteVideo.muted = true;
+  elements.remoteVideo.playsInline = true;
+  elements.remoteVideo.autoplay = true;
 
-      setTimeout(() => {
-        elements.remoteVideo.muted = false;
-        elements.remoteVideo.play().catch(() => {});
-      }, 300);
-    };
+  elements.remoteVideo.srcObject = stream;
+
+  // Android bug: tracks may start disabled
+  stream.getVideoTracks().forEach(t => t.enabled = true);
+
+  elements.remoteStatus.style.display = "none";
+
+  elements.remoteVideo.play().catch(() => {});
+};
+
 
     // ❄ ICE candidates
     state.peerConnection.onicecandidate = (event) => {
@@ -1552,27 +1572,30 @@ state.peerConnection.addTransceiver("audio", { direction: "sendrecv" });
 
 
 
-  async function handleRemoteSDP(sdp) {
-    if (!state.peerConnection) {
-      await createPeerConnection();
-    }
-    
-    try {
-      await state.peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-      
-      if (sdp.type === 'offer') {
-        const answer = await state.peerConnection.createAnswer();
-        await state.peerConnection.setLocalDescription(answer);
-        
-        socket.emit("signal", {
-          room: state.roomId,
-          sdp: state.peerConnection.localDescription
-        });
-      }
-    } catch (error) {
-      console.error("Error handling SDP:", error);
-    }
+async function handleRemoteSDP(sdp) {
+  if (!state.peerConnection) {
+    await createPeerConnection();
   }
+
+  try {
+    if (sdp.type === "offer") {
+      await state.peerConnection.setRemoteDescription(sdp);
+
+      const answer = await state.peerConnection.createAnswer();
+      await state.peerConnection.setLocalDescription(answer);
+
+      socket.emit("signal", {
+        room: state.roomId,
+        sdp: answer
+      });
+    } else if (sdp.type === "answer") {
+      await state.peerConnection.setRemoteDescription(sdp);
+    }
+  } catch (err) {
+    console.error("SDP error:", err);
+  }
+}
+
 
   async function handleRemoteCandidate(candidate) {
     if (state.peerConnection && state.peerConnection.remoteDescription) {
@@ -1848,12 +1871,15 @@ clearTypingIndicator();
   elements.interestBadge.style.display = "none";
   elements.remoteFlag.textContent = "";
 
-  elements.messages.innerHTML = `
+  elements.messages.innerHTML = state.isVideoMode
+  ? ""
+  : `
     <div class="welcome-banner">
       <strong>Looking for a new match...</strong><br>
       Searching for someone ${state.tags.length > 0 ? 'with similar interests' : 'random'}.
     </div>
   `;
+
 
   clearTypingIndicator();
 
@@ -1994,11 +2020,22 @@ clearTypingIndicator();
 
   // 🔥 Force a stable codec for laptops
   function shouldForceVP8() {
+  // Safari must use H264
   return !/iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
+function forceVP8(sdp) {
+  return sdp.replace(/a=fmtp:.*\r\n/g, "");
+}
 
-  await state.peerConnection.setLocalDescription(offer);
+
+if (shouldForceVP8()) {
+  offer.sdp = forceVP8(offer.sdp);
+}
+
+await state.peerConnection.setLocalDescription(offer);
+
+
 
   socket.emit("signal", {
     room: state.roomId,
