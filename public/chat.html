@@ -2,15 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Mana Mingle - Chat</title>
-
- 
   <meta name="theme-color" content="#00c6ff">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>" type="image/svg+xml">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2&display=swap" rel="stylesheet">
@@ -54,7 +50,6 @@
       justify-content: center;
       padding: 0;
       margin: 0;
-      overflow-x: hidden;
       overflow: hidden;
       touch-action: manipulation;
       overscroll-behavior: none;
@@ -69,11 +64,9 @@
       border: 1px solid var(--border);
       border-radius: 0;
       width: 100vw;
-      min-height: 100dvh;
-  height: auto;
-  overflow: visible;
+      height: 100dvh;
+      overflow: hidden;
       box-shadow: 0 30px 80px rgba(0,0,0,0.45);
-      
       backdrop-filter: blur(12px);
       z-index: 1;
     }
@@ -98,13 +91,14 @@
       gap: 12px;
       flex-shrink: 0;
       min-height: 60px;
-      
+      z-index: 100;
     }
+    
     .back-btn {
-  background: #222;
-  border-color: #444;
-  min-width: 70px;
-}
+      background: #222;
+      border-color: #444;
+      min-width: 70px;
+    }
 
     .partner-info {
       display: flex;
@@ -180,7 +174,7 @@
       display: none;
       flex-direction: column;
       padding: 12px;
-      background: rgba(255,255,255,0.02);
+      background: rgba(0,0,0,0.3);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       height: 40vh;
@@ -198,7 +192,7 @@
 
     .video-card {
       position: relative;
-      background: rgba(255,255,255,0.04);
+      background: #000;
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
@@ -210,8 +204,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      background: #05060a;
-      transition: all 0.3s ease;
+      background: #000;
       display: block;
     }
 
@@ -223,7 +216,7 @@
       position: absolute;
       top: 8px;
       left: 8px;
-      background: rgba(0,0,0,0.45);
+      background: rgba(0,0,0,0.7);
       color: #fff;
       padding: 4px 8px;
       border-radius: 8px;
@@ -243,7 +236,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       color: #e8ecf2;
       font-weight: 600;
       text-align: center;
@@ -251,10 +244,10 @@
       gap: 10px;
       z-index: 1;
     }
+
     video {
-  image-rendering: auto;
-  filter: contrast(1.06) brightness(1.05);
-}
+      image-rendering: auto;
+    }
 
     .video-controls {
       display: flex;
@@ -263,6 +256,7 @@
       justify-content: center;
       width: 100%;
       flex-wrap: wrap;
+      z-index: 10;
     }
 
     .control-btn {
@@ -309,12 +303,11 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      background: radial-gradient(circle at 20% 20%, rgba(0,198,255,0.05), transparent 25%),
-                  radial-gradient(circle at 80% 0%, rgba(255,127,80,0.08), transparent 24%),
-                  rgba(0,0,0,0.25);
+      background: rgba(0,0,0,0.3);
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
       min-height: 0;
+      position: relative;
     }
 
     .message {
@@ -364,63 +357,57 @@
       text-align: left;
     }
 
-    .message-status {
-      position: absolute;
-      bottom: 6px;
-      right: 10px;
-      font-size: 0.7rem;
-      opacity: 0.7;
-      display: flex;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .welcome-banner {
+    /* =========== FINDING MATCH INDICATORS =========== */
+    .finding-match-indicator {
+      text-align: center;
+      padding: 20px;
+      color: var(--muted);
+      font-style: italic;
       background: rgba(0,198,255,0.1);
       border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 10px;
-      text-align: center;
-      border: 1px solid rgba(0,198,255,0.2);
-      font-size: 0.9rem;
-      line-height: 1.5;
-      align-self: center;
+      margin: 10px auto;
       max-width: 90%;
+      border: 1px solid rgba(0,198,255,0.2);
+      animation: pulse 2s infinite;
     }
-    .finding-match * {
-  pointer-events: none;
-}
-.video-area + .chat-messages .welcome-banner {
-  display: none;
-}
 
-.finding-match {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
+    .finding-match {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      display: none;
+    }
 
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
+    .finding-match.show {
+      display: flex;
+    }
 
-  z-index: 10000; /* ABOVE EVERYTHING */
-}
-
-.finding-match.show {
-  display: flex;
-}
-
-
+    .finding-match-content {
+      background: rgba(255,255,255,0.05);
+      padding: 40px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      backdrop-filter: blur(20px);
+    }
 
     .finding-match .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
+      width: 60px;
+      height: 60px;
+      border: 4px solid transparent;
       border-top-color: var(--blue);
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin: 0 auto 15px;
+      margin: 0 auto 25px;
     }
 
     /* =========== VIDEO CAPTIONS =========== */
@@ -429,29 +416,20 @@
       bottom: 10px;
       left: 10px;
       right: 10px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.85);
       color: white;
-      padding: 8px 12px;
+      padding: 10px 15px;
       border-radius: 10px;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       text-align: center;
       z-index: 10;
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.2);
       animation: captionFadeIn 0.3s ease;
-      max-height: 60px;
+      max-height: 80px;
       overflow-y: auto;
       word-break: break-word;
-    }
-
-    @keyframes captionFadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes captionFadeOut {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(-10px); }
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
 
     /* =========== TYPING INDICATOR =========== */
@@ -471,8 +449,8 @@
     }
 
     .typing-dots span {
-      width: 4px;
-      height: 4px;
+      width: 5px;
+      height: 5px;
       background: var(--blue);
       border-radius: 50%;
       animation: typing 1.4s infinite;
@@ -483,14 +461,13 @@
       display: flex;
       align-items: center;
       padding: 12px;
-      background: rgba(255,255,255,0.03);
+      background: rgba(0,0,0,0.85);
       gap: 8px;
       border-top: 1px solid var(--border);
       flex-wrap: wrap;
       flex-shrink: 0;
       min-height: 70px;
-      position: relative;
-      z-index: 1000;
+      z-index: 100;
     }
 
     .skip-btn {
@@ -499,7 +476,7 @@
       justify-content: center;
       min-width: 44px;
       min-height: 44px;
-      padding: 10px;
+      padding: 10px 15px;
       border-radius: 12px;
       background: var(--danger-gradient);
       color: white;
@@ -510,6 +487,12 @@
       gap: 6px;
       white-space: nowrap;
       flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .skip-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255,71,87,0.3);
     }
 
     .input-wrapper {
@@ -517,7 +500,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.1);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 8px 12px;
@@ -527,7 +510,7 @@
 
     .input-wrapper:focus-within {
       border-color: var(--blue);
-      box-shadow: 0 0 0 2px rgba(0,198,255,0.1);
+      box-shadow: 0 0 0 3px rgba(0,198,255,0.15);
     }
 
     .chat-input {
@@ -549,45 +532,8 @@
       color: var(--muted);
     }
 
-    /* Mobile optimization for input */
-    @media (max-width: 768px) {
-      .chat-input-area {
-        padding: 10px;
-        gap: 6px;
-        min-height: 64px;
-      }
-      
-      .input-wrapper {
-        padding: 6px 10px;
-        min-height: 44px;
-      }
-      
-      .chat-input {
-        font-size: 16px !important;
-        padding: 6px 2px;
-        min-height: 32px;
-      }
-      
-      .skip-btn, .send-btn {
-        padding: 8px 12px;
-        min-width: 44px;
-        min-height: 44px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .chat-input {
-        font-size: 16px !important;
-        min-width: 40px;
-      }
-      
-      .input-wrapper {
-        min-width: 60px;
-      }
-    }
-
     .send-btn {
-      padding: 10px 18px;
+      padding: 10px 20px;
       border: none;
       border-radius: 12px;
       background: var(--primary-gradient);
@@ -595,7 +541,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -608,45 +554,35 @@
       flex-shrink: 0;
     }
 
+    .send-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,198,255,0.3);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     /* =========== NOTIFICATIONS =========== */
     .notification {
       position: fixed;
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 12px 24px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(255,255,255,0.15);
+      padding: 14px 25px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.95);
+      border: 1px solid var(--border);
       color: white;
-      font-size: 0.9rem;
-      z-index: 1000;
+      font-size: 0.95rem;
+      z-index: 10000;
       pointer-events: none;
-      backdrop-filter: blur(10px);
-      animation: slideDown 0.3s ease;
-      max-width: 80%;
+      backdrop-filter: blur(15px);
+      animation: slideDown 0.4s ease;
+      max-width: 85%;
       text-align: center;
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-    }
-
-    /* =========== COUNTRY FLAGS =========== */
-    .country-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 4px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
 
     /* =========== CONNECTION QUALITY =========== */
@@ -657,12 +593,13 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      background: rgba(0,0,0,0.6);
-      padding: 4px 8px;
+      background: rgba(0,0,0,0.7);
+      padding: 5px 10px;
       border-radius: 8px;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       z-index: 10;
       backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
     .quality-dot {
@@ -684,12 +621,14 @@
       transform: translateX(-50%);
       background: var(--purple-gradient);
       color: white;
-      padding: 4px 12px;
-      border-radius: 10px;
-      font-size: 0.8rem;
+      padding: 6px 15px;
+      border-radius: 12px;
+      font-size: 0.85rem;
       z-index: 10;
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(168,85,247,0.3);
+      border: 1px solid rgba(168,85,247,0.4);
+      box-shadow: 0 4px 15px rgba(168,85,247,0.3);
+      animation: glow 2s infinite alternate;
     }
 
     /* =========== CHAT STATS =========== */
@@ -697,41 +636,27 @@
       position: fixed;
       bottom: 80px;
       right: 20px;
-      background: rgba(0,0,0,0.8);
-      padding: 12px 16px;
-      border-radius: 12px;
+      background: rgba(0,0,0,0.95);
+      padding: 15px 20px;
+      border-radius: 15px;
       border: 1px solid var(--border);
-      font-size: 0.85rem;
-      z-index: 100;
+      font-size: 0.9rem;
+      z-index: 1000;
       display: none;
-      backdrop-filter: blur(10px);
-      min-width: 200px;
+      backdrop-filter: blur(15px);
+      min-width: 220px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
 
     .chat-stats.show {
       display: block;
       animation: slideUp 0.3s ease;
     }
-    .video-controls {
-  position: relative;
-  z-index: 50;
-}
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
 
     .stat-item {
       display: flex;
       justify-content: space-between;
-      margin: 6px 0;
+      margin: 8px 0;
       color: var(--muted);
     }
 
@@ -748,7 +673,7 @@
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       border: 2px solid var(--border);
       color: var(--text);
       cursor: pointer;
@@ -759,6 +684,7 @@
       z-index: 1000;
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
     }
 
     .sound-toggle:hover {
@@ -771,31 +697,11 @@
       opacity: 0.5;
     }
 
-    /* =========== RESPONSIVE FIXES =========== */
-    @media (max-height: 500px) {
-      .video-area {
-        height: 30vh;
-        min-height: 200px;
-      }
-      
-      .chat-input-area {
-        min-height: 60px;
-        padding: 8px;
-      }
-    }
-
-    @media (orientation: landscape) and (max-height: 500px) {
-      .video-area {
-        height: 35vh;
-      }
-    }
-    
+    /* =========== RESPONSIVE =========== */
     @media (max-width: 768px) {
       .chat-header {
         padding: 10px 12px;
         min-height: 56px;
-        flex-wrap: wrap;
-        gap: 8px;
       }
       
       .partner-info {
@@ -808,19 +714,11 @@
       }
       
       .header-right {
-        flex-wrap: wrap;
         gap: 6px;
       }
       
       .pill {
         padding: 6px 10px;
-        font-size: 0.85rem;
-      }
-      
-      .skip-btn {
-        padding: 8px 12px;
-        min-width: 40px;
-        min-height: 40px;
         font-size: 0.85rem;
       }
       
@@ -833,93 +731,49 @@
         gap: 8px;
       }
       
-      .chat-messages {
-        padding: 10px;
-      }
-      
-      .message {
-        max-width: 90%;
+      .control-btn {
         padding: 8px 12px;
         font-size: 0.9rem;
+      }
+      
+      .finding-match-content {
+        padding: 30px;
       }
     }
     
     @media (max-width: 480px) {
-      .chat-container {
-        border-radius: 0;
-      }
-      
       .chat-header {
         padding: 8px 10px;
-        min-height: 52px;
-      }
-      
-      .partner-info {
-        font-size: 0.9rem;
-      }
-      
-      .partner-info span {
-        max-width: 120px;
-      }
-      
-      .pill {
-        padding: 5px 8px;
-        font-size: 0.75rem;
-      }
-      
-      .skip-btn {
-        padding: 6px 10px;
-        min-width: 36px;
-        min-height: 36px;
       }
       
       .video-area {
-        padding: 6px;
         min-height: 180px;
       }
-    }
-    .chat-input-area {
-  position: sticky;
-  bottom: 0;
-  z-index: 9999;
-  background: rgba(10,12,20,0.98);
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-
-@media (max-width: 768px) {
-  .video-area {
-    pointer-events: auto;
-  }
-}
-
-.video-controls {
-  pointer-events: auto;
-}
-
-    /* Safe area insets for modern phones */
-    @supports (padding: max(0px)) {
-      .chat-container {
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
+      
+      .video-controls {
+        gap: 4px;
       }
       
-      .chat-input-area {
-        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      .control-btn {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+        min-width: 40px;
+      }
+      
+      .finding-match-content {
+        padding: 20px;
+      }
+      
+      .finding-match .spinner {
+        width: 40px;
+        height: 40px;
       }
     }
 
     /* Animations */
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     @keyframes spin {
@@ -931,28 +785,65 @@
       30% { opacity: 1; }
     }
 
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes captionFadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+      50% { opacity: 0.7; }
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 4px 15px rgba(168,85,247,0.3); }
+      to { box-shadow: 0 4px 25px rgba(168,85,247,0.5); }
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <!-- Finding Match Overlay -->
-    <div class="finding-match" id="findingMatch" style="display: none;">
-      <div class="spinner"></div>
-      <h3>Finding Match...</h3>
-      <p id="matchMessage" style="color: var(--muted); margin-top: 10px;">
-        Looking for someone with similar interests
-      </p>
-      <div id="matchTags" style="margin-top: 10px;"></div>
+    <!-- Finding Match Modal (only for video) -->
+    <div class="finding-match" id="findingMatch">
+      <div class="finding-match-content">
+        <div class="spinner"></div>
+        <h3>Finding Video Match...</h3>
+        <p id="matchMessage" style="color: var(--muted); margin-top: 10px;">
+          Looking for someone with similar interests...
+        </p>
+        <div id="matchTags" style="margin-top: 15px; font-size: 0.9rem; color: var(--blue);">
+          <strong>Your interests:</strong> <span id="currentTags"></span>
+        </div>
+        <div id="matchStats" style="margin-top: 15px; font-size: 0.8rem; color: var(--muted);">
+          <span id="onlineStats">Connecting to server...</span>
+        </div>
+      </div>
     </div>
 
     <div class="chat-header">
-      <button id="backBtn" class="skip-btn back-btn">
-        ⬅ Back
-      </button>
+      <button id="backBtn" class="skip-btn back-btn">⬅ Back</button>
       
       <div class="partner-info">
         <img id="partnerAvatar" src="https://api.dicebear.com/7.x/thumbs/svg?seed=stranger" alt="Avatar">
@@ -962,6 +853,7 @@
           <span id="qualityText">Good</span>
         </div>
       </div>
+      
       <div class="header-right">
         <div class="count-pill pill"><span id="onlineCount">0</span> online</div>
         <div class="status-pill waiting" id="statusPill">Finding match...</div>
@@ -970,7 +862,7 @@
       </div>
     </div>
 
-    <!-- VIDEO AREA (Only for video mode) -->
+    <!-- VIDEO AREA -->
     <div class="video-area" id="videoArea">
       <div class="video-grid">
         <div class="video-card">
@@ -1015,9 +907,11 @@
 
     <!-- CHAT MESSAGES -->
     <div class="chat-messages" id="messages">
-      <div class="welcome-banner">
-        <strong>Welcome to Mana Mingle!</strong><br>
-        You're now in matching queue. We'll find someone with similar interests for you!
+      <div class="finding-match-indicator" id="matchIndicator">
+        🔍 Finding a match... We'll connect you with someone soon!
+        <div id="matchStatus" style="margin-top: 10px; font-size: 0.85rem;">
+          <span id="queuePosition">0</span> users in queue | <span id="matchType">Random</span>
+        </div>
       </div>
     </div>
 
@@ -1031,9 +925,9 @@
         <span class="text">Skip</span>
       </button>
       <div class="input-wrapper">
-        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off">
+        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off" disabled>
       </div>
-      <button class="send-btn" id="sendBtn">
+      <button class="send-btn" id="sendBtn" disabled>
         <span class="text">Send</span>
         <span class="icon">➤</span>
       </button>
@@ -1044,29 +938,37 @@
   <div id="notificationContainer"></div>
 
   <!-- Sound Toggle -->
-  
+  <div class="sound-toggle" id="soundToggle">🔊</div>
 
   <!-- Chat Statistics -->
   <div class="chat-stats" id="chatStats">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <strong style="color: var(--blue);">Chat Statistics</strong>
-      <button id="closeStatsBtn"
-  style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem;">
-  ×
-</button>
-
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <strong style="color: var(--blue); font-size: 1.1rem;">Chat Statistics</strong>
+      <button id="closeStatsBtn" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.5rem; padding: 0 5px;">×</button>
     </div>
     <div class="stat-item">
       <span>Messages Sent:</span>
       <span class="stat-value" id="statMessages">0</span>
     </div>
     <div class="stat-item">
-      <span>Session Time:</span>
-      <span class="stat-value" id="statTime">0m</span>
+      <span>Messages Received:</span>
+      <span class="stat-value" id="statReceived">0</span>
     </div>
     <div class="stat-item">
-      <span>Connection:</span>
-      <span class="stat-value" id="statConnection">-</span>
+      <span>Session Time:</span>
+      <span class="stat-value" id="statTime">0m 0s</span>
+    </div>
+    <div class="stat-item">
+      <span>Connection Quality:</span>
+      <span class="stat-value" id="statConnection">Good</span>
+    </div>
+    <div class="stat-item">
+      <span>Match Type:</span>
+      <span class="stat-value" id="statMatchType">Random</span>
+    </div>
+    <div class="stat-item">
+      <span>Shared Interests:</span>
+      <span class="stat-value" id="statInterests">0</span>
     </div>
   </div>
 
@@ -1076,140 +978,173 @@
     transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: 5,
-    reconnectionDelay: 1000
+    reconnectionDelay: 1000,
+    forceNew: true,
+    timeout: 10000
   });
 
   // =========== STATE ===========
   let state = {
+    // Connection
     roomId: null,
     partnerId: null,
+    socketId: null,
+    
+    // User info
     mode: 'text',
     tags: [],
     isVideoMode: false,
+    userCountry: null,
+    userName: null,
+    
+    // Video
     localStream: null,
     peerConnection: null,
     isMuted: false,
     isCameraOff: false,
-    isMatching: true,
-    sentMessageIds: new Set(),
-    currentPartnerTags: [],
-    isInterestMatch: false,
+    pendingIceCandidates: [],
+    
+    // Matching
+    isMatching: false,
     isInitiator: false,
+    isInterestMatch: false,
+    currentPartnerTags: [],
+    partnerCountry: null,
+    
+    // Messaging
+    sentMessageIds: new Set(),
+    receivedMessageIds: new Set(),
     messageIdCounter: 0,
+    isTyping: false,
     typingTimeout: null,
+    
+    // Settings
     soundEnabled: localStorage.getItem('soundEnabled') !== 'false',
+    
+    // Stats
     messagesSent: 0,
+    messagesReceived: 0,
     sessionStartTime: Date.now(),
     connectionQuality: 'good',
-    userCountry: null,
-    isTyping: false,
-
-    partnerCountry: null,
+    
+    // WebRTC
     iceServers: {
       iceServers: [
-  { urls: "stun:stun.l.google.com:19302" },
-  {
-    urls: [
-      "turn:openrelay.metered.ca:80?transport=udp",
-      "turn:openrelay.metered.ca:443?transport=tcp",
-      "turns:openrelay.metered.ca:443"
-    ],
-    username: "openrelayproject",
-    credential: "openrelayproject"
-  }
-]
-
-}
-
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        {
+          urls: [
+            "turn:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:443?transport=tcp"
+          ],
+          username: "openrelayproject",
+          credential: "openrelayproject"
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80",
+          username: "7b95bb4de91a2ef763e17d2c",
+          credential: "N3eHMLm8Yh8BB4e7"
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80?transport=tcp",
+          username: "7b95bb4de91a2ef763e17d2c",
+          credential: "N3eHMLm8Yh8BB4e7"
+        },
+        {
+          urls: "turn:global.relay.metered.ca:443",
+          username: "7b95bb4de91a2ef763e17d2c",
+          credential: "N3eHMLm8Yh8BB4e7"
+        },
+        {
+          urls: "turns:global.relay.metered.ca:443?transport=tcp",
+          username: "7b95bb4de91a2ef763e17d2c",
+          credential: "N3eHMLm8Yh8BB4e7"
+        }
+      ],
+      iceCandidatePoolSize: 10
+    },
+    
+    // Timeouts
+    captionTimeouts: { local: null, remote: null },
+    connectionCheckInterval: null,
+    statsUpdateInterval: null
   };
-  function recoverRemoteVideo() {
-  console.warn("🔄 Recovering remote video");
-
-  if (!state.peerConnection) return;
-
-  try {
-    state.peerConnection.restartIce();
-
-    state.peerConnection.getReceivers().forEach(r => {
-      if (r.track?.kind === "video") {
-        r.track.enabled = false;
-        r.track.enabled = true;
-      }
-    });
-
-    if (elements.remoteVideo.srcObject) {
-      elements.remoteVideo.srcObject = elements.remoteVideo.srcObject;
-      elements.remoteVideo.play().catch(() => {});
-    }
-  } catch (e) {
-    console.error("Recovery failed", e);
-  }
-}
-/*video clarity*/
-function tuneVideoQuality(pc) {
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-
-  pc.getSenders().forEach(sender => {
-    if (sender.track?.kind === "video") {
-      const params = sender.getParameters();
-      if (!params.encodings) params.encodings = [{}];
-
-      params.encodings[0].maxBitrate = isMobile ? 1_200_000 : 2_500_000;
-      params.encodings[0].maxFramerate = isMobile ? 24 : 30;
-      params.encodings[0].priority = "high";
-
-      sender.setParameters(params).catch(console.error);
-    }
-  });
-}
 
   // =========== DOM ELEMENTS ===========
   const elements = {
+    // Core
     messages: document.getElementById("messages"),
     chatInput: document.getElementById("chatInput"),
     statusPill: document.getElementById("statusPill"),
     onlineCount: document.getElementById("onlineCount"),
+    
+    // Partner info
     partnerAvatar: document.getElementById("partnerAvatar"),
     partnerName: document.getElementById("partnerName"),
+    
+    // Video
     videoArea: document.getElementById("videoArea"),
     localVideo: document.getElementById("localVideo"),
     remoteVideo: document.getElementById("remoteVideo"),
     remoteStatus: document.getElementById("remoteStatus"),
     localStatus: document.getElementById("localStatus"),
+    
+    // Buttons
     skipBtn: document.getElementById("skipBtn"),
     sendBtn: document.getElementById("sendBtn"),
     reportBtn: document.getElementById("reportBtn"),
     toggleMic: document.getElementById("toggleMic"),
     toggleCam: document.getElementById("toggleCam"),
     endCall: document.getElementById("endCall"),
+    
+    // Matching
     findingMatch: document.getElementById("findingMatch"),
-    matchTags: document.getElementById("matchTags"),
+    matchIndicator: document.getElementById("matchIndicator"),
     matchMessage: document.getElementById("matchMessage"),
+    currentTags: document.getElementById("currentTags"),
+    onlineStats: document.getElementById("onlineStats"),
+    
+    // Captions
     localCaption: document.getElementById("localCaption"),
     remoteCaption: document.getElementById("remoteCaption"),
+    
+    // Interest
     interestBadge: document.getElementById("interestBadge"),
     toggleVideoChat: document.getElementById("toggleVideoChat"),
+    
+    // Country flags
     localFlag: document.getElementById("localFlag"),
     remoteFlag: document.getElementById("remoteFlag"),
-    connectionQuality: document.getElementById("connectionQuality")
+    
+    // Connection quality
+    connectionQuality: document.getElementById("connectionQuality"),
+    qualityDot: document.getElementById("qualityDot"),
+    qualityText: document.getElementById("qualityText"),
+    
+    // Stats
+    statMessages: document.getElementById("statMessages"),
+    statReceived: document.getElementById("statReceived"),
+    statTime: document.getElementById("statTime"),
+    statConnection: document.getElementById("statConnection"),
+    statMatchType: document.getElementById("statMatchType"),
+    statInterests: document.getElementById("statInterests")
   };
-
-  // =========== SECURITY: BLOCK RIGHT CLICK & DEV TOOLS ===========
-  
-
-  
-
-  // Prevent inspecting elements
 
   // =========== INITIALIZATION ===========
   async function init() {
+    console.log("Initializing chat...");
+    
     // Parse URL parameters
     const params = new URLSearchParams(window.location.search);
     state.mode = params.get('mode') || 'text';
     state.tags = params.get('tags') ? JSON.parse(decodeURIComponent(params.get('tags'))) : [];
     state.isVideoMode = state.mode === 'video';
+    state.userName = params.get('name') || `User_${Math.random().toString(36).substr(2, 6)}`;
     
-    // Setup interface based on mode
+    // Setup interface
     setupInterface();
     
     // Detect user country
@@ -1218,181 +1153,154 @@ function tuneVideoQuality(pc) {
     // Setup event listeners
     setupEventListeners();
     
-    // Start matching
-    if (state.isVideoMode) {
-    await initializeVideo(); // 👈 THIS TRIGGERS PERMISSION PROMPT
-  }
+    // Start stats update
+    state.statsUpdateInterval = setInterval(updateChatStats, 1000);
     
-    // Focus on input
-   
-
-
-
+    // Initialize video if needed
+    if (state.isVideoMode) {
+      await initializeVideo();
+    }
+    
+    // Connect to server
+    if (socket.connected) {
+      startMatching();
+    }
   }
-  
 
   function setupInterface() {
     // Show/hide video area
     elements.videoArea.style.display = state.isVideoMode ? 'flex' : 'none';
     
-    // Update welcome message based on mode
-    const welcomeBanner = document.querySelector('.welcome-banner');
-    if (welcomeBanner) {
-      if (state.tags.length > 0) {
-        welcomeBanner.innerHTML = `
-          <strong>Welcome to ${state.isVideoMode ? 'Video' : 'Text'} Chat!</strong><br>
-          Looking for someone with similar interests:<br>
-          ${state.tags.map(tag => `<span style="background: rgba(0,198,255,0.2); padding: 2px 8px; border-radius: 10px; margin: 2px; display: inline-block;">${tag}</span>`).join(' ')}
-        `;
-      } else {
-        welcomeBanner.innerHTML = `
-          <strong>Welcome to ${state.isVideoMode ? 'Video' : 'Text'} Chat!</strong><br>
-          You're now in matching queue for a random connection.
-        `;
-      }
+    // Update finding match display
+    if (elements.currentTags && state.tags.length > 0) {
+      elements.currentTags.textContent = state.tags.join(', ');
     }
+    
+    // Setup sound toggle
+    updateSoundToggle();
     
     setStatus("Finding match...", "waiting");
   }
-  
-
-  function goBackToHome() {
-  state.isMatching = false;
-
-  if (state.isVideoMode) {
-    cleanupVideo();
-  }
-
-  if (state.roomId) {
-    socket.emit("leave_room", { room: state.roomId });
-  }
-
-  socket.disconnect();
-  window.location.href ="index.html";
-}
-const welcomeBanner = document.querySelector(".welcome-banner");
-
-if (welcomeBanner && state.isVideoMode) {
-  welcomeBanner.style.display = "none";
-}
 
   // =========== COUNTRY DETECTION ===========
   async function detectUserCountry() {
-  try {
-    let country = null;
-
-    // 1️⃣ Try browser language (most reliable, instant)
-    const lang = navigator.language || navigator.userLanguage;
-    if (lang && lang.includes("-")) {
-      country = lang.split("-")[1].toLowerCase();
-    }
-
-    // 2️⃣ Fallback to timezone detection
-    if (!country) {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-      if (tz.includes("Asia/Kolkata")) country = "in";
-      else if (tz.includes("Asia")) country = "in";
-      else if (tz.includes("America")) country = "us";
-      else if (tz.includes("Europe/London")) country = "gb";
-      else if (tz.includes("Europe")) country = "eu";
-    }
-
-    // 3️⃣ Apply if detected
-    if (country && country.length === 2) {
-      state.userCountry = country;
-      updateCountryFlag("local", country);
-    } else {
+    try {
+      // Try browser language first
+      const lang = navigator.language || navigator.userLanguage;
+      if (lang && lang.includes("-")) {
+        state.userCountry = lang.split("-")[1].toLowerCase();
+      } else {
+        // Fallback to IP detection (simplified)
+        try {
+          const response = await fetch('https://ipapi.co/json/');
+          const data = await response.json();
+          state.userCountry = data.country_code ? data.country_code.toLowerCase() : null;
+        } catch (ipError) {
+          console.warn("IP detection failed:", ipError);
+        }
+      }
+      
+      // Update flag display
+      updateCountryFlag("local", state.userCountry);
+    } catch (error) {
+      console.warn("Country detection error:", error);
       state.userCountry = null;
     }
-
-  } catch (err) {
-    console.warn("Country detection skipped:", err);
-    state.userCountry = null;
-  }
-}
-
-function updateCountryFlag(type, countryCode) {
-  const flag = getCountryFlag(countryCode);
-  if (!flag) return;
-
-  if (type === "local" && elements.localFlag) {
-    elements.localFlag.textContent = flag;
   }
 
-  if (type === "remote" && elements.remoteFlag) {
-    elements.remoteFlag.textContent = flag;
+  function updateCountryFlag(type, countryCode) {
+    const flag = getCountryFlag(countryCode);
+    if (!flag) return;
+    
+    if (type === "local" && elements.localFlag) {
+      elements.localFlag.textContent = flag;
+    }
+    if (type === "remote" && elements.remoteFlag) {
+      elements.remoteFlag.textContent = flag;
+    }
   }
-}
 
-function getCountryFlag(countryCode) {
-  if (!countryCode || countryCode.length !== 2) return '';
-  const codePoints = countryCode
-    .toUpperCase()
-    .split('')
-    .map(char => 127397 + char.charCodeAt());
-  return String.fromCodePoint(...codePoints);
-}
-
+  function getCountryFlag(countryCode) {
+    if (!countryCode || countryCode.length !== 2) return '';
+    const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
+  }
 
   // =========== MATCHING LOGIC ===========
   function startMatching() {
-  state.isMatching = true;
-
-  if (state.isVideoMode) {
-    elements.findingMatch.style.display = 'block';
-  } else {
-    elements.findingMatch.style.display = 'none';
-    showNotification("🔍 Finding a match...", "info");
+    console.log("Starting matching process...");
+    
+    state.isMatching = true;
+    state.sessionStartTime = Date.now();
+    
+    // Disable chat input while matching
+    elements.chatInput.disabled = true;
+    elements.sendBtn.disabled = true;
+    
+    // Show appropriate matching indicator
+    if (state.isVideoMode) {
+      elements.findingMatch.classList.add('show');
+    } else {
+      elements.matchIndicator.style.display = 'block';
+      updateMatchIndicator();
+    }
+    
+    // Send join request to server
+    socket.emit("join_chat", {
+      mode: state.mode,
+      tags: state.tags,
+      country: state.userCountry,
+      name: state.userName
+    });
+    
+    setStatus("Finding match...", "waiting");
   }
 
-  socket.emit("join_chat", {
-  mode: state.mode,
-  tags: (state.tags || []).map(t => t.toLowerCase().trim()),
-  country: state.userCountry
-});
+  function stopMatching() {
+    state.isMatching = false;
+    
+    if (state.isVideoMode) {
+      elements.findingMatch.classList.remove('show');
+    } else {
+      elements.matchIndicator.style.display = 'none';
+    }
+  }
 
-
-
-}
-
-
-function stopMatching() {
-  state.isMatching = false;
-}
-
-elements.chatInput.addEventListener("focus", () => {
-  setTimeout(() => {
-    elements.chatInput.scrollIntoView({
-      behavior: "smooth",
-      block: "end"
-    });
-  }, 300);
-});
+  function updateMatchIndicator() {
+    if (!state.isMatching || !elements.matchIndicator) return;
+    
+    const queueEl = document.getElementById('queuePosition');
+    const typeEl = document.getElementById('matchType');
+    
+    if (queueEl) queueEl.textContent = Math.floor(Math.random() * 10) + 1;
+    if (typeEl) {
+      typeEl.textContent = state.tags.length > 0 ? 'Interest-based' : 'Random';
+    }
+  }
 
   // =========== EVENT LISTENERS ===========
   function setupEventListeners() {
-
-    const closeStatsBtn = document.getElementById("closeStatsBtn");
-if (closeStatsBtn) {
-  closeStatsBtn.addEventListener("click", () => {
-    document.getElementById("chatStats")?.classList.remove("show");
-  });
-}
-
-
-    const backBtn = document.getElementById("backBtn");
-  if (backBtn) {
-    backBtn.addEventListener("click", goBackToHome);
-  }
+    console.log("Setting up event listeners...");
+    
+    // Navigation
+    document.getElementById("backBtn").addEventListener("click", goBackToHome);
+    document.getElementById("closeStatsBtn").addEventListener("click", () => {
+      document.getElementById("chatStats")?.classList.remove("show");
+    });
+    
+    // Stats
+    document.getElementById('statsBtn').addEventListener('click', toggleStats);
+    
+    // Sound toggle
+    document.getElementById('soundToggle').addEventListener('click', toggleSound);
+    
     // Keyboard shortcuts
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         e.preventDefault();
         skipChat();
-        
-
       }
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === "Enter" && !e.shiftKey && document.activeElement === elements.chatInput) {
         e.preventDefault();
         sendMessage();
       }
@@ -1400,210 +1308,282 @@ if (closeStatsBtn) {
         e.preventDefault();
         toggleMute();
       }
-      if (e.key === 's' && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        toggleSound();
-      }
     });
-
-    // Sound toggle
     
-    
-    // Stats button
-    document.getElementById('statsBtn').addEventListener('click', () => {
-      document.getElementById('chatStats').classList.toggle('show');
-    });
-
-    // Input events
+    // Chat input
     elements.chatInput.addEventListener("input", notifyTyping);
+    elements.chatInput.addEventListener("focus", () => {
+      setTimeout(() => {
+        elements.messages.scrollTop = elements.messages.scrollHeight;
+      }, 100);
+    });
     
-    // Button events
+    // Buttons
     elements.sendBtn.addEventListener("click", sendMessage);
     elements.skipBtn.addEventListener("click", skipChat);
-    elements.toggleMic?.addEventListener("click", toggleMute);
-elements.toggleCam?.addEventListener("click", toggleCamera);
-elements.endCall?.addEventListener("click", endVideoCall);
-elements.toggleVideoChat?.addEventListener("click", () => {
-  setTimeout(() => elements.chatInput?.focus(), 100);
-
-
-      showNotification("Type your message below", "info");
-    });
-
-    // Report button
-    elements.reportBtn.addEventListener("click", () => {
-      if (state.roomId) {
-        socket.emit("report", { room: state.roomId, reason: "inappropriate" });
-        showNotification("User reported", "success");
-        skipChat();
-      }
-    });
-
-    // Update chat stats periodically
-    setInterval(updateChatStats, 60000);
+    
+    if (elements.toggleMic) elements.toggleMic.addEventListener("click", toggleMute);
+    if (elements.toggleCam) elements.toggleCam.addEventListener("click", toggleCamera);
+    if (elements.endCall) elements.endCall.addEventListener("click", endVideoCall);
+    if (elements.toggleVideoChat) elements.toggleVideoChat.addEventListener("click", focusChatInput);
+    
+    // Report
+    elements.reportBtn.addEventListener("click", reportUser);
+    
+    // Connection monitoring
+    state.connectionCheckInterval = setInterval(checkConnectionQuality, 5000);
   }
 
-  
+  function goBackToHome() {
+    console.log("Going back to home...");
+    
+    // Clean up
+    cleanupVideo();
+    stopMatching();
+    
+    if (state.roomId) {
+      socket.emit("leave_room", { room: state.roomId });
+    }
+    
+    // Clear intervals
+    if (state.connectionCheckInterval) clearInterval(state.connectionCheckInterval);
+    if (state.statsUpdateInterval) clearInterval(state.statsUpdateInterval);
+    
+    // Navigate
+    window.location.href = "index.html";
+  }
 
   // =========== VIDEO FUNCTIONS ===========
   async function initializeVideo() {
+    console.log("Initializing video...");
+    
     try {
       elements.localStatus.style.display = "flex";
       
-      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-
-const constraints = {
-  video: {
-    width: { ideal: isMobile ? 640 : 1280 },
-    height: { ideal: isMobile ? 480 : 720 },
-    frameRate: { ideal: isMobile ? 24 : 30, max: 30 },
-    facingMode: "user"
-  },
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true
-  }
-};
-
+      // Get user media with appropriate constraints
+      const constraints = {
+        video: {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          frameRate: { ideal: 30, max: 60 },
+          facingMode: "user"
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 2
+        }
+      };
       
       state.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      state.localStream.getAudioTracks().forEach(track => {
-  track.enabled = true;
-});
-
+      
       // Apply to local video
       elements.localVideo.srcObject = state.localStream;
       elements.localStatus.style.display = "none";
       
-      // Update controls
-      elements.toggleMic.querySelector(".text").textContent = "Mute";
-      elements.toggleCam.querySelector(".text").textContent = "Hide";
+      // Set up video playback for mobile
+      setupVideoPlayback();
+      
+      console.log("Video initialized successfully");
       
     } catch (error) {
-      console.error("Error accessing media:", error);
-      showNotification("Camera access denied. Switching to text mode.", "error");
+      console.error("Error initializing video:", error);
       
-      // Fallback to text
-      state.mode = "text";
-      state.isVideoMode = false;
-      elements.videoArea.style.display = "none";
+      if (error.name === 'NotAllowedError') {
+        showNotification("Camera/microphone access denied. Please enable permissions.", "error");
+      } else if (error.name === 'NotFoundError') {
+        showNotification("No camera/microphone found.", "error");
+      } else {
+        showNotification("Failed to access camera/microphone.", "error");
+      }
       
-      
+      // Fallback to text mode
+      fallbackToTextMode();
     }
+  }
+
+  function setupVideoPlayback() {
+    // Ensure videos play on mobile
+    elements.localVideo.setAttribute('playsinline', '');
+    elements.localVideo.setAttribute('webkit-playsinline', '');
+    elements.remoteVideo.setAttribute('playsinline', '');
+    elements.remoteVideo.setAttribute('webkit-playsinline', '');
+    
+    // Force play
+    elements.localVideo.play().catch(e => console.warn("Local video play failed:", e));
+  }
+
+  function fallbackToTextMode() {
+    state.mode = "text";
+    state.isVideoMode = false;
+    elements.videoArea.style.display = "none";
+    
+    // Notify server
+    socket.emit("switch_to_text", { room: state.roomId });
+    
+    showNotification("Switched to text chat mode", "info");
   }
 
   async function createPeerConnection() {
-  if (state.peerConnection) return;
-
-  try {
-    state.peerConnection = new RTCPeerConnection(state.iceServers);
-    // 🔥 REQUIRED for desktop browsers
-    state.peerConnection.addTransceiver("video");
-state.peerConnection.addTransceiver("audio");
-
-
-
-    // 🔁 ICE recovery
-    state.peerConnection.oniceconnectionstatechange = () => {
-      const ice = state.peerConnection.iceConnectionState;
-      console.log("ICE:", ice);
-
-      if (ice === "disconnected" || ice === "failed") {
-        recoverRemoteVideo();
-      }
-    };
-
-    // 🔁 Connection recovery (KEYFRAME FORCE)
-    state.peerConnection.onconnectionstatechange = () => {
-      const conn = state.peerConnection.connectionState;
-      console.log("CONN:", conn);
-
-      if (conn === "connected") {
-        tuneVideoQuality(state.peerConnection);
-        setTimeout(recoverRemoteVideo, 500);
-      }
-    };
-
-    // ➕ Local tracks
-    if (state.localStream) {
-      state.localStream.getTracks().forEach(track => {
-        state.peerConnection.addTrack(track, state.localStream);
-      });
+    console.log("Creating peer connection...");
+    
+    if (state.peerConnection) {
+      console.warn("Peer connection already exists");
+      return;
     }
-
-    // 🎥 Remote stream
-    state.peerConnection.ontrack = (event) => {
-  if (!event.streams?.[0]) return;
-
-  const stream = event.streams[0];
-
-  // REQUIRED for Android + iOS autoplay
-  elements.remoteVideo.muted = true;
-  elements.remoteVideo.playsInline = true;
-  elements.remoteVideo.autoplay = true;
-
-  elements.remoteVideo.srcObject = stream;
-
-  // Android bug: tracks may start disabled
-  stream.getVideoTracks().forEach(t => t.enabled = true);
-
-  elements.remoteStatus.style.display = "none";
-
-  elements.remoteVideo.play().catch(() => {});
-};
-
-
-    // ❄ ICE candidates
-    state.peerConnection.onicecandidate = (event) => {
-      if (event.candidate && state.roomId) {
-        socket.emit("signal", {
-          room: state.roomId,
-          candidate: event.candidate
+    
+    try {
+      state.peerConnection = new RTCPeerConnection(state.iceServers);
+      state.pendingIceCandidates = [];
+      
+      // Add local tracks
+      if (state.localStream) {
+        state.localStream.getTracks().forEach(track => {
+          state.peerConnection.addTrack(track, state.localStream);
+          console.log(`Added ${track.kind} track`);
         });
       }
-    };
-
-  } catch (err) {
-    console.error("PeerConnection error:", err);
-  }
-}
-
-
-
-
-async function handleRemoteSDP(sdp) {
-  if (!state.peerConnection) {
-    await createPeerConnection();
-  }
-
-  try {
-    if (sdp.type === "offer") {
-      await state.peerConnection.setRemoteDescription(sdp);
-
-      const answer = await state.peerConnection.createAnswer();
-      await state.peerConnection.setLocalDescription(answer);
-
-      socket.emit("signal", {
-        room: state.roomId,
-        sdp: answer
-      });
-    } else if (sdp.type === "answer") {
-      await state.peerConnection.setRemoteDescription(sdp);
+      
+      // Handle remote stream
+      state.peerConnection.ontrack = (event) => {
+        console.log("Received remote track:", event.track.kind);
+        
+        if (event.streams && event.streams[0]) {
+          const stream = event.streams[0];
+          elements.remoteVideo.srcObject = stream;
+          elements.remoteStatus.style.display = "none";
+          
+          // Ensure video plays
+          elements.remoteVideo.play().catch(e => {
+            console.warn("Remote video play failed, retrying...", e);
+            setTimeout(() => elements.remoteVideo.play().catch(() => {}), 100);
+          });
+        }
+      };
+      
+      // ICE candidates
+      state.peerConnection.onicecandidate = (event) => {
+        if (event.candidate && state.roomId) {
+          socket.emit("signal", {
+            room: state.roomId,
+            candidate: event.candidate
+          });
+        }
+      };
+      
+      // Connection state
+      state.peerConnection.onconnectionstatechange = () => {
+        console.log("Connection state:", state.peerConnection.connectionState);
+        
+        if (state.peerConnection.connectionState === "connected") {
+          setStatus("Connected", "connected");
+          showNotification("Video connected!", "success");
+          updateConnectionQuality("excellent");
+        } else if (state.peerConnection.connectionState === "disconnected") {
+          setStatus("Disconnected", "error");
+          showNotification("Connection lost", "warning");
+          updateConnectionQuality("poor");
+        } else if (state.peerConnection.connectionState === "failed") {
+          setStatus("Connection failed", "error");
+          showNotification("Connection failed", "error");
+          updateConnectionQuality("poor");
+          attemptReconnect();
+        }
+      };
+      
+      // ICE connection state
+      state.peerConnection.oniceconnectionstatechange = () => {
+        console.log("ICE connection state:", state.peerConnection.iceConnectionState);
+      };
+      
+      console.log("Peer connection created successfully");
+      
+    } catch (error) {
+      console.error("Error creating peer connection:", error);
+      showNotification("Failed to establish connection", "error");
     }
-  } catch (err) {
-    console.error("SDP error:", err);
   }
-}
 
+  async function handleRemoteSDP(sdp) {
+    console.log("Handling remote SDP:", sdp.type);
+    
+    if (!state.peerConnection) {
+      await createPeerConnection();
+    }
+    
+    try {
+      await state.peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+      
+      // Process pending ICE candidates
+      for (const candidate of state.pendingIceCandidates) {
+        try {
+          await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (candidateError) {
+          console.warn("Failed to add ICE candidate:", candidateError);
+        }
+      }
+      state.pendingIceCandidates = [];
+      
+      if (sdp.type === 'offer') {
+        const answer = await state.peerConnection.createAnswer();
+        await state.peerConnection.setLocalDescription(answer);
+        
+        socket.emit("signal", {
+          room: state.roomId,
+          sdp: answer
+        });
+      }
+      
+    } catch (error) {
+      console.error("Error handling remote SDP:", error);
+    }
+  }
 
   async function handleRemoteCandidate(candidate) {
-    if (state.peerConnection && state.peerConnection.remoteDescription) {
+    if (!state.peerConnection) {
+      state.pendingIceCandidates.push(candidate);
+      return;
+    }
+    
+    if (state.peerConnection.remoteDescription) {
       try {
         await state.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
       } catch (error) {
-        console.error("Error adding ICE candidate:", error);
+        console.warn("Failed to add ICE candidate:", error);
       }
+    } else {
+      state.pendingIceCandidates.push(candidate);
+    }
+  }
+
+  function attemptReconnect() {
+    console.log("Attempting to reconnect...");
+    
+    if (!state.roomId || !state.isVideoMode) return;
+    
+    setTimeout(() => {
+      if (state.peerConnection && state.peerConnection.connectionState === "failed") {
+        console.log("Restarting ICE...");
+        restartIce();
+      }
+    }, 2000);
+  }
+
+  async function restartIce() {
+    if (!state.peerConnection) return;
+    
+    try {
+      const offer = await state.peerConnection.createOffer({ iceRestart: true });
+      await state.peerConnection.setLocalDescription(offer);
+      
+      socket.emit("signal", {
+        room: state.roomId,
+        sdp: state.peerConnection.localDescription
+      });
+    } catch (error) {
+      console.error("Error restarting ICE:", error);
     }
   }
 
@@ -1639,26 +1619,25 @@ async function handleRemoteSDP(sdp) {
     elements.toggleCam.classList.toggle("active", state.isCameraOff);
     
     elements.localVideo.style.opacity = state.isCameraOff ? "0.3" : "1";
-    
-    if (state.isCameraOff) {
-      elements.localStatus.style.display = "flex";
-      elements.localStatus.innerHTML = '<div>Camera off</div>';
-    } else {
-      elements.localStatus.style.display = "none";
-    }
+    elements.localStatus.style.display = state.isCameraOff ? "flex" : "none";
     
     showNotification(state.isCameraOff ? "Camera hidden" : "Camera shown");
   }
 
+  function focusChatInput() {
+    elements.chatInput.focus();
+    showNotification("Type your message below", "info");
+  }
+
   function endVideoCall() {
-    cleanupVideo();
+    showNotification("Ending video call...", "info");
     skipChat();
   }
 
   function cleanupVideo() {
+    console.log("Cleaning up video...");
+    
     if (state.peerConnection) {
-      state.peerConnection.onicecandidate = null;
-      state.peerConnection.ontrack = null;
       state.peerConnection.close();
       state.peerConnection = null;
     }
@@ -1674,12 +1653,14 @@ async function handleRemoteSDP(sdp) {
     elements.remoteStatus.style.display = "flex";
     elements.localCaption.style.display = "none";
     elements.remoteCaption.style.display = "none";
+    
+    state.pendingIceCandidates = [];
   }
 
   // =========== MESSAGE FUNCTIONS ===========
   function sendMessage() {
     const msg = elements.chatInput.value.trim();
-    if (!msg || !state.roomId) return;
+    if (!msg || !state.roomId || msg.length === 0) return;
     
     const messageId = `${Date.now()}-${state.messageIdCounter++}`;
     
@@ -1687,22 +1668,24 @@ async function handleRemoteSDP(sdp) {
     state.messagesSent++;
     updateChatStats();
     
-    // Append locally
+    // Add to sent messages
     state.sentMessageIds.add(messageId);
-
+    
+    // Display message
     appendMessage(msg, "you", messageId);
     
-    // Show in video caption if in video mode
+    // Show caption in video mode
     if (state.isVideoMode) {
       showVideoCaption('local', msg);
     }
     
-    // Send via socket
+    // Send to server
     socket.emit("send_message", {
       room: state.roomId,
       message: msg,
       messageId: messageId,
-      type: state.isVideoMode ? "video_chat" : "text"
+      type: state.isVideoMode ? "video_chat" : "text",
+      timestamp: Date.now()
     });
     
     // Clear input
@@ -1710,14 +1693,11 @@ async function handleRemoteSDP(sdp) {
     setTimeout(() => elements.chatInput.focus(), 100);
     
     // Clear typing indicator
-    // Stop typing after send
-socket.emit("typing", {
-  room: state.roomId,
-  isTyping: false
-});
-clearTypingIndicator();
-
+    socket.emit("typing", { room: state.roomId, isTyping: false });
+    clearTypingIndicator();
     
+    // Play sound
+    playSound('send');
   }
 
   function appendMessage(content, type = "stranger", messageId = null) {
@@ -1732,9 +1712,7 @@ clearTypingIndicator();
     const timeDiv = document.createElement("div");
     timeDiv.className = "message-time";
     const now = new Date();
-    timeDiv.innerHTML = `
-      ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-    `;
+    timeDiv.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     div.appendChild(timeDiv);
     
     elements.messages.appendChild(div);
@@ -1756,57 +1734,170 @@ clearTypingIndicator();
       clearTimeout(state.captionTimeouts[timeoutKey]);
     }
     
-    // Update caption text
+    // Update caption
     captionElement.textContent = text;
     captionElement.style.display = 'block';
-    captionElement.style.animation = 'captionFadeIn 0.3s ease';
     
-    // Hide after 5 seconds
+    // Hide after delay
     state.captionTimeouts[timeoutKey] = setTimeout(() => {
-      captionElement.style.animation = 'captionFadeOut 0.3s ease';
-      setTimeout(() => {
-        captionElement.style.display = 'none';
-      }, 300);
+      captionElement.style.display = 'none';
     }, 5000);
   }
 
   function notifyTyping() {
-  if (!state.roomId || state.isTyping) return;
-
-  state.isTyping = true;
-
-  socket.emit("typing", {
-    room: state.roomId,
-    isTyping: true
-  });
-
-  clearTimeout(state.typingTimeout);
-  state.typingTimeout = setTimeout(() => {
-    state.isTyping = false;
-    socket.emit("typing", {
-      room: state.roomId,
-      isTyping: false
-    });
-  }, 1500);
-}
-
-
+    if (!state.roomId || state.isTyping) return;
+    
+    state.isTyping = true;
+    socket.emit("typing", { room: state.roomId, isTyping: true });
+    
+    clearTimeout(state.typingTimeout);
+    state.typingTimeout = setTimeout(() => {
+      state.isTyping = false;
+      socket.emit("typing", { room: state.roomId, isTyping: false });
+    }, 1500);
+  }
 
   function clearTypingIndicator() {
     const indicator = document.getElementById("typing-indicator");
     if (indicator) indicator.innerHTML = "";
   }
 
-  function updateChatStats() {
-    const messagesEl = document.getElementById('statMessages');
-    const timeEl = document.getElementById('statTime');
+  // =========== SOUND FUNCTIONS ===========
+  function toggleSound() {
+    state.soundEnabled = !state.soundEnabled;
+    localStorage.setItem('soundEnabled', state.soundEnabled);
     
-    if (messagesEl) messagesEl.textContent = state.messagesSent;
+    const toggle = document.getElementById('soundToggle');
+    toggle.classList.toggle('muted', !state.soundEnabled);
+    toggle.textContent = state.soundEnabled ? '🔊' : '🔇';
     
-    if (timeEl) {
-      const elapsed = Math.floor((Date.now() - state.sessionStartTime) / 1000 / 60);
-      timeEl.textContent = `${elapsed}m`;
+    showNotification(state.soundEnabled ? 'Sound enabled' : 'Sound disabled', 'info');
+    
+    // Test sound
+    if (state.soundEnabled) {
+      playSound('notification');
     }
+  }
+
+  function updateSoundToggle() {
+    const toggle = document.getElementById('soundToggle');
+    if (toggle) {
+      toggle.classList.toggle('muted', !state.soundEnabled);
+      toggle.textContent = state.soundEnabled ? '🔊' : '🔇';
+    }
+  }
+
+  function playSound(type) {
+    if (!state.soundEnabled) return;
+    
+    try {
+      // Create audio context for better control
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Different sounds for different events
+      switch(type) {
+        case 'send':
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+          oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.2);
+          break;
+          
+        case 'receive':
+          oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.1);
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.2);
+          break;
+          
+        case 'notification':
+          oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+          oscillator.frequency.setValueAtTime(1200, audioContext.currentTime + 0.05);
+          oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+          gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.15);
+          break;
+          
+        case 'match':
+          oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+          oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+          oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.3);
+          break;
+      }
+      
+    } catch (error) {
+      console.warn("Audio playback failed:", error);
+    }
+  }
+
+  // =========== STATISTICS FUNCTIONS ===========
+  function updateChatStats() {
+    if (!state.sessionStartTime) return;
+    
+    const elapsed = Date.now() - state.sessionStartTime;
+    const minutes = Math.floor(elapsed / 60000);
+    const seconds = Math.floor((elapsed % 60000) / 1000);
+    
+    // Update DOM elements
+    if (elements.statMessages) elements.statMessages.textContent = state.messagesSent;
+    if (elements.statReceived) elements.statReceived.textContent = state.receivedMessageIds.size;
+    if (elements.statTime) elements.statTime.textContent = `${minutes}m ${seconds}s`;
+    if (elements.statConnection) elements.statConnection.textContent = state.connectionQuality;
+    if (elements.statMatchType) {
+      elements.statMatchType.textContent = state.isInterestMatch ? 'Interest Match' : 'Random';
+    }
+    if (elements.statInterests) {
+      elements.statInterests.textContent = state.currentPartnerTags.length;
+    }
+  }
+
+  function toggleStats() {
+    updateChatStats();
+    document.getElementById('chatStats').classList.toggle('show');
+  }
+
+  // =========== CONNECTION QUALITY ===========
+  function checkConnectionQuality() {
+    if (!state.peerConnection || !state.isVideoMode) return;
+    
+    // Simulate connection quality check
+    const qualityLevels = ['excellent', 'good', 'fair', 'poor'];
+    const currentIndex = qualityLevels.indexOf(state.connectionQuality);
+    const newIndex = Math.min(qualityLevels.length - 1, 
+      Math.max(0, currentIndex + (Math.random() > 0.7 ? 1 : -1)));
+    
+    const newQuality = qualityLevels[newIndex];
+    if (newQuality !== state.connectionQuality) {
+      updateConnectionQuality(newQuality);
+    }
+  }
+
+  function updateConnectionQuality(quality) {
+    state.connectionQuality = quality;
+    
+    if (elements.connectionQuality) {
+      elements.connectionQuality.style.display = 'flex';
+      elements.qualityDot.className = `quality-dot ${quality}`;
+      elements.qualityText.textContent = quality.charAt(0).toUpperCase() + quality.slice(1);
+    }
+    
+    // Update stats
+    updateChatStats();
   }
 
   // =========== UTILITY FUNCTIONS ===========
@@ -1825,140 +1916,194 @@ clearTypingIndicator();
     notification.className = "notification";
     notification.textContent = message;
     
-    if (type === "error") {
-      notification.style.borderColor = "var(--danger)";
-      notification.style.background = "rgba(231, 76, 60, 0.2)";
-    } else if (type === "success") {
-      notification.style.borderColor = "var(--green)";
-      notification.style.background = "rgba(46, 204, 113, 0.2)";
-    } else if (type === "warning") {
-      notification.style.borderColor = "var(--orange)";
-      notification.style.background = "rgba(243, 156, 18, 0.2)";
+    // Style based on type
+    switch(type) {
+      case "error":
+        notification.style.borderColor = "var(--danger)";
+        notification.style.background = "rgba(231, 76, 60, 0.15)";
+        break;
+      case "success":
+        notification.style.borderColor = "var(--green)";
+        notification.style.background = "rgba(46, 204, 113, 0.15)";
+        break;
+      case "warning":
+        notification.style.borderColor = "var(--orange)";
+        notification.style.background = "rgba(243, 156, 18, 0.15)";
+        break;
+      default:
+        notification.style.borderColor = "var(--border)";
+        notification.style.background = "rgba(0, 0, 0, 0.9)";
     }
     
     container.appendChild(notification);
     
+    // Remove after delay
     setTimeout(() => {
-      notification.style.animation = "slideDown 0.3s ease reverse";
+      notification.style.opacity = "0";
+      notification.style.transform = "translateX(-50%) translateY(-10px)";
       setTimeout(() => notification.remove(), 300);
     }, 3000);
+    
+    // Play sound
+    if (type !== "info") {
+      playSound('notification');
+    }
+  }
+
+  function reportUser() {
+    if (!state.roomId || !state.partnerId) {
+      showNotification("No user to report", "warning");
+      return;
+    }
+    
+    const reason = prompt("Why are you reporting this user?\n1. Inappropriate content\n2. Harassment\n3. Spam\n4. Other");
+    if (reason) {
+      socket.emit("report", { 
+        room: state.roomId, 
+        partnerId: state.partnerId,
+        reason: reason 
+      });
+      showNotification("User reported. Thank you!", "success");
+      skipChat();
+    }
   }
 
   function skipChat() {
-  // 1️⃣ Stop matching immediately
-  state.isMatching = false;
-
-  // 2️⃣ Cleanup video safely
-  if (state.isVideoMode) {
-    cleanupVideo();
-  }
-
-  // 3️⃣ Tell server we skipped (ONLY if connected to a room)
-  if (state.roomId) {
-    socket.emit("skip", { 
-      room: state.roomId,
-      tags: state.tags,
-      mode: state.mode,
-      country: state.userCountry
-    });
-  }
-
-  // 4️⃣ Reset UI
-  setStatus("Finding new match...", "waiting");
-  elements.partnerName.textContent = "Stranger";
-  elements.partnerAvatar.src =
-    "https://api.dicebear.com/7.x/thumbs/svg?seed=stranger";
-  elements.interestBadge.style.display = "none";
-  elements.remoteFlag.textContent = "";
-
-  elements.messages.innerHTML = state.isVideoMode
-  ? ""
-  : `
-    <div class="welcome-banner">
-      <strong>Looking for a new match...</strong><br>
-      Searching for someone ${state.tags.length > 0 ? 'with similar interests' : 'random'}.
-    </div>
-  `;
-
-
-  clearTypingIndicator();
-
-  // 5️⃣ Reset state (CRITICAL ORDER)
-  state.roomId = null;
-  state.partnerId = null;
-  state.currentPartnerTags = [];
-  state.isInterestMatch = false;
-  state.isInitiator = false;
-  state.partnerCountry = null;
-  state.messagesSent = 0;
-  state.sessionStartTime = Date.now();
-  state.sentMessageIds.clear();
-
-
-  // 6️⃣ Show overlay if video mode
-  if (state.isVideoMode) {
-    elements.findingMatch.style.display = "block";
-  }
-
-  // 7️⃣ 🔁 Restart matching (ONLY ONCE, ONLY HERE)
-  state.isMatching = true;
-
-  setTimeout(() => {
-    if (socket.connected && !state.roomId) {
-      startMatching();
+    console.log("Skipping chat...");
+    
+    // Stop matching
+    stopMatching();
+    
+    // Cleanup video
+    if (state.isVideoMode) {
+      cleanupVideo();
     }
-  }, 500);
-}
-
+    
+    // Notify server
+    if (state.roomId) {
+      socket.emit("skip", { 
+        room: state.roomId,
+        tags: state.tags,
+        mode: state.mode,
+        country: state.userCountry
+      });
+    }
+    
+    // Reset UI
+    setStatus("Finding new match...", "waiting");
+    elements.partnerName.textContent = "Stranger";
+    elements.partnerAvatar.src = "https://api.dicebear.com/7.x/thumbs/svg?seed=stranger";
+    elements.interestBadge.style.display = "none";
+    elements.remoteFlag.textContent = "";
+    elements.connectionQuality.style.display = "none";
+    
+    // Clear messages
+    elements.messages.innerHTML = `
+      <div class="finding-match-indicator" id="matchIndicator">
+        🔍 Finding new match...
+        <div id="matchStatus" style="margin-top: 10px; font-size: 0.85rem;">
+          Searching ${state.tags.length > 0 ? 'for similar interests' : 'random connection'}...
+        </div>
+      </div>
+    `;
+    
+    // Clear typing
+    clearTypingIndicator();
+    
+    // Disable chat
+    elements.chatInput.disabled = true;
+    elements.sendBtn.disabled = true;
+    elements.chatInput.value = "";
+    
+    // Reset state
+    state.roomId = null;
+    state.partnerId = null;
+    state.currentPartnerTags = [];
+    state.isInterestMatch = false;
+    state.isInitiator = false;
+    state.partnerCountry = null;
+    state.messagesSent = 0;
+    state.sessionStartTime = Date.now();
+    state.sentMessageIds.clear();
+    state.receivedMessageIds.clear();
+    
+    // Show matching indicator
+    if (state.isVideoMode) {
+      elements.findingMatch.classList.add('show');
+    } else {
+      elements.matchIndicator.style.display = 'block';
+    }
+    
+    // Restart matching after delay
+    setTimeout(() => {
+      if (!state.roomId && socket.connected) {
+        startMatching();
+      }
+    }, 1000);
+  }
 
   // =========== SOCKET.IO HANDLERS ===========
   socket.on("connect", () => {
-  if (!state.roomId && state.isMatching) {
-    startMatching();
-  }
-});
-
-
+    console.log("Socket connected:", socket.id);
+    state.socketId = socket.id;
+    setStatus("Connected", "connected");
+    
+    // Start matching if not already in a room
+    if (!state.roomId && !state.isMatching) {
+      startMatching();
+    }
+  });
 
   socket.on("connect_error", (error) => {
     console.error("Connection error:", error);
     setStatus("Connection failed", "error");
-    showNotification("Failed to connect to server", "error");
+    showNotification("Failed to connect to server. Retrying...", "error");
   });
 
   socket.on("online_count", ({ count }) => {
     if (elements.onlineCount) {
       elements.onlineCount.textContent = count;
     }
+    if (elements.onlineStats) {
+      elements.onlineStats.textContent = `${count} users online`;
+    }
   });
 
-  socket.on("waiting", () => {
-  state.isMatching = true; // ✅ ADD THIS
-  setStatus("Finding match...", "waiting");
-  elements.findingMatch.style.display = 'block';
-});
-
+  socket.on("waiting", (data) => {
+    console.log("Waiting for match...", data);
+    setStatus("Finding match...", "waiting");
+    
+    if (data.position) {
+      const queueEl = document.getElementById('queuePosition');
+      if (queueEl) queueEl.textContent = data.position;
+    }
+  });
 
   socket.on("matched", async (data) => {
-    stopMatching();
-    elements.findingMatch.style.display = "none";
-    elements.findingMatch.classList.remove("show");
-
-    state.roomId = data.roomId;
+    console.log("Matched with partner:", data);
     
-
+    // Stop matching indicators
+    stopMatching();
+    
+    // Enable chat
+    elements.chatInput.disabled = false;
+    elements.sendBtn.disabled = false;
+    elements.chatInput.focus();
+    
+    // Update state
+    state.roomId = data.roomId;
     state.partnerId = data.partnerId;
     state.currentPartnerTags = data.partnerTags || [];
     state.isInterestMatch = data.matchType === 'interest';
     state.isInitiator = data.isInitiator || false;
-    state.sessionStartTime = Date.now();
     state.partnerCountry = data.partnerCountry;
+    state.sessionStartTime = Date.now();
     
     // Update UI
     elements.partnerName.textContent = data.partnerName || "Stranger";
     elements.partnerAvatar.src = `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(data.partnerId || "stranger")}`;
     
-    // Update partner country flag
+    // Update flags
     if (state.partnerCountry) {
       updateCountryFlag('remote', state.partnerCountry);
     }
@@ -1968,12 +2113,12 @@ clearTypingIndicator();
       elements.interestBadge.style.display = 'block';
     }
     
-    // Show country connection message
+    // Create welcome message
     let countryInfo = '';
     if (state.userCountry && state.partnerCountry) {
       const userFlag = getCountryFlag(state.userCountry);
       const partnerFlag = getCountryFlag(state.partnerCountry);
-      countryInfo = `<div class="country-info">${userFlag} Connected to ${partnerFlag}</div>`;
+      countryInfo = `<div class="country-info">${userFlag} ↔ ${partnerFlag}</div>`;
     }
     
     // Clear and show welcome message
@@ -1981,91 +2126,73 @@ clearTypingIndicator();
       <div class="welcome-banner">
         <strong>${state.isInterestMatch ? '🎯 Interest Match!' : '✅ Connected!'}</strong><br>
         ${data.partnerName ? `You're now chatting with ${data.partnerName}` : 'You are now connected!'}<br>
-        ${state.currentPartnerTags.length > 0 ? `Shared interests: ${state.currentPartnerTags.join(', ')}` : 'Random match - start chatting!'}
+        ${state.currentPartnerTags.length > 0 ? 
+          `Shared interests: ${state.currentPartnerTags.join(', ')}` : 
+          'Random match - start chatting!'}
         ${countryInfo}
       </div>
     `;
     
     setStatus("Connected", "connected");
+    playSound('match');
     
     // Initialize video if needed
     if (state.isVideoMode) {
-  // 1️⃣ Ensure media exists
-  if (!state.localStream) {
-    await initializeVideo();
-  }
-
-  // 2️⃣ Create peer connection
-  if (!state.peerConnection) {
-    await createPeerConnection();
-  }
-
-  // 3️⃣ Ensure tracks are added BEFORE offer
-  const senders = state.peerConnection.getSenders();
-  if (senders.length === 0 && state.localStream) {
-    state.localStream.getTracks().forEach(track => {
-      state.peerConnection.addTrack(track, state.localStream);
-    });
-  }
-
-  // 4️⃣ Only ONE side creates offer
-  if (state.isInitiator === true) {
-  // 🔥 Desktop browsers need time to bind transceivers
-  await new Promise(r => setTimeout(r, 150));
-
-  let offer = await state.peerConnection.createOffer({
-    offerToReceiveAudio: true,
-    offerToReceiveVideo: true
-  });
-
-  // 🔥 Force a stable codec for laptops
-  function shouldForceVP8() {
-  // Safari must use H264
-  return !/iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-
-function forceVP8(sdp) {
-  return sdp.replace(/a=fmtp:.*\r\n/g, "");
-}
-
-
-if (shouldForceVP8()) {
-  offer.sdp = forceVP8(offer.sdp);
-}
-
-await state.peerConnection.setLocalDescription(offer);
-
-
-
-  socket.emit("signal", {
-    room: state.roomId,
-    sdp: offer
-  });
-}
-
-}
-
-
+      if (!state.localStream) {
+        await initializeVideo();
+      }
+      
+      if (!state.peerConnection) {
+        await createPeerConnection();
+      }
+      
+      if (state.isInitiator) {
+        try {
+          const offer = await state.peerConnection.createOffer({
+            offerToReceiveVideo: true,
+            offerToReceiveAudio: true
+          });
+          
+          await state.peerConnection.setLocalDescription(offer);
+          
+          socket.emit("signal", {
+            room: state.roomId,
+            sdp: offer
+          });
+          
+        } catch (error) {
+          console.error("Error creating offer:", error);
+          showNotification("Failed to establish video connection", "error");
+        }
+      }
+    }
     
-    showNotification(`${state.isInterestMatch ? 'Interest match!' : 'Connected!'}`, "success");
+    showNotification(`${state.isInterestMatch ? '🎯 Interest match!' : '✅ Connected!'}`, "success");
   });
 
   socket.on("receive_message", (data) => {
-  if (data.room !== state.roomId) return;
-  if (state.sentMessageIds.has(data.messageId)) return;
-
-  appendMessage(data.message, "stranger", data.messageId);
-
-  if (state.isVideoMode && data.type === "video_chat") {
-    showVideoCaption("remote", data.message);
-  }
-});
-
-
+    if (data.room !== state.roomId) return;
+    if (state.sentMessageIds.has(data.messageId)) return;
+    
+    // Add to received messages
+    state.receivedMessageIds.add(data.messageId);
+    
+    // Display message
+    appendMessage(data.message, "stranger", data.messageId);
+    
+    // Show caption in video mode
+    if (state.isVideoMode && data.type === "video_chat") {
+      showVideoCaption("remote", data.message);
+    }
+    
+    // Play sound
+    playSound('receive');
+    
+    // Update stats
+    updateChatStats();
+  });
 
   socket.on("partner_typing", ({ isTyping }) => {
-    
-
     const indicator = document.getElementById("typing-indicator");
     if (indicator) {
       if (isTyping) {
@@ -2082,68 +2209,85 @@ await state.peerConnection.setLocalDescription(offer);
       }
     }
   });
-  
 
   socket.on("partner_disconnected", () => {
-  clearTypingIndicator(); // ✅ ADD THIS
-
-  appendMessage("⚠️ Partner disconnected", "stranger");
-  showNotification("Partner disconnected", "warning");
-  
-  setTimeout(() => {
-    skipChat();
-  }, 2000);
-});
-
+    clearTypingIndicator();
+    appendMessage("⚠️ Partner disconnected", "stranger");
+    showNotification("Partner disconnected", "warning");
+    playSound('notification');
+    
+    setTimeout(() => {
+      skipChat();
+    }, 2000);
+  });
 
   socket.on("signal", async ({ sdp, candidate }) => {
-  if (!state.isVideoMode) return;
-
-  if (!state.peerConnection) {
-    await createPeerConnection();
-  }
-
-  if (sdp) {
-    await handleRemoteSDP(sdp);
-  } else if (candidate) {
-    await handleRemoteCandidate(candidate);
-  }
-});
-
-
+    if (!state.isVideoMode) return;
+    
+    if (sdp) {
+      await handleRemoteSDP(sdp);
+    } else if (candidate) {
+      await handleRemoteCandidate(candidate);
+    }
+  });
 
   socket.on("skip_success", () => {
     showNotification("Skipped to next match", "info");
   });
 
-  socket.on('disconnect', (reason) => {
+  socket.on("disconnect", (reason) => {
+    console.log("Socket disconnected:", reason);
     setStatus("Reconnecting...", "waiting");
+    
     if (reason === 'io server disconnect') {
+      // Server initiated disconnect, try to reconnect
       setTimeout(() => socket.connect(), 1000);
     }
   });
 
   // =========== INITIALIZE ===========
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOM loaded, initializing...");
+    init();
+  });
 
   // Handle page unload
   window.addEventListener('beforeunload', () => {
-  cleanupVideo();
-});
-
+    console.log("Page unloading, cleaning up...");
+    cleanupVideo();
+    
+    if (state.roomId) {
+      socket.emit("leave_room", { room: state.roomId });
+    }
+    
+    // Clear intervals
+    if (state.connectionCheckInterval) clearInterval(state.connectionCheckInterval);
+    if (state.statsUpdateInterval) clearInterval(state.statsUpdateInterval);
+  });
 
   // Handle visibility change
   document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && state.isVideoMode) {
-    if (elements.remoteVideo.srcObject) {
-      elements.remoteVideo.srcObject = elements.remoteVideo.srcObject;
-      elements.remoteVideo.play().catch(() => {});
-      recoverRemoteVideo(); // 🔥 THIS LINE
+    if (!document.hidden && state.isVideoMode) {
+      // Page became visible, restart video if needed
+      if (elements.remoteVideo.srcObject) {
+        elements.remoteVideo.play().catch(() => {});
+      }
+      if (elements.localVideo.srcObject) {
+        elements.localVideo.play().catch(() => {});
+      }
     }
-  }
-});
+  });
 
-
+  // Handle orientation change
+  window.addEventListener("orientationchange", () => {
+    // Debounce orientation change handling
+    clearTimeout(window.orientationTimeout);
+    window.orientationTimeout = setTimeout(() => {
+      if (state.isVideoMode && state.peerConnection) {
+        restartIce();
+      }
+    }, 500);
+  });
 </script>
 </body>
 </html>
