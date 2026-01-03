@@ -914,99 +914,108 @@ socket.queuedAt = null;
   });
   
   function handleOneOnOneJoin(socket, mode, userData) {
-    // Try to find match immediately (fast matching)
+    // Try to find match immediately
     const match = findMatchForUser(socket.id, mode, userData.tags);
-    
+  
     if (match) {
-      // Found a match - connect immediately
       const matchedUserData = match.userData;
       const isInterestMatch = match.matchScore > 0;
-      const commonTags = match.userData.commonTags || [];
-      
+      const commonTags = matchedUserData.commonTags || [];
+  
+      // Create room
       const roomId = createRoom(mode, socket.id, userData, {
         socketId: match.socketId,
         data: matchedUserData
       });
-      
-      // Remove both from waiting
+  
+      // Remove both users from waiting queue
       state.waiting[mode].delete(socket.id);
       state.waiting[mode].delete(match.socketId);
-      
-      // Add room to user data
+  
+      // Track rooms
       userData.rooms.add(roomId);
       const matchedUser = state.users.get(match.socketId);
       if (matchedUser) {
         matchedUser.rooms.add(roomId);
       }
-      
-      // Join room
+  
+      // Join sockets to room
       socket.join(roomId);
       const matchedSocket = io.sockets.sockets.get(match.socketId);
       if (matchedSocket) {
         matchedSocket.join(roomId);
       }
-      
-      // Get country codes for flags
+  
+      // Country flags (client-side detection preferred)
       const userCountry = getUserCountry(socket);
       const partnerCountry = getUserCountry(matchedSocket);
-      
-      // Notify both users immediately
-      const matchData = {
-        roomId: roomId,
+  
+      // =========================
+      // 🔥 INITIATOR ASSIGNMENT
+      // =========================
+      // Rule:
+      // - socket (current joiner) → INITIATOR
+      // - matchedSocket → RECEIVER
+  
+      // Send to initiator
+      socket.emit("matched", {
+        roomId,
         partner: matchedUserData.name,
         partnerName: matchedUserData.name,
         partnerId: matchedUserData.id,
-        mode: mode,
+        mode,
         tags: matchedUserData.tags || [],
         partnerTags: matchedUserData.tags || [],
-        matchType: isInterestMatch ? 'interest' : 'random',
-        partnerCountry: partnerCountry,
-        commonTags: commonTags
-      };
-      
-      socket.emit("matched", matchData);
-      
+        matchType: isInterestMatch ? "interest" : "random",
+        partnerCountry,
+        commonTags,
+        isInitiator: true
+      });
+  
+      // Send to receiver
       if (matchedSocket) {
         matchedSocket.emit("matched", {
-          roomId: roomId,
+          roomId,
           partner: userData.name,
           partnerName: userData.name,
           partnerId: userData.id,
-          mode: mode,
+          mode,
           tags: userData.tags || [],
           partnerTags: userData.tags || [],
-          matchType: isInterestMatch ? 'interest' : 'random',
+          matchType: isInterestMatch ? "interest" : "random",
           partnerCountry: userCountry,
-          commonTags: commonTags
+          commonTags,
+          isInitiator: false
         });
       }
-      
-      logSecurityEvent('USERS_MATCHED', {
+  
+      logSecurityEvent("USERS_MATCHED", {
         roomId,
         user1: { id: userData.id, name: userData.name },
         user2: { id: matchedUserData.id, name: matchedUserData.name },
-        mode: mode,
-        isInterestMatch: isInterestMatch
+        mode,
+        isInterestMatch
       });
-      
+  
     } else {
-      // No match found, add to waiting (will match when someone else joins)
+      // No match → add to waiting queue
       state.waiting[mode].set(socket.id, userData);
       userData.waitingSince = Date.now();
-
-      socket.emit("waiting", { 
-        mode, 
-        estimatedWait: Math.max(2, state.waiting[mode].size * 1) 
+  
+      socket.emit("waiting", {
+        mode,
+        estimatedWait: Math.max(2, state.waiting[mode].size * 1)
       });
-      
-      logSecurityEvent('USER_WAITING', {
+  
+      logSecurityEvent("USER_WAITING", {
         userId: userData.id,
-        mode: mode,
+        mode,
         name: userData.name,
         waitingCount: state.waiting[mode].size
       });
     }
   }
+  
   
   function getUserCountry(socket) {
     if (!socket) return null;
