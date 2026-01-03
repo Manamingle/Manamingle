@@ -1104,16 +1104,19 @@
     isTyping: false,
 
     partnerCountry: null,
-    iceServers: {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject"
-    }
-  ]
-}
+    iceServers: [
+  { urls: "stun:stun.l.google.com:19302" },
+  {
+    urls: [
+      "turn:openrelay.metered.ca:80?transport=udp",
+      "turn:openrelay.metered.ca:443?transport=tcp",
+      "turns:openrelay.metered.ca:443"
+    ],
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  }
+]
+
 
   };
   function recoverRemoteVideo() {
@@ -1525,17 +1528,19 @@ state.peerConnection.addTransceiver("audio");
     state.peerConnection.ontrack = (event) => {
   if (!event.streams?.[0]) return;
 
-  // 🔥 SAFARI RULE: mute BEFORE srcObject
   elements.remoteVideo.muted = true;
   elements.remoteVideo.playsInline = true;
   elements.remoteVideo.autoplay = true;
 
   elements.remoteVideo.srcObject = event.streams[0];
-  elements.remoteStatus.style.display = "none";
 
-  // ❌ DO NOT AUTO-UNMUTE ON iOS
+  event.streams[0].getVideoTracks().forEach(t => t.enabled = true);
+
+  elements.remoteStatus.style.display = "none";
   elements.remoteVideo.play().catch(() => {});
 };
+
+
 
 
     // ❄ ICE candidates
