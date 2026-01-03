@@ -877,7 +877,10 @@ body{
   .chat-messages{
     padding:10px;
   }
-  
+  button {
+  touch-action: manipulation;
+}
+
   .msg{
     padding:8px 12px;
     font-size:0.85rem;
@@ -1065,22 +1068,28 @@ body{
 .mobile-home-btn {
   display: none;
   position: fixed;
-  top: 10px;
-  left: 10px;
-  background: rgba(0,0,0,0.8);
+  top: env(safe-area-inset-top, 10px);
+  left: env(safe-area-inset-left, 10px);
+
+  background: rgba(0,0,0,0.9);
   border: 1px solid var(--border);
   color: white;
-  padding: 8px 12px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
   cursor: pointer;
-  z-index: 1001;
-  font-size: 0.8rem;
+
+  z-index: 20000; /* 🔥 ABOVE ALL MODALS */
+  font-size: 0.9rem;
   min-width: 44px;
   min-height: 44px;
+
+  display: flex;
   align-items: center;
   justify-content: center;
+
   backdrop-filter: blur(10px);
 }
+
 
 @media (max-width: 768px) {
   .mobile-home-btn {
@@ -1460,14 +1469,7 @@ body{
 
   function setupMobileHandlers() {
     // Prevent double-tap zoom
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function(event) {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, false);
+    
     
     // Prevent context menu on buttons
     document.addEventListener('contextmenu', function(e) {
@@ -3025,18 +3027,7 @@ body{
     });
     
     // Handle touch events for mobile
-    document.addEventListener('touchstart', (e) => {
-      // Add visual feedback for buttons
-      if (e.target.closest('button')) {
-        e.target.closest('button').style.opacity = '0.8';
-      }
-    }, { passive: true });
     
-    document.addEventListener('touchend', (e) => {
-      if (e.target.closest('button')) {
-        e.target.closest('button').style.opacity = '1';
-      }
-    }, { passive: true });
   }
 
   // Global error handling
