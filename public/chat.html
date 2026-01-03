@@ -55,6 +55,8 @@
       overscroll-behavior: none;
     }
 
+    /* =========== BACKGROUND ANIMATIONS =========== */
+    
     /* =========== CONTAINER =========== */
     .chat-container {
       position: relative;
@@ -209,7 +211,35 @@
     }
 
     #localVideo {
-      transform: scaleX(-1);
+      transform: scaleX(-1); /* Only mirror local video */
+    }
+
+    #remoteVideo {
+      transform: scaleX(1); /* Remote video should be normal */
+    }
+
+    /* =========== VIDEO WATERMARK =========== */
+    .video-watermark {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      pointer-events: none;
+    }
+
+    .video-watermark .icon {
+      font-size: 0.9rem;
+      color: var(--blue);
     }
 
     .video-label {
@@ -310,18 +340,38 @@
       position: relative;
     }
 
+    /* Message animations */
     .message {
       padding: 10px 14px;
       border-radius: 16px;
       max-width: 85%;
       line-height: 1.4;
-      animation: fadeIn 0.25s ease;
+      animation: fadeIn 0.25s ease, floatMessage 3s infinite ease-in-out;
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255,255,255,0.06);
       box-shadow: 0 8px 20px rgba(0,0,0,0.25);
       word-wrap: break-word;
       word-break: break-word;
       clear: both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .message::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.03), transparent);
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .message:hover::before {
+      opacity: 1;
     }
 
     @media (min-width: 768px) {
@@ -336,6 +386,7 @@
       align-self: flex-end;
       margin-left: auto;
       border-bottom-right-radius: 6px;
+      animation-delay: 0.1s;
     }
 
     .message.stranger {
@@ -344,6 +395,7 @@
       align-self: flex-start;
       margin-right: auto;
       border-bottom-left-radius: 6px;
+      animation-delay: 0.2s;
     }
 
     .message-time {
@@ -351,10 +403,26 @@
       opacity: 0.7;
       margin-top: 4px;
       text-align: right;
+      animation: fadeIn 0.5s ease;
     }
 
     .message.stranger .message-time {
       text-align: left;
+    }
+
+    /* =========== WELCOME BANNER =========== */
+    .welcome-banner {
+      text-align: center;
+      padding: 15px;
+      background: rgba(0, 198, 255, 0.1);
+      border-radius: 12px;
+      margin: 10px auto;
+      max-width: 90%;
+      border: 1px solid rgba(0, 198, 255, 0.3);
+      color: var(--text);
+      font-size: 0.95rem;
+      animation: fadeIn 0.5s ease, floatMessage 4s infinite ease-in-out;
+      backdrop-filter: blur(10px);
     }
 
     /* =========== FINDING MATCH INDICATORS =========== */
@@ -368,7 +436,8 @@
       margin: 10px auto;
       max-width: 90%;
       border: 1px solid rgba(0,198,255,0.2);
-      animation: pulse 2s infinite;
+      animation: pulse 2s infinite, floatMessage 5s infinite ease-in-out;
+      backdrop-filter: blur(10px);
     }
 
     .finding-match {
@@ -383,6 +452,7 @@
       justify-content: center;
       z-index: 10000;
       display: none;
+      backdrop-filter: blur(20px);
     }
 
     .finding-match.show {
@@ -398,6 +468,7 @@
       max-width: 500px;
       width: 90%;
       backdrop-filter: blur(20px);
+      animation: fadeIn 0.5s ease;
     }
 
     .finding-match .spinner {
@@ -430,6 +501,7 @@
       overflow-y: auto;
       word-break: break-word;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      display: none;
     }
 
     /* =========== TYPING INDICATOR =========== */
@@ -441,6 +513,7 @@
       flex-shrink: 0;
       font-style: italic;
       clear: both;
+      animation: fadeIn 0.3s ease;
     }
 
     .typing-dots {
@@ -488,6 +561,7 @@
       white-space: nowrap;
       flex-shrink: 0;
       transition: all 0.2s ease;
+      animation: fadeIn 0.5s ease;
     }
 
     .skip-btn:hover {
@@ -506,6 +580,8 @@
       padding: 8px 12px;
       min-width: 0;
       transition: all 0.2s ease;
+      max-width: 100%;
+      animation: fadeIn 0.5s ease;
     }
 
     .input-wrapper:focus-within {
@@ -515,7 +591,7 @@
 
     .chat-input {
       flex: 1;
-      padding: 8px 2px;
+      padding: 10px 5px;
       border: none;
       outline: none;
       background: transparent;
@@ -526,6 +602,7 @@
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
+      width: 100%;
     }
 
     .chat-input::placeholder {
@@ -552,6 +629,7 @@
       justify-content: center;
       border: 1px solid rgba(0,198,255,0.5);
       flex-shrink: 0;
+      animation: fadeIn 0.5s ease;
     }
 
     .send-btn:hover:not(:disabled) {
@@ -734,16 +812,37 @@
       .control-btn {
         padding: 8px 12px;
         font-size: 0.9rem;
+        min-width: 40px;
       }
       
       .finding-match-content {
         padding: 30px;
+      }
+      
+      .chat-input-area {
+        padding: 10px;
+        gap: 6px;
+      }
+      
+      .input-wrapper {
+        padding: 6px 10px;
+      }
+      
+      .chat-input {
+        padding: 8px 4px;
+        font-size: 15px !important;
+      }
+      
+      .skip-btn, .send-btn {
+        padding: 8px 12px;
+        min-width: 40px;
       }
     }
     
     @media (max-width: 480px) {
       .chat-header {
         padding: 8px 10px;
+        flex-wrap: wrap;
       }
       
       .video-area {
@@ -757,7 +856,7 @@
       .control-btn {
         padding: 6px 8px;
         font-size: 0.8rem;
-        min-width: 40px;
+        min-width: 36px;
       }
       
       .finding-match-content {
@@ -767,6 +866,21 @@
       .finding-match .spinner {
         width: 40px;
         height: 40px;
+      }
+      
+      .chat-input-area {
+        padding: 8px;
+        gap: 4px;
+      }
+      
+      .skip-btn {
+        min-width: 36px;
+        padding: 8px 10px;
+      }
+      
+      .send-btn {
+        min-width: 36px;
+        padding: 8px 10px;
       }
     }
 
@@ -824,6 +938,14 @@
   </style>
 </head>
 <body>
+  <!-- Background Animations -->
+  <div class="floating-shapes">
+    <div class="shape-1"></div>
+    <div class="shape-2"></div>
+    <div class="shape-3"></div>
+    <div class="shape-4"></div>
+  </div>
+
   <div class="chat-container">
     <!-- Finding Match Modal (only for video) -->
     <div class="finding-match" id="findingMatch">
@@ -867,21 +989,29 @@
       <div class="video-grid">
         <div class="video-card">
           <div class="video-label">You <span id="localFlag"></span></div>
+          <div class="video-watermark">
+            <span class="icon">💬</span>
+            <span>Mana Mingle</span>
+          </div>
           <video id="localVideo" autoplay playsinline muted></video>
           <div class="video-overlay" id="localStatus">
             <div class="spinner" style="width: 30px; height: 30px;"></div>
             <div>Camera off</div>
           </div>
-          <div id="localCaption" class="video-caption" style="display: none;"></div>
+          <div id="localCaption" class="video-caption"></div>
         </div>
         <div class="video-card">
           <div class="video-label">Stranger <span id="remoteFlag"></span></div>
+          <div class="video-watermark">
+            <span class="icon">💬</span>
+            <span>Mana Mingle</span>
+          </div>
           <video id="remoteVideo" autoplay playsinline></video>
           <div class="video-overlay" id="remoteStatus">
             <div class="spinner" style="width: 30px; height: 30px;"></div>
             <div>Waiting for partner...</div>
           </div>
-          <div id="remoteCaption" class="video-caption" style="display: none;"></div>
+          <div id="remoteCaption" class="video-caption"></div>
           <div class="interest-match-badge" id="interestBadge" style="display: none;">🎯 Interest Match</div>
         </div>
       </div>
@@ -925,7 +1055,7 @@
         <span class="text">Skip</span>
       </button>
       <div class="input-wrapper">
-        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off" disabled>
+        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off" disabled maxlength="500">
       </div>
       <button class="send-btn" id="sendBtn" disabled>
         <span class="text">Send</span>
@@ -1042,26 +1172,6 @@
           ],
           username: "openrelayproject",
           credential: "openrelayproject"
-        },
-        {
-          urls: "turn:global.relay.metered.ca:80",
-          username: "7b95bb4de91a2ef763e17d2c",
-          credential: "N3eHMLm8Yh8BB4e7"
-        },
-        {
-          urls: "turn:global.relay.metered.ca:80?transport=tcp",
-          username: "7b95bb4de91a2ef763e17d2c",
-          credential: "N3eHMLm8Yh8BB4e7"
-        },
-        {
-          urls: "turn:global.relay.metered.ca:443",
-          username: "7b95bb4de91a2ef763e17d2c",
-          credential: "N3eHMLm8Yh8BB4e7"
-        },
-        {
-          urls: "turns:global.relay.metered.ca:443?transport=tcp",
-          username: "7b95bb4de91a2ef763e17d2c",
-          credential: "N3eHMLm8Yh8BB4e7"
         }
       ],
       iceCandidatePoolSize: 10
@@ -1153,6 +1263,9 @@
     // Setup event listeners
     setupEventListeners();
     
+    // Create background animation dots
+    createBackgroundDots();
+    
     // Start stats update
     state.statsUpdateInterval = setInterval(updateChatStats, 1000);
     
@@ -1180,6 +1293,35 @@
     updateSoundToggle();
     
     setStatus("Finding match...", "waiting");
+  }
+
+  // =========== BACKGROUND ANIMATIONS ===========
+  function createBackgroundDots() {
+    const container = document.querySelector('.floating-shapes');
+    if (!container) return;
+    
+    // Create pulsing dots
+    for (let i = 0; i < 20; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'pulse-dot';
+      
+      // Random position
+      const left = Math.random() * 100;
+      const top = Math.random() * 100;
+      const delay = Math.random() * 2;
+      const duration = 2 + Math.random() * 2;
+      
+      dot.style.left = `${left}%`;
+      dot.style.top = `${top}%`;
+      dot.style.animationDelay = `${delay}s`;
+      dot.style.animationDuration = `${duration}s`;
+      
+      // Random color
+      const colors = ['var(--blue)', 'var(--purple)', 'var(--green)', 'var(--orange)'];
+      dot.style.background = colors[Math.floor(Math.random() * colors.length)];
+      
+      container.appendChild(dot);
+    }
   }
 
   // =========== COUNTRY DETECTION ===========
@@ -1259,11 +1401,11 @@
   function stopMatching() {
     state.isMatching = false;
     
-    if (state.isVideoMode) {
-      elements.findingMatch.classList.remove('show');
-    } else {
-      elements.matchIndicator.style.display = 'none';
-    }
+    // ALWAYS hide both indicators
+    elements.findingMatch.classList.remove('show');
+    elements.matchIndicator.style.display = 'none';
+    
+    console.log("Matching stopped, indicators hidden");
   }
 
   function updateMatchIndicator() {
@@ -1310,13 +1452,19 @@
       }
     });
     
-    // Chat input
+    // Chat input - FIXED FOR MOBILE
     elements.chatInput.addEventListener("input", notifyTyping);
     elements.chatInput.addEventListener("focus", () => {
       setTimeout(() => {
         elements.messages.scrollTop = elements.messages.scrollHeight;
       }, 100);
     });
+    
+    // Prevent iOS zoom on focus
+    elements.chatInput.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      elements.chatInput.focus();
+    }, { passive: false });
     
     // Buttons
     elements.sendBtn.addEventListener("click", sendMessage);
@@ -1379,7 +1527,7 @@
       
       state.localStream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      // Apply to local video
+      // Apply to local video - MIRRORED (user sees themselves naturally)
       elements.localVideo.srcObject = state.localStream;
       elements.localStatus.style.display = "none";
       
@@ -1421,7 +1569,9 @@
     elements.videoArea.style.display = "none";
     
     // Notify server
-    socket.emit("switch_to_text", { room: state.roomId });
+    if (state.roomId) {
+      socket.emit("switch_to_text", { room: state.roomId });
+    }
     
     showNotification("Switched to text chat mode", "info");
   }
@@ -1431,7 +1581,7 @@
     
     if (state.peerConnection) {
       console.warn("Peer connection already exists");
-      return;
+      state.peerConnection.close();
     }
     
     try {
@@ -1454,6 +1604,9 @@
           const stream = event.streams[0];
           elements.remoteVideo.srcObject = stream;
           elements.remoteStatus.style.display = "none";
+          
+          // Remote video should NOT be mirrored - NORMAL orientation
+          elements.remoteVideo.style.transform = 'scaleX(1)';
           
           // Ensure video plays
           elements.remoteVideo.play().catch(e => {
@@ -1660,7 +1813,42 @@
   // =========== MESSAGE FUNCTIONS ===========
   function sendMessage() {
     const msg = elements.chatInput.value.trim();
-    if (!msg || !state.roomId || msg.length === 0) return;
+    
+    // Input validation rules
+    if (!msg || !state.roomId || msg.length === 0) {
+      return;
+    }
+    
+    // Check message length
+    if (msg.length > 500) {
+      showNotification("Message too long! Max 500 characters.", "error");
+      return;
+    }
+    
+    // Check for spam patterns
+    const spamPatterns = [
+      /(.)\1{10,}/, // Repeated characters
+      /https?:\/\//i, // URLs
+      /www\./i, // URLs without protocol
+      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i, // Email addresses
+    ];
+    
+    for (const pattern of spamPatterns) {
+      if (pattern.test(msg)) {
+        showNotification("Message contains blocked content", "error");
+        return;
+      }
+    }
+    
+    // Check for offensive words (basic example)
+    const offensiveWords = ['badword1', 'badword2']; // Add actual words
+    const lowerMsg = msg.toLowerCase();
+    for (const word of offensiveWords) {
+      if (lowerMsg.includes(word)) {
+        showNotification("Please keep the conversation respectful", "warning");
+        return;
+      }
+    }
     
     const messageId = `${Date.now()}-${state.messageIdCounter++}`;
     
@@ -1674,7 +1862,7 @@
     // Display message
     appendMessage(msg, "you", messageId);
     
-    // Show caption in video mode
+    // Show caption in video mode - FIXED
     if (state.isVideoMode) {
       showVideoCaption('local', msg);
     }
@@ -2082,13 +2270,17 @@
   socket.on("matched", async (data) => {
     console.log("Matched with partner:", data);
     
-    // Stop matching indicators
+    // Stop matching indicators - FIXED
     stopMatching();
     
     // Enable chat
     elements.chatInput.disabled = false;
     elements.sendBtn.disabled = false;
-    elements.chatInput.focus();
+    
+    // Focus input after a delay for mobile
+    setTimeout(() => {
+      elements.chatInput.focus();
+    }, 300);
     
     // Update state
     state.roomId = data.roomId;
@@ -2180,7 +2372,7 @@
     // Display message
     appendMessage(data.message, "stranger", data.messageId);
     
-    // Show caption in video mode
+    // Show caption in video mode - FIXED
     if (state.isVideoMode && data.type === "video_chat") {
       showVideoCaption("remote", data.message);
     }
