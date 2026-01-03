@@ -1,0 +1,23 @@
+# Render Blueprint Configuration
+# Deploy with: render blueprint launch
+
+services:
+  - type: web
+    name: manamingle
+    env: node
+    region: oregon  # Change to your preferred region
+    plan: free  # Change to 'starter' or 'standard' for paid plans
+    buildCommand: cd manamingle-backend && npm install
+    startCommand: cd manamingle-backend && npm start
+    healthCheckPath: /_health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: ADMIN_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: ALLOWED_ORIGINS
+        sync: false  # Optional: Set if you need additional origins
+
+

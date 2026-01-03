@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Abuse – Mana Mingle</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#05060b;
+  --glass1:rgba(255,255,255,.07);
+  --glass2:rgba(255,255,255,.03);
+  --border:rgba(255,255,255,.12);
+  --text:#e8ecf2;
+  --muted:#b8c2cc;
+  --blue:#00c6ff;
+  --orange:#ff9f43;
+  --red:#ff4757;
+  --green:#00d19a;
+}
+
+/* ===== GLOBAL ===== */
+*{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
+
+body{
+  font-family:'Baloo Tamma 2',cursive;
+  background:
+    radial-gradient(circle at top,rgba(0,198,255,.12),transparent 45%),
+    radial-gradient(circle at bottom,rgba(255,159,67,.10),transparent 45%),
+    var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  margin:0;
+  padding:24px;
+}
+
+.container{
+  max-width:780px;
+  margin:auto;
+}
+
+/* ===== HEADERS ===== */
+h1{
+  font-size:2.4rem;
+  margin-bottom:15px;
+  text-shadow:0 0 10px rgba(255,71,87,.35);
+}
+
+h2{
+  color:var(--orange);
+  margin-top:0;
+}
+
+/* ===== BOXES ===== */
+.card{
+  background:linear-gradient(145deg,var(--glass1),var(--glass2));
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:26px;
+  margin-bottom:24px;
+  transition:transform .25s ease, box-shadow .25s ease;
+  will-change:transform;
+}
+
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 18px 30px rgba(0,0,0,.35);
+}
+
+.warning{
+  background:rgba(255,71,87,.12);
+  border-left:4px solid var(--red);
+}
+
+.info{
+  background:rgba(255,255,255,.05);
+}
+
+/* ===== FORM ===== */
+.form-group{
+  margin:18px 0;
+}
+
+label{
+  display:block;
+  margin-bottom:8px;
+  color:var(--muted);
+}
+
+select, textarea, input{
+  width:100%;
+  padding:12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:inherit;
+  font-size:1rem;
+}
+
+textarea{
+  min-height:140px;
+  resize:vertical;
+}
+
+.submit-btn{
+  background:linear-gradient(135deg,#ff4757,#ff2e43);
+  color:white;
+  border:none;
+  padding:14px 30px;
+  border-radius:12px;
+  font-size:1.1rem;
+  font-weight:bold;
+  cursor:pointer;
+  width:100%;
+  margin-top:20px;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+
+.submit-btn:hover{
+  transform:scale(1.04);
+  box-shadow:0 0 22px rgba(255,71,87,.6);
+}
+
+/* ===== SUCCESS ===== */
+.success-message{
+  display:none;
+  background:rgba(0,209,154,.12);
+  border-left:4px solid var(--green);
+  border-radius:16px;
+  padding:26px;
+  text-align:center;
+}
+
+/* ===== LINKS ===== */
+a{
+  color:var(--blue);
+  text-decoration:none;
+}
+
+/* ===== BACK BUTTON ===== */
+.back-link{
+  display:block;
+  width:max-content;
+  margin:40px auto 0;
+  padding:14px 30px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  color:white;
+  font-size:1.05rem;
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+
+.back-link:hover{
+  transform:scale(1.08);
+  box-shadow:0 0 22px rgba(0,198,255,.6);
+}
+
+/* ===== FOOTER ===== */
+.footer{
+  margin-top:55px;
+  padding-top:22px;
+  border-top:1px solid var(--border);
+  text-align:center;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.footer a{margin:0 12px}
+
+/* ===== SCROLL REVEAL ===== */
+.reveal{
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity .6s ease, transform .6s ease;
+  will-change:transform, opacity;
+}
+
+.reveal.show{
+  opacity:1;
+  transform:none;
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+</style>
+<!-- Standard favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+
+<!-- Apple devices -->
+<link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+
+<!-- Android / PWA -->
+<link rel="manifest" href="/images/favicons/site.webmanifest">
+
+
+<!-- Fallback -->
+<link rel="shortcut icon" href="/images/favicons/favicon.ico">
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 class="reveal">🚨 Report Abuse</h1>
+
+<div class="card warning reveal">
+  <strong>⚠️ Emergency:</strong>
+  If you are in immediate danger, please contact local authorities first.
+</div>
+
+<div id="successMessage" class="success-message reveal">
+  <h2 style="color:var(--green)">✅ Report Submitted</h2>
+  <p>Thank you for reporting. Our team will review this within 24 hours.</p>
+  <p>Your action helps keep Mana Mingle safe.</p>
+</div>
+
+<div class="card reveal" id="reportForm">
+  <h2>What happened?</h2>
+  <p>Please describe the incident clearly and honestly.</p>
+
+  <form id="abuseForm">
+
+    <div class="form-group">
+      <label for="reason">Type of Abuse *</label>
+      <select id="reason" required>
+        <option value="">Select a reason</option>
+        <option>Harassment or Bullying</option>
+        <option>Explicit / Adult Content</option>
+        <option>Threats or Violence</option>
+        <option>Spam or Scams</option>
+        <option>Hate Speech</option>
+        <option>Involving Minors</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="details">Details *</label>
+      <textarea id="details" required
+        placeholder="Describe what happened:
+• What was said or shared
+• When it happened
+• Any usernames or IDs
+• Why it violates our rules"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="evidence">Evidence (Optional)</label>
+      <textarea id="evidence"
+        placeholder="Screenshots, context, or other helpful details"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="contact">Your Email (Optional)</label>
+      <input type="email" id="contact"
+        placeholder="We may contact you for clarification">
+    </div>
+
+    <button type="submit" class="submit-btn">Submit Report</button>
+  </form>
+</div>
+
+<div class="card info reveal">
+  <h3>What happens next?</h3>
+  <ul>
+    <li>Reports are reviewed within 24 hours</li>
+    <li>Violating users may be restricted or banned</li>
+    <li>We cannot disclose actions taken on other users</li>
+    <li>You may be contacted for more details</li>
+  </ul>
+</div>
+
+<a href="index.html" class="back-link reveal">← Back to Mana Mingle</a>
+
+<div class="footer reveal">
+  <a href="privacy-policy.html">Privacy Policy</a>
+  <a href="terms-of-service.html">Terms of Service</a>
+  <a href="contact.html">Contact</a>
+  <p style="margin-top:15px">© 2026 Mana Mingle · 18+ Only</p>
+</div>
+
+</div>
+
+<script>
+/* Scroll reveal */
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add("show");
+      observer.unobserve(entry.target);
+    }
+  });
+},{threshold:0.15});
+
+document.querySelectorAll(".reveal").forEach(el=>{
+  observer.observe(el);
+});
+
+/* Form handling */
+document.getElementById("abuseForm").addEventListener("submit",e=>{
+  e.preventDefault();
+
+  console.log("🚨 Abuse report submitted");
+
+  document.getElementById("reportForm").style.display="none";
+  document.getElementById("successMessage").style.display="block";
+});
+</script>
+
+</body>
+</html>

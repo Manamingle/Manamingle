@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact – Mana Mingle</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#05060b;
+  --glass1:rgba(255,255,255,.07);
+  --glass2:rgba(255,255,255,.03);
+  --border:rgba(255,255,255,.12);
+  --text:#e8ecf2;
+  --muted:#b8c2cc;
+  --blue:#00c6ff;
+  --orange:#ff9f43;
+  --red:#ff4757;
+}
+
+/* ===== GLOBAL ===== */
+*{box-sizing:border-box}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  font-family:'Baloo Tamma 2',cursive;
+  background:
+    radial-gradient(circle at top,rgba(0,198,255,.12),transparent 45%),
+    radial-gradient(circle at bottom,rgba(255,159,67,.10),transparent 45%),
+    var(--bg);
+  color:var(--text);
+  margin:0;
+  padding:24px;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+}
+
+/* ===== HEADINGS ===== */
+h1{
+  text-align:center;
+  font-size:2.6rem;
+  margin-bottom:8px;
+  text-shadow:0 0 12px rgba(0,198,255,.3);
+}
+
+.status{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  font-size:.9rem;
+  color:#8cff9c;
+  margin-bottom:30px;
+}
+
+.status span{
+  width:8px;
+  height:8px;
+  background:#8cff9c;
+  border-radius:50%;
+  box-shadow:0 0 6px #8cff9c;
+}
+
+/* ===== SECTIONS ===== */
+.contact-section{
+  background:linear-gradient(145deg,var(--glass1),var(--glass2));
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:25px;
+  margin:22px 0;
+  position:relative;
+  transition:transform .25s ease, box-shadow .25s ease;
+  will-change:transform;
+}
+
+.contact-section:hover{
+  transform:translateY(-4px);
+  box-shadow:0 18px 30px rgba(0,0,0,.35);
+}
+
+h2{
+  color:var(--blue);
+  margin-top:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* ===== EMERGENCY ===== */
+.emergency{
+  border-color:rgba(255,71,87,.45);
+  box-shadow:0 0 14px rgba(255,71,87,.25);
+}
+
+/* ===== LINKS ===== */
+a{
+  color:var(--blue);
+  text-decoration:none;
+}
+
+.report-link{
+  display:inline-block;
+  margin-top:10px;
+  padding:12px 18px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#ff4757,#ff6b81);
+  color:#fff;
+  font-weight:bold;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+
+.report-link:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 18px rgba(255,71,87,.6);
+}
+
+/* ===== EMAIL ===== */
+.email-box{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.copy-btn{
+  padding:7px 14px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  color:#fff;
+  cursor:pointer;
+  transition:transform .2s ease;
+}
+
+.copy-btn:hover{
+  transform:scale(1.08);
+}
+
+/* ===== BACK BUTTON ===== */
+.back-link{
+  display:block;
+  width:max-content;
+  margin:40px auto 0;
+  padding:14px 30px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  color:white;
+  font-size:1.1rem;
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+
+.back-link:hover{
+  transform:scale(1.08);
+  box-shadow:0 0 22px rgba(0,198,255,.6);
+}
+
+/* ===== FOOTER ===== */
+.footer{
+  margin-top:60px;
+  padding-top:25px;
+  border-top:1px solid var(--border);
+  text-align:center;
+  color:var(--muted);
+  font-size:.9rem;
+}
+
+.footer a{margin:0 12px}
+
+/* ===== SCROLL REVEAL (OPTIMIZED) ===== */
+.reveal{
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity .6s ease, transform .6s ease;
+  will-change:transform, opacity;
+}
+
+.reveal.show{
+  opacity:1;
+  transform:none;
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+</style>
+<!-- Standard favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
+
+<!-- Apple devices -->
+<link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+
+<!-- Android / PWA -->
+<link rel="manifest" href="/images/favicons/site.webmanifest">
+
+
+<!-- Fallback -->
+<link rel="shortcut icon" href="/images/favicons/favicon.ico">
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Contact Mana Mingle</h1>
+<div class="status"><span></span>Support team online</div>
+
+<div class="contact-section emergency reveal">
+  <h2>🚨 Emergency / Abuse Reports</h2>
+  <p>Immediate action for safety-related issues.</p>
+  <a href="report.html" class="report-link">→ File Abuse Report</a>
+  <p style="margin-top:12px;font-size:.9rem;color:var(--muted)">
+    Reports are reviewed quickly. Provide screenshots or timestamps if possible.
+  </p>
+</div>
+
+<div class="contact-section reveal">
+  <h2>🔒 Privacy & GDPR</h2>
+  <div class="email-box">
+    <strong>Email:</strong>
+    <span id="email">manaminglechat@gmail.com</span>
+    <button class="copy-btn" onclick="copyEmail()">Copy</button>
+  </div>
+  <p style="margin-top:10px;font-size:.9rem;color:var(--muted)">
+    We do not store user data or chat logs.
+  </p>
+</div>
+
+<div class="contact-section reveal">
+  <h2>⚖️ Legal / Law Enforcement</h2>
+  <div class="email-box">
+    <strong>Email:</strong>
+    <span>manaminglechat@gmail.com</span>
+  </div>
+  <p style="margin-top:10px;font-size:.9rem;color:var(--muted)">
+    Mana Mingle operates with zero-data retention.
+  </p>
+</div>
+
+<div class="contact-section reveal">
+  <h2>🌐 General Questions</h2>
+  <p>Email us anytime for feedback or questions.</p>
+  <strong>manaminglechat@gmail.com</strong>
+</div>
+
+<div class="contact-section reveal">
+  <h2>📍 Expected Response Time</h2>
+  <ul>
+    <li>Abuse reports – within 24 hours</li>
+    <li>Privacy requests – within 48 hours</li>
+    <li>Legal inquiries – within 72 hours</li>
+    <li>General questions – 3–5 days</li>
+  </ul>
+</div>
+
+<a href="index.html" class="back-link reveal">← Back to Mana Mingle</a>
+
+<div class="footer reveal">
+  <a href="privacy-policy.html">Privacy Policy</a>
+  <a href="terms-of-service.html">Terms of Service</a>
+  <a href="cookie-policy.html">Cookie Policy</a>
+  <p style="margin-top:15px">© 2025 Mana Mingle · 18+ Only</p>
+</div>
+
+</div>
+
+<script>
+function copyEmail(){
+  navigator.clipboard.writeText("manaminglechat@gmail.com");
+  alert("Email copied to clipboard!");
+}
+
+/* Smooth scroll reveal */
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add("show");
+      observer.unobserve(entry.target);
+    }
+  });
+},{threshold:0.15});
+
+document.querySelectorAll(".reveal").forEach(el=>{
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>

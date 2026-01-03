@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 – Page Not Found | Mana Mingle
+  
+</title>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#05060b;
+  --glass1:rgba(255,255,255,.07);
+  --glass2:rgba(255,255,255,.03);
+  --border:rgba(255,255,255,.12);
+  --text:#e8ecf2;
+  --muted:#b8c2cc;
+  --blue:#00c6ff;
+  --red:#ff4757;
+}
+
+/* ===== GLOBAL ===== */
+*{box-sizing:border-box}
+
+html,body{
+  height:100%;
+}
+
+body{
+  margin:0;
+  font-family:'Baloo Tamma 2',cursive;
+  background:
+    radial-gradient(circle at top,rgba(0,198,255,.12),transparent 45%),
+    radial-gradient(circle at bottom,rgba(255,71,87,.10),transparent 45%),
+    var(--bg);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:20px;
+}
+
+/* ===== CARD ===== */
+.card{
+  max-width:520px;
+  width:100%;
+  background:linear-gradient(145deg,var(--glass1),var(--glass2));
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:40px 30px;
+  box-shadow:0 20px 40px rgba(0,0,0,.45);
+}
+
+/* ===== TEXT ===== */
+h1{
+  font-size:4rem;
+  margin:0;
+  color:var(--red);
+  text-shadow:0 0 18px rgba(255,71,87,.45);
+}
+
+h2{
+  margin:10px 0 20px;
+  font-size:1.4rem;
+}
+
+p{
+  color:var(--muted);
+  margin-bottom:30px;
+}
+
+/* ===== BUTTON ===== */
+a{
+  display:inline-block;
+  padding:14px 30px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  color:white;
+  text-decoration:none;
+  font-size:1.05rem;
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+
+a:hover{
+  transform:scale(1.08);
+  box-shadow:0 0 25px rgba(0,198,255,.6);
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+</style>
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
+
+<!-- Apple devices -->
+<link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
+
+<!-- Android / PWA -->
+<link rel="manifest" href="/favicons/site.webmanifest">
+
+
+<!-- Fallback -->
+<link rel="shortcut icon" href="/favicons/favicon.ico">
+</head>
+
+<body>
+
+<div class="card">
+  <h1>404</h1>
+  <h2>Page Not Found</h2>
+  <p>
+    The page you’re looking for doesn’t exist or may have been moved.
+  </p>
+  <a href="index.html">← Back to Mana Mingle</a>
+</div>
+
+</body>
+</html>

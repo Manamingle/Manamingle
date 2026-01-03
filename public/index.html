@@ -1,0 +1,2851 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Talk to strangers anonymously. Safe and monitored video/text chat for speakers worldwide.">
+  
+  <!-- Simplified CSP -->
+  <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self' https://cdn.socket.io https://fonts.googleapis.com;
+  script-src 'self' 'unsafe-inline' https://cdn.socket.io;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self' https://manamingle.site wss://manamingle.site https://cdn.socket.io;
+  img-src 'self' data: https:;
+  media-src 'self' blob:;
+  frame-src 'none';
+  object-src 'none';
+">
+
+  
+  <title>Mana Mingle - Stranger Chat</title>
+  
+  <meta name="theme-color" content="#00c6ff">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #05060b;
+      --panel: rgba(255, 255, 255, 0.06);
+      --panel-strong: rgba(255, 255, 255, 0.12);
+      --blue: #00c6ff;
+      --green: #00d19a;
+      --orange: #ff9f43;
+      --red: #ff4757;
+      --purple: #a855f7;
+      --text: #e8ecf2;
+      --muted: #b8c2cc;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* ===== CARD SYSTEM ===== */
+    .card {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 26px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+      animation: cardIn .6s cubic-bezier(.22, 1, .36, 1) both;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      animation: slideBorder 3s linear infinite;
+    }
+    
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(.96);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+    
+    @keyframes slideBorder {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .card-title {
+      font-size: 1.4rem;
+      color: #fff;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      height: 100%;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Baloo Tamma 2', cursive;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(0, 198, 255, 0.08), transparent 25%),
+        radial-gradient(circle at 80% 0%, rgba(255, 127, 80, 0.14), transparent 25%),
+        radial-gradient(circle at 50% 100%, rgba(0, 209, 154, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      width: 100%;
+      position: relative;
+    }
+
+    /* Fix for mobile viewport */
+    @supports (-webkit-touch-callout: none) {
+      body {
+        min-height: -webkit-fill-available;
+      }
+    }
+
+    /* ===== BACKGROUND FLOATING ICONS ===== */
+    .floating-icons {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    
+    .floating-icon {
+      position: absolute;
+      font-size: 2.5rem;
+      opacity: 0.08;
+      animation: floatRandom 20s infinite linear;
+      filter: blur(0.5px);
+    }
+    
+    @keyframes floatRandom {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 0.08;
+      }
+      25% {
+        transform: translate(30px, -40px) rotate(90deg);
+        opacity: 0.1;
+      }
+      50% {
+        transform: translate(60px, 20px) rotate(180deg);
+        opacity: 0.06;
+      }
+      75% {
+        transform: translate(20px, 50px) rotate(270deg);
+        opacity: 0.1;
+      }
+      100% {
+        transform: translate(0, 0) rotate(360deg);
+        opacity: 0.08;
+      }
+    }
+    
+    /* Icon positioning */
+    .icon-1 { top: 10%; left: 5%; animation-delay: 0s; font-size: 2.8rem; }
+    .icon-2 { top: 20%; right: 10%; animation-delay: -5s; animation-duration: 25s; }
+    .icon-3 { bottom: 30%; left: 15%; animation-delay: -10s; font-size: 3rem; }
+    .icon-4 { bottom: 15%; right: 20%; animation-delay: -15s; animation-duration: 22s; }
+    .icon-5 { top: 40%; left: 30%; animation-delay: -7s; font-size: 2.5rem; }
+    .icon-6 { top: 60%; right: 5%; animation-delay: -12s; animation-duration: 28s; }
+
+    /* Background Blobs */
+    .bg-blob {
+      position: fixed;
+      width: 520px;
+      height: 520px;
+      filter: blur(80px);
+      opacity: 0.35;
+      z-index: 0;
+      animation: float 14s ease-in-out infinite;
+    }
+    .bg-blob.one { 
+      top: -80px; 
+      left: -120px; 
+      background: #00c6ff; 
+      animation-delay: 0s;
+    }
+    .bg-blob.two { 
+      bottom: -120px; 
+      right: -140px; 
+      background: #ff8000; 
+      animation-duration: 18s;
+      animation-delay: 2s;
+    }
+    .bg-blob.three { 
+      top: 30%; 
+      right: 30%; 
+      background: #00d19a; 
+      animation-duration: 16s;
+      animation-delay: 4s;
+    }
+
+    @keyframes float {
+      0%, 100% { 
+        transform: translateY(0) scale(1) rotate(0deg); 
+      }
+      50% { 
+        transform: translateY(-20px) scale(1.05) rotate(180deg); 
+      }
+    }
+
+    /* NAVBAR */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(20px);
+      background: rgba(5, 6, 11, 0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+      width: 100%;
+    }
+
+    .nav-container {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 60px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.2rem;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      z-index: 1001;
+    }
+
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      padding: 3px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1001;
+    }
+
+    .nav-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+      min-height: 32px;
+      position: relative;
+    }
+
+    .nav-pill:hover {
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-1px);
+    }
+
+    .nav-pill.online {
+      background: rgba(0, 209, 154, 0.15);
+      border-color: rgba(0, 209, 154, 0.3);
+      color: var(--green);
+    }
+
+    .nav-pill.coins {
+      background: rgba(255, 159, 67, 0.15);
+      border-color: rgba(255, 159, 67, 0.3);
+      color: #ffcc00;
+    }
+
+    .nav-pill.gift {
+      background: rgba(168, 85, 247, 0.15);
+      border-color: rgba(168, 85, 247, 0.3);
+      color: var(--purple);
+      position: relative;
+      min-width: 44px;
+      justify-content: center;
+    }
+
+    .nav-pill.bell {
+      background: rgba(0, 198, 255, 0.15);
+      border-color: rgba(0, 198, 255, 0.3);
+      color: var(--blue);
+      min-width: 44px;
+      justify-content: center;
+      position: relative;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, .3);
+      border-radius: 50%;
+      border-top-color: var(--blue);
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin { 
+      to { transform: rotate(360deg); } 
+    }
+
+    /* MAIN CONTENT */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HERO SECTION */
+    .hero-section {
+      text-align: center;
+      margin-bottom: 30px;
+      width: 100%;
+      z-index: 1;
+    }
+
+    .hero-logo {
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle at top left, #00c6ff, #00d19a);
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 0 0 6px rgba(0, 198, 255, .15),
+        0 25px 45px rgba(0, 0, 0, .55);
+      animation: logoFloat 4s ease-in-out infinite;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-logo::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 70%
+      );
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      60% { transform: translateY(-8px) rotate(2deg); }
+    }
+
+    .hero-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      background: #000;
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      color: var(--blue);
+      background: rgba(0, 198, 255, 0.12);
+      border: 1px solid rgba(0, 198, 255, 0.25);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      margin-bottom: 15px;
+      white-space: nowrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      line-height: 1.2;
+      color: #fff;
+      margin-bottom: 12px;
+      font-weight: 700;
+      text-shadow: 0 2px 10px rgba(0, 198, 255, 0.3);
+      padding: 0 10px;
+      word-break: break-word;
+      animation: fadeIn 1s ease-out;
+    }
+
+    .subtext {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+      max-width: 100%;
+      margin: 0 auto 20px;
+      padding: 0 10px;
+      animation: fadeIn 1.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ENHANCED CHAT BUTTONS */
+    .chat-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 20px 0;
+      width: 100%;
+    }
+
+    .chat-btn {
+      border: none;
+      padding: 16px 20px;
+      border-radius: 14px;
+      font-size: 1rem;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 160px;
+      max-width: 100%;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+      outline: none;
+      min-height: 60px;
+      box-sizing: border-box;
+      animation: buttonFloat 3s ease-in-out infinite;
+      animation-delay: var(--delay);
+    }
+
+    .chat-btn:nth-child(1) { --delay: 0s; }
+    .chat-btn:nth-child(2) { --delay: 0.1s; }
+    .chat-btn:nth-child(3) { --delay: 0.2s; }
+
+    @keyframes buttonFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-5px) scale(1.02); }
+    }
+
+    .chat-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.7s;
+    }
+
+    .chat-btn:hover::before {
+      left: 100%;
+    }
+
+    .chat-btn:hover {
+      transform: translateY(-6px) scale(1.05);
+      box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.4),
+        0 5px 15px rgba(255, 255, 255, 0.1);
+    }
+
+    .chat-btn:active {
+      transform: translateY(-2px) scale(1.02);
+      transition: transform 0.1s;
+    }
+
+    .chat-btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 1%, transparent 20%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .chat-btn:hover::after {
+      opacity: 1;
+    }
+
+    .chat-btn.primary {
+      background: linear-gradient(135deg, #00d19a, #00c6ff);
+      box-shadow: 0 8px 25px rgba(0, 209, 154, 0.3);
+    }
+    
+    .chat-btn.secondary {
+      background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+      box-shadow: 0 8px 25px rgba(255, 159, 67, 0.3);
+    }
+    
+    .chat-btn.group {
+      background: linear-gradient(135deg, var(--purple), #ff6b9d);
+      box-shadow: 0 8px 25px rgba(168, 85, 247, 0.3);
+    }
+    
+    .chat-btn:disabled { 
+      opacity: 0.6; 
+      cursor: not-allowed; 
+      transform: none !important; 
+      animation: none !important;
+    }
+
+    /* INTEREST SECTION */
+    .interest-section {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 15px;
+      margin: 25px 0;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .section-title {
+      color: #fff;
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tag-count {
+      color: var(--blue);
+      font-weight: bold;
+      font-size: 0.9rem;
+      background: rgba(0, 198, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 8px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .interest-input-container {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .interest-input-container:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(0, 198, 255, 0.1);
+    }
+
+    .interest-display {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 36px;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .interest-tag {
+      background: linear-gradient(135deg, rgba(0, 120, 215, 0.9), rgba(0, 198, 255, 0.9));
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      animation: scaleIn 0.3s ease-out;
+      box-shadow: 0 2px 6px rgba(0, 120, 215, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .interest-tag:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 120, 215, 0.4);
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .interest-tag-remove {
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0 2px;
+      background: none;
+      border: none;
+      color: inherit;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .interest-tag-remove:hover {
+      transform: scale(1.2);
+    }
+
+    input.interest-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 0.9rem;
+      padding: 8px;
+      outline: none;
+      font-family: 'Baloo Tamma 2', cursive;
+      box-sizing: border-box;
+    }
+
+    input.interest-input::placeholder {
+      color: var(--muted);
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+
+    .interest-suggestions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .interest-suggestion {
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Baloo Tamma 2', cursive;
+      font-size: 0.8rem;
+      animation: floatUp 0.5s ease-out;
+      animation-fill-mode: backwards;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .interest-suggestion:nth-child(1) { animation-delay: 0.1s; }
+    .interest-suggestion:nth-child(2) { animation-delay: 0.2s; }
+    .interest-suggestion:nth-child(3) { animation-delay: 0.3s; }
+    .interest-suggestion:nth-child(4) { animation-delay: 0.4s; }
+    .interest-suggestion:nth-child(5) { animation-delay: 0.5s; }
+    .interest-suggestion:nth-child(6) { animation-delay: 0.6s; }
+
+    @keyframes floatUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .interest-suggestion:hover {
+      color: #fff;
+      border-color: var(--blue);
+      background: rgba(0, 198, 255, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 198, 255, 0.2);
+    }
+
+    .interest-info {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-align: center;
+      margin-top: 8px;
+      opacity: 0.8;
+      padding: 0 5px;
+    }
+
+    /* Features Section */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      animation: slideIn 0.5s ease-out;
+      animation-fill-mode: backwards;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .feature-card:nth-child(1) { animation-delay: 0.1s; }
+    .feature-card:nth-child(2) { animation-delay: 0.2s; }
+    .feature-card:nth-child(3) { animation-delay: 0.3s; }
+    .feature-card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(0,198,255,0.3);
+      background: rgba(0,198,255,0.08);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      display: block;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .feature-card h3 {
+      color: #fff;
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    /* Steps Section */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      animation: slideInRight 0.5s ease-out;
+      animation-fill-mode: backwards;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .step-item:nth-child(1) { animation-delay: 0.1s; }
+    .step-item:nth-child(2) { animation-delay: 0.2s; }
+    .step-item:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+      animation: bounceIn 0.5s ease-out;
+      font-size: 0.9rem;
+    }
+
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      70% {
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .step-content h3 {
+      color: #fff;
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+
+    .step-content p {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    /* Safety Notice */
+    .safety-notice {
+      background: rgba(255, 165, 0, 0.12);
+      border: 1px solid rgba(255, 165, 0, 0.3);
+      border-radius: 12px;
+      padding: 15px;
+      margin: 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      animation: slideInUp 0.5s ease-out;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .safety-icon {
+      font-size: 1.5rem;
+      color: #ffcc00;
+      flex-shrink: 0;
+      animation: shake 2s infinite;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg); }
+      10%, 30%, 50%, 70%, 90% { transform: rotate(-5deg); }
+      20%, 40%, 60%, 80% { transform: rotate(5deg); }
+    }
+
+    .safety-content h3 {
+      color: #ffcc00;
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+
+    .safety-content p {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 20px 15px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 30px;
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .footer-links a {
+      color: var(--blue);
+      text-decoration: none;
+      transition: color 0.2s ease;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .footer-links a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    .coin-animation {
+      position: fixed;
+      font-size: 1.2rem;
+      pointer-events: none;
+      z-index: 9999;
+      animation: coinFly 1s cubic-bezier(.22, 1, .36, 1) forwards;
+      filter: drop-shadow(0 4px 8px rgba(255, 200, 0, .6));
+    }
+
+    @keyframes coinFly {
+      0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(.5) rotate(0deg);
+      }
+      10% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform:
+          translate(var(--dx), var(--dy))
+          scale(1.1)
+          rotate(720deg);
+      }
+    }
+
+    /* Gift Animation */
+    .gift-animation {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      font-size: 4rem;
+      z-index: 9999;
+      pointer-events: none;
+      animation: giftPop 0.8s ease-out forwards;
+    }
+
+    @keyframes giftPop {
+      0% {
+        transform: translate(-50%, -50%) scale(0) rotate(0deg);
+        opacity: 0;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.2) rotate(180deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* Connection Animation */
+    .connection-animation {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      z-index: 9999;
+      pointer-events: none;
+      animation: connectPulse 1s ease-out forwards;
+    }
+
+    @keyframes connectPulse {
+      0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+      }
+      30% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+      }
+    }
+
+    /* Gift Pulse Animation */
+    @keyframes giftPulse {
+      0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); 
+      }
+      50% { 
+        box-shadow: 0 0 0 15px rgba(168, 85, 247, 0); 
+      }
+    }
+
+    .nav-pill.gift.available {
+      animation: giftPulse 2s infinite;
+    }
+
+    /* Notification Badge */
+    .notif-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--red);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 999px;
+      min-width: 16px;
+      text-align: center;
+      animation: badgePulse 1.5s infinite;
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* MODALS */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 1001;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: #111;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 100%;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 2px solid var(--orange);
+      position: relative;
+      animation: modalAppear 0.3s ease-out;
+      box-sizing: border-box;
+    }
+
+    @keyframes modalAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      font-size: 1.3rem;
+      color: var(--red);
+      background: none;
+      border: none;
+      padding: 5px;
+      line-height: 1;
+    }
+
+    /* Age verification modal */
+    .age-modal {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+
+    .age-modal-content {
+      background: #111;
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 100%;
+      width: 100%;
+      border: 2px solid var(--orange);
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .age-checkbox {
+      display: flex;
+      align-items: center;
+      margin: 12px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .age-checkbox input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.2);
+      cursor: pointer;
+      accent-color: var(--green);
+      flex-shrink: 0;
+    }
+
+    .age-checkbox label {
+      flex: 1;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .age-checkbox a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    .age-checkbox a:hover {
+      text-decoration: underline;
+    }
+
+    .age-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 8px;
+      min-width: 140px;
+      font-family: 'Baloo Tamma 2', cursive;
+      box-sizing: border-box;
+    }
+
+    .age-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .age-confirm {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      color: white;
+    }
+
+    .age-confirm:hover:enabled {
+      transform: translateY(-2px);
+    }
+
+    .age-exit {
+      background: rgba(255, 71, 87, 0.2);
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
+
+    .age-exit:hover {
+      background: rgba(255, 71, 87, 0.3);
+    }
+
+    /* NOTIFICATION PANEL */
+    .notification {
+      position: fixed;
+      top: 70px; /* Positioned below navbar */
+      right: 15px;
+      padding: 12px 15px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      border: 1px solid var(--border);
+      z-index: 999;
+      max-width: 90%;
+      width: 300px;
+      animation: slideInRight 0.3s ease;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* NOTIFICATION PANEL */
+    .notif-panel {
+      position: fixed;
+      top: 70px;
+      right: 16px;
+      width: 320px;
+      max-height: 420px;
+      background: #0b0d14;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 25px 50px rgba(0,0,0,.6);
+      display: none;
+      flex-direction: column;
+      z-index: 9999;
+    }
+
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      font-weight: bold;
+    }
+
+    .notif-header button {
+      background: none;
+      border: none;
+      color: var(--orange);
+      cursor: pointer;
+      font-size: .85rem;
+    }
+
+    .notif-list {
+      overflow-y: auto;
+      max-height: 360px;
+    }
+
+    .notif-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: .85rem;
+      cursor: pointer;
+      animation: notifIn .25s ease;
+    }
+
+    .notif-item:hover {
+      background: rgba(255,255,255,.05);
+    }
+
+    .notif-item.success { color: var(--green); }
+    .notif-item.warning { color: var(--orange); }
+    .notif-item.error { color: var(--red); }
+    .notif-item.info { color: var(--blue); }
+
+    .notif-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    @keyframes notifIn {
+      from { opacity: 0; transform: translateY(6px) }
+      to { opacity: 1; transform: none }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .floating-icons .floating-icon {
+        font-size: 2rem;
+      }
+      
+      .bg-blob {
+        width: 300px;
+        height: 300px;
+        filter: blur(50px);
+      }
+      
+      main {
+        padding: 15px 12px;
+      }
+      
+      .nav-container {
+        padding: 0 12px;
+        min-height: 56px;
+      }
+      
+      h1 {
+        font-size: 1.6rem;
+      }
+      
+      .chat-buttons {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .chat-btn {
+        max-width: 100%;
+        width: 100%;
+        min-width: unset;
+      }
+      
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .step-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+      }
+      
+      .step-number {
+        align-self: center;
+      }
+      
+      .nav-pill {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
+      
+      .interest-section {
+        padding: 12px;
+      }
+      
+      .interest-suggestions {
+        gap: 5px;
+      }
+      
+      .interest-suggestion {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+      }
+      
+      .eyebrow {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+      }
+      
+      .subtext {
+        font-size: 0.95rem;
+      }
+      
+      .hero-logo {
+        width: 110px;
+        height: 110px;
+      }
+      
+      .footer-links {
+        gap: 12px;
+      }
+      
+      .footer-links a {
+        font-size: 0.85rem;
+      }
+      
+      .notif-panel {
+        width: 90%;
+        right: 5%;
+        left: 5%;
+      }
+      
+      .notification {
+        top: 65px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .floating-icons .floating-icon {
+        font-size: 1.5rem;
+        opacity: 0.06;
+      }
+      
+      .bg-blob {
+        width: 250px;
+        height: 250px;
+        filter: blur(40px);
+      }
+      
+      .nav-pill {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+      }
+      
+      .brand {
+        font-size: 1rem;
+      }
+      
+      .brand-logo {
+        width: 28px;
+        height: 28px;
+      }
+      
+      .hero-logo {
+        width: 90px;
+        height: 90px;
+      }
+      
+      h1 {
+        font-size: 1.4rem;
+      }
+      
+      .chat-btn {
+        padding: 14px;
+        font-size: 0.95rem;
+        min-height: 50px;
+      }
+      
+      .interest-display {
+        min-height: 32px;
+      }
+      
+      .interest-tag {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+      }
+      
+      .footer-links {
+        gap: 10px;
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .footer-links a {
+        display: block;
+        margin: 2px 0;
+      }
+      
+      .features-grid {
+        gap: 12px;
+      }
+      
+      .feature-card {
+        padding: 15px;
+      }
+      
+      .step-item {
+        padding: 15px;
+      }
+      
+      .safety-notice {
+        padding: 12px;
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .safety-icon {
+        align-self: center;
+      }
+      
+      .modal-content {
+        padding: 15px;
+      }
+      
+      .age-modal-content {
+        padding: 15px;
+      }
+      
+      .age-btn {
+        min-width: 120px;
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        margin: 5px;
+      }
+      
+      .notification {
+        width: 90%;
+        max-width: none;
+        right: 5%;
+        left: 5%;
+        font-size: 0.85rem;
+      }
+    }
+    
+    @media (max-width: 360px) {
+      .nav-container {
+        padding: 0 8px;
+      }
+      
+      .brand {
+        font-size: 0.9rem;
+        gap: 6px;
+      }
+      
+      .nav-pill {
+        padding: 4px 6px;
+        font-size: 0.7rem;
+      }
+      
+      .nav-pill.gift, .nav-pill.bell {
+        min-width: 40px;
+        padding: 4px;
+      }
+      
+      h1 {
+        font-size: 1.3rem;
+      }
+      
+      .eyebrow {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+      }
+      
+      .hero-logo {
+        width: 80px;
+        height: 80px;
+      }
+      
+      .interest-suggestions {
+        justify-content: center;
+      }
+      
+      .interest-suggestion {
+        flex-grow: 1;
+        text-align: center;
+        min-width: calc(33.33% - 10px);
+        box-sizing: border-box;
+      }
+      
+      .footer {
+        padding: 15px 10px;
+      }
+    }
+    
+    @media (max-height: 700px) and (orientation: landscape) {
+      main {
+        padding: 15px 12px;
+      }
+      
+      .hero-section {
+        margin-bottom: 20px;
+      }
+      
+      .chat-buttons {
+        margin: 15px 0;
+      }
+      
+      .interest-section {
+        margin: 20px 0;
+      }
+      
+      .features-section, .steps-section {
+        margin: 25px 0;
+      }
+      
+      .safety-notice {
+        margin: 25px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background floating icons -->
+  <div class="floating-icons">
+    <div class="floating-icon icon-1">💬</div>
+    <div class="floating-icon icon-2">📱</div>
+    <div class="floating-icon icon-3">👥</div>
+    <div class="floating-icon icon-4">🎥</div>
+    <div class="floating-icon icon-5">📞</div>
+    <div class="floating-icon icon-6">🤝</div>
+  </div>
+
+  <!-- Background blobs -->
+  <div class="bg-blob one"></div>
+  <div class="bg-blob two"></div>
+  <div class="bg-blob three"></div>
+
+  <!-- Age Verification Modal (MOVED TO TOP) -->
+  <div class="age-modal" id="ageVerificationModal">
+    <div class="age-modal-content">
+      <h2 style="color: var(--orange); margin-bottom: 15px;">Age Verification Required</h2>
+      <p style="margin-bottom: 20px; color: var(--text);">
+        You must be at least 18 years old to use Mana Mingle. This is an anonymous chat platform for adults only.
+      </p>
+      
+      <div class="age-checkbox">
+        <input type="checkbox" id="agreeTos">
+        <label for="agreeTos">
+          I agree to the <a href="#" id="tosLink2">Terms of Service</a>
+        </label>
+      </div>
+      
+      <div class="age-checkbox">
+        <input type="checkbox" id="agreePrivacy">
+        <label for="agreePrivacy">
+          I have read and agree to the <a href="#" id="privacyLink4">Privacy Policy</a>
+        </label>
+      </div>
+      
+      <p style="margin: 20px 0; color: var(--muted); font-size: 0.9rem;">
+        By clicking "I am 18+" you confirm you are at least 18 years old.
+      </p>
+      
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+        <button class="age-btn age-confirm" id="confirmBtn" disabled>
+          I am 18+ ✅
+        </button>
+        <button class="age-btn age-exit" id="exitBtn">
+          I'm under 18 ❌
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Policy Modal -->
+  <div class="modal" id="privacyModal">
+    <div class="modal-content">
+      <button class="close-modal" id="closePrivacyModal">&times;</button>
+      <h2>Privacy Policy</h2>
+      <p>Last Updated: October 26, 2024</p>
+      <h3>1. Information We Collect</h3>
+      <ul style="margin-left: 20px; margin-bottom: 15px;">
+        <li>Chat content (monitored for safety)</li>
+        <li>Connection metadata (IP, device info)</li>
+        <li>Optional interests you provide</li>
+      </ul>
+      <h3>2. How We Use Your Information</h3>
+      <ul style="margin-left: 20px; margin-bottom: 15px;">
+        <li>Facilitate anonymous connections</li>
+        <li>Monitor for inappropriate content</li>
+        <li>Improve our service</li>
+      </ul>
+      <button id="understandPrivacyBtn" class="chat-btn" style="background: var(--green); margin-top: 20px; width: 100%;">
+        I Understand
+      </button>
+    </div>
+  </div>
+
+  <!-- Terms of Service Modal -->
+  <div class="modal" id="termsModal">
+    <div class="modal-content">
+      <button class="close-modal" id="closeTermsModal">&times;</button>
+      <h2>Terms of Service</h2>
+      <p>Last Updated: October 26, 2024</p>
+      <h3>1. Acceptance of Terms</h3>
+      <p>By accessing and using Mana Mingle, you accept and agree to be bound by these Terms of Service.</p>
+      <h3>2. User Conduct</h3>
+      <p>You agree not to engage in any activity that is harmful, abusive, harassing, or illegal.</p>
+      <h3>3. Age Requirement</h3>
+      <p>You must be 18 years or older to use this service.</p>
+      <button id="understandTermsBtn" class="chat-btn" style="background: var(--green); margin-top: 20px; width: 100%;">
+        I Understand
+      </button>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <header>
+    <div class="nav-container">
+      <a class="brand" href="index.html" id="homeLink">
+        <img src="logo.jpeg" alt="Mana Mingle" class="brand-logo">
+        <span>Mana Mingle</span>
+      </a>
+      
+      <div class="nav-right">
+        <div class="nav-stats">
+          <div class="nav-pill online">
+            <span class="status-dot"></span>
+            <span id="onlineCount">0</span>
+          </div>
+          
+          <div class="nav-pill coins" id="manaPill">
+            <span>₹</span>
+            <span id="manaCoins">0</span>
+          </div>
+        </div>
+        
+        <button class="nav-pill gift" id="giftBtn" title="Claim Daily Gift">
+          <span>🎁</span>
+        </button>
+        <button class="nav-pill bell" id="bellBtn" title="Notifications">
+          🔔
+          <span class="notif-badge" id="notifCount" style="display:none;">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-logo">
+        <img src="logo.jpeg" alt="Mana Mingle">
+      </div>
+      
+      <div class="eyebrow">• Anonymous • Monitored</div>
+      <h1>Meet strangers in seconds</h1>
+      <p class="subtext">
+        Safe text & video chat without signup.
+      </p>
+    </section>
+
+    <!-- Start Chat Card -->
+    <div class="card">
+      <div class="card-title">Start Chat</div>
+      <div class="chat-buttons">
+        <button class="chat-btn primary" id="textBtn">
+          ✉️ Text Chat
+        </button>
+        <button class="chat-btn secondary" id="videoBtn">
+          🎥 Video Chat
+        </button>
+        <button class="chat-btn group" id="groupBtn">
+          👥 Group Chat
+        </button>
+      </div>
+    </div>
+
+    <!-- Interests Card -->
+    <div class="card">
+      <div class="card-title">
+        Your Interests
+        <span class="tag-count" id="interestCount">0/5</span>
+      </div>
+      <section class="interest-section" style="margin:0;padding:0;border:none;background:none;">
+        <div class="interest-input-container">
+          <div class="interest-display" id="interestsDisplay"></div>
+          <input type="text" 
+                 class="interest-input" 
+                 id="interestInput" 
+                 placeholder="e.g.,, vizag, hyderabad"
+                 maxlength="20"
+                 autocomplete="off">
+        </div>
+        <div class="interest-suggestions">
+          <button class="interest-suggestion" data-interest=">తెలుగు</button>
+          <button class="interest-suggestion" data-interest="Movies">🎬 Movies</button>
+          <button class="interest-suggestion" data-interest="Music">🎵 Music</button>
+          <button class="interest-suggestion" data-interest="Gaming">🎮 Gaming</button>
+          <button class="interest-suggestion" data-interest="Food">🍕 Food</button>
+          <button class="interest-suggestion" data-interest="Sports">⚽ Sports</button>
+        </div>
+        <p class="interest-info">
+          Add interests to find better matches. Maximum 5 interests.
+        </p>
+      </section>
+    </div>
+
+    <!-- Features Card - Updated with 6 features -->
+    <div class="card">
+      <div class="card-title">Why Choose Mana Mingle?</div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">🧠</span>
+          <h3>Smart Matching</h3>
+          <p>Connect with people who share your interests using our intelligent matching system.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🛡️</span>
+          <h3>Safe & Monitored</h3>
+          <p>All chats are monitored by AI to ensure a safe and respectful environment.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3>Fast Connections</h3>
+          <p>Connect with strangers in seconds with no sign-up required.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">👥</span>
+          <h3>Multiple Modes</h3>
+          <p>Text, video, or group chat — choose what suits you best.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">💰</span>
+          <h3>Earn Mana Coins</h3>
+          <p>Earn coins by claiming daily gifts. Use them for special features!</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🌍</span>
+          <h3> Connections</h3>
+          <p>Connect with people from your region who understand your culture and language.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- How It Works Card -->
+    <div class="card">
+      <div class="card-title">How It Works</div>
+      <div class="steps-container">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Add Interests</h3>
+            <p>Add optional interests to help match with similar people.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Choose Chat Mode</h3>
+            <p>Select text, video, or group chat based on your preference.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Chat Safely</h3>
+            <p>Skip, report, or continue chatting anytime.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Safety Rules Card -->
+    <div class="card">
+      <div class="card-title">Safety Rules</div>
+      <div class="safety-notice" style="margin:0;">
+        <div class="safety-icon">⚠️</div>
+        <div class="safety-content">
+          <h3>Safety First</h3>
+          <p>
+            No nudity, harassment, hate speech, or personal info sharing.
+            Violations result in permanent bans. Always report misuse.
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="#" id="privacyLink3">Privacy Policy</a>
+      <a href="#" id="termsLink">Terms of Service</a>
+      <a href="contact.html">Contact</a>
+      <a href="report.html">Report Abuse</a>
+    </div>
+    <p>© 2026 Mana Mingle. For users 18+ only.</p>
+    <p style="margin-top: 10px; font-size: 0.85rem; color: var(--muted);">
+      Anonymous, simple & safe. Built proudly for people 💛
+    </p>
+  </footer>
+
+  <!-- Notification Panel -->
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-header">
+      <span>Notifications</span>
+      <button id="clearNotifs">Clear</button>
+    </div>
+    <div class="notif-list" id="notifList">
+      <p class="notif-empty">No notifications yet</p>
+    </div>
+  </div>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <script>
+    // ============================
+    // GLOBAL STATE
+    // ============================
+    const appState = {
+      interests: [],
+      ageVerified: false,
+      manaCoins: 0,
+      lastGiftClaim: 0,
+      
+    };
+
+    const notifState = {
+      items: [],
+      unread: 0
+    };
+    const socket = io("https://manamingle.site", {
+  transports: ["websocket"]
+});
+
+socket.on("online_count", ({ count }) => {
+  const display = document.getElementById("onlineCount");
+  if (!display) return;
+  display.textContent = count; // REAL COUNT
+});
+
+
+    // ============================
+    // INITIALIZATION
+    // ============================
+    document.addEventListener('DOMContentLoaded', () => {
+  loadFromStorage();
+  checkAgeVerification();
+  setupEventListeners();
+  updateUI();
+
+  initNotificationPanel(); // ✅ REQUIRED FOR 🔔 BELL
+
+  console.log('✅ Mana Mingle ready');
+});
+
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+    // ============================
+    // AGE VERIFICATION SYSTEM - FIXED
+    // ============================
+    function checkAgeVerification() {
+  const today = getTodayKey();
+
+  // Read from both storages (Safari private fix)
+  const verifiedDate =
+    localStorage.getItem('age_verified_date') ||
+    sessionStorage.getItem('age_verified_date');
+
+  // ✅ Already verified today
+  if (verifiedDate === today) {
+    appState.ageVerified = true;
+    enableChatButtons();
+
+    const modal = document.getElementById('ageVerificationModal');
+    if (modal) modal.style.display = 'none';
+
+    return;
+  }
+
+  // ❌ Not verified today → force popup
+  appState.ageVerified = false;
+  disableChatButtons();
+
+  const modal = document.getElementById('ageVerificationModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+
+function updateConfirmButton() {
+  const tos = document.getElementById('agreeTos');
+  const privacy = document.getElementById('agreePrivacy');
+  const confirmBtn = document.getElementById('confirmBtn');
+
+  if (!tos || !privacy || !confirmBtn) return;
+  confirmBtn.disabled = !(tos.checked && privacy.checked);
+}
+
+    
+
+function verifyAge(isAdult) {
+  if (!isAdult) {
+    addNotification('You must be 18+ to use this service', 'warning');
+    showPopupNotification('You must be 18+ to use this service', 'warning');
+
+    setTimeout(() => {
+      window.location.href = 'https://www.google.com';
+    }, 2000);
+    return;
+  }
+
+  const tos = document.getElementById('agreeTos');
+  const privacy = document.getElementById('agreePrivacy');
+
+  if (!tos.checked || !privacy.checked) {
+    addNotification('Please agree to Terms & Privacy Policy', 'warning');
+    showPopupNotification('Please agree to Terms & Privacy Policy', 'warning');
+    return;
+  }
+
+  const today = getTodayKey();
+
+  // ✅ Store verification for TODAY only
+  localStorage.setItem('age_verified_date', today);
+  sessionStorage.setItem('age_verified_date', today);
+
+  appState.ageVerified = true;
+
+  const modal = document.getElementById('ageVerificationModal');
+  if (modal) modal.style.display = 'none';
+
+  enableChatButtons();
+
+  addNotification('✅ Age verified for today!', 'success');
+  showPopupNotification('✅ Age verified for today!', 'success');
+
+  setTimeout(() => {
+    addNotification('🎁 Claim your daily gift!', 'info');
+  }, 1200);
+}
+
+
+function enableChatButtons() {
+  ['textBtn', 'videoBtn', 'groupBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  });
+}
+
+function disableChatButtons() {
+  ['textBtn', 'videoBtn', 'groupBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+  });
+}
+
+
+    // ============================
+    // STORAGE FUNCTIONS
+    // ============================
+    function loadFromStorage() {
+      try {
+        // Load interests
+        const savedInterests = localStorage.getItem('manaInterests');
+        if (savedInterests) {
+          appState.interests = JSON.parse(savedInterests);
+        }
+        
+        // Load mana coins
+        const savedCoins = localStorage.getItem('manaCoins');
+        if (savedCoins) {
+          appState.manaCoins = parseInt(savedCoins) || 0;
+        }
+        
+        // Load last gift claim
+        const lastClaim = localStorage.getItem('lastGiftClaim');
+        if (lastClaim) {
+          appState.lastGiftClaim = parseInt(lastClaim) || 0;
+        }
+        
+        // Load notifications
+        const savedNotifs = localStorage.getItem('manaNotifications');
+        if (savedNotifs) {
+          notifState.items = JSON.parse(savedNotifs);
+          notifState.unread = notifState.items.filter(n => !n.read).length;
+        }
+        
+      } catch (e) {
+        console.error('Error loading from storage:', e);
+      }
+    }
+
+    function saveToStorage() {
+      try {
+        localStorage.setItem('manaInterests', JSON.stringify(appState.interests));
+        localStorage.setItem('manaCoins', appState.manaCoins.toString());
+        localStorage.setItem('lastGiftClaim', appState.lastGiftClaim.toString());
+        localStorage.setItem('manaNotifications', JSON.stringify(notifState.items));
+      } catch (e) {
+        console.error('Error saving to storage:', e);
+      }
+    }
+
+    // ============================
+    // MANA COINS SYSTEM - FIXED (Only gift, no auto coins)
+    // ============================
+    function updateManaDisplay() {
+      const display = document.getElementById('manaCoins');
+      if (display) {
+        display.textContent = appState.manaCoins;
+      }
+    }
+
+    function addManaCoins(amount, reason = '') {
+      const oldCoins = appState.manaCoins;
+      appState.manaCoins += amount;
+      saveToStorage();
+      updateManaDisplay();
+      
+      // Play coin sound
+      playCoinSound();
+      
+      // Show coin animation
+      spawnCoinAnimation(amount);
+      
+      // Add notification to bell
+      if (reason) {
+        addNotification(`+${amount} Mana coins! ${reason}`, 'success');
+      }
+    }
+
+    function playCoinSound() {
+      try {
+        // Create audio context for coin sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(987.77, audioContext.currentTime); // B5
+        oscillator.frequency.exponentialRampToValueAtTime(1318.51, audioContext.currentTime + 0.1); // E6
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (e) {
+        console.log('Audio not supported:', e);
+      }
+    }
+
+    // ============================
+// HOURLY GIFT SYSTEM (ONLY ON CLICK)
+// ============================
+
+const GIFT_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+function checkDailyGift() {
+  const now = Date.now();
+  const giftBtn = document.getElementById('giftBtn');
+  if (!giftBtn) return;
+
+  const timePassed = now - appState.lastGiftClaim;
+
+  if (timePassed >= GIFT_INTERVAL) {
+    giftBtn.classList.add('available');
+    giftBtn.title = '🎁 Claim your gift';
+  } else {
+    giftBtn.classList.remove('available');
+    const minutesLeft = Math.ceil((GIFT_INTERVAL - timePassed) / 60000);
+    giftBtn.title = `Come back in ${minutesLeft} minutes`;
+  }
+}
+
+function claimDailyGift() {
+  const now = Date.now();
+
+  if (now - appState.lastGiftClaim < GIFT_INTERVAL) {
+    const minutesLeft = Math.ceil((GIFT_INTERVAL - (now - appState.lastGiftClaim)) / 60000);
+    addNotification(`Come back in ${minutesLeft} minutes for your gift`, 'warning');
+    showPopupNotification(`⏳ ${minutesLeft} minutes left`, 'info');
+    return;
+  }
+
+  // ✅ ONLY PLACE WHERE COINS ARE ADDED
+  const reward = 30;
+
+  appState.lastGiftClaim = now;
+  saveToStorage();
+
+  showGiftAnimation();
+  addManaCoins(reward, '🎁 Hourly gift');
+
+  showPopupNotification(`🎁 Gift claimed! +${reward} coins`, 'gift');
+  checkDailyGift();
+}
+
+
+    function spawnCoinAnimation(amount = 30) {
+      const manaPill = document.querySelector('.nav-pill.coins');
+      if (!manaPill) return;
+      
+      const rect = manaPill.getBoundingClientRect();
+      const coinsToSpawn = Math.min(amount, 10);
+      
+      for (let i = 0; i < coinsToSpawn; i++) {
+        setTimeout(() => {
+          const coin = document.createElement("div");
+          coin.className = "coin-animation";
+          coin.textContent = "₹";
+          coin.style.color = '#ffcc00';
+          
+          const dx = (Math.random() - 0.5) * 240;
+          const dy = (Math.random() - 1) * 260;
+          
+          coin.style.left = rect.left + rect.width / 2 + "px";
+          coin.style.top = rect.top + rect.height / 2 + "px";
+          coin.style.setProperty("--dx", `${dx}px`);
+          coin.style.setProperty("--dy", `${dy}px`);
+          
+          document.body.appendChild(coin);
+          
+          setTimeout(() => coin.remove(), 1000);
+        }, i * 50);
+      }
+    }
+
+    // ============================
+    // NOTIFICATION SYSTEM (BELL)
+    // ============================
+    function initNotificationPanel() {
+      const bellBtn = document.getElementById('bellBtn');
+      const notifPanel = document.getElementById('notifPanel');
+      const clearBtn = document.getElementById('clearNotifs');
+      const notifList = document.getElementById('notifList');
+      const notifCount = document.getElementById('notifCount');
+
+      // Toggle panel
+      if (bellBtn) {
+        bellBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          notifPanel.style.display = notifPanel.style.display === 'flex' ? 'none' : 'flex';
+          if (notifPanel.style.display === 'flex') {
+            markAllAsRead();
+          }
+        });
+      }
+
+      // Clear notifications
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          notifState.items = [];
+          notifState.unread = 0;
+          renderNotifications();
+          updateNotifBadge();
+          saveToStorage();
+        });
+      }
+
+      // Close panel when clicking outside
+      document.addEventListener('click', (e) => {
+        if (notifPanel && bellBtn && !notifPanel.contains(e.target) && !bellBtn.contains(e.target)) {
+          notifPanel.style.display = 'none';
+        }
+      });
+
+      // Initial render
+      renderNotifications();
+      updateNotifBadge();
+    }
+
+    function addNotification(message, type = 'info') {
+      const newNotif = {
+        id: Date.now(),
+        message,
+        type,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        read: false,
+        date: new Date().toISOString()
+      };
+      
+      notifState.items.unshift(newNotif);
+      notifState.unread++;
+      
+      // Keep only last 50 notifications
+      if (notifState.items.length > 50) {
+        notifState.items = notifState.items.slice(0, 50);
+      }
+      
+      renderNotifications();
+      updateNotifBadge();
+      saveToStorage();
+    }
+
+    function renderNotifications() {
+      const notifList = document.getElementById('notifList');
+      if (!notifList) return;
+      
+      notifList.innerHTML = '';
+      
+      if (notifState.items.length === 0) {
+        notifList.innerHTML = '<p class="notif-empty">No notifications yet</p>';
+        return;
+      }
+      
+      notifState.items.forEach((notif, index) => {
+        const div = document.createElement('div');
+        div.className = `notif-item ${notif.type} ${notif.read ? 'read' : 'unread'}`;
+        div.style.animationDelay = `${index * 0.05}s`;
+        
+        let icon = '💡';
+        if (notif.type === 'error') icon = '❌';
+        if (notif.type === 'success') icon = '✅';
+        if (notif.type === 'warning') icon = '⚠️';
+        
+        div.innerHTML = `
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <div style="font-size: 1.2rem;">${icon}</div>
+            <div>
+              <div style="margin-bottom: 4px;">${notif.message}</div>
+              <small style="opacity: 0.6; font-size: 0.75rem;">${notif.time}</small>
+            </div>
+          </div>
+        `;
+        
+        div.addEventListener('click', () => {
+          if (!notif.read) {
+            notif.read = true;
+            notifState.unread = Math.max(0, notifState.unread - 1);
+            div.classList.remove('unread');
+            div.classList.add('read');
+            updateNotifBadge();
+            saveToStorage();
+          }
+        });
+        
+        notifList.appendChild(div);
+      });
+    }
+
+    function markAllAsRead() {
+      notifState.items.forEach(notif => notif.read = true);
+      notifState.unread = 0;
+      updateNotifBadge();
+      saveToStorage();
+    }
+
+    function updateNotifBadge() {
+      const notifCount = document.getElementById('notifCount');
+      if (!notifCount) return;
+      
+      if (notifState.unread > 0) {
+        notifCount.style.display = 'inline-block';
+        notifCount.textContent = notifState.unread > 99 ? '99+' : notifState.unread.toString();
+      } else {
+        notifCount.style.display = 'none';
+      }
+    }
+
+    // ============================
+    // POPUP NOTIFICATION SYSTEM - FIXED (no overlap with navbar)
+    // ============================
+    function showPopupNotification(message, type = 'info') {
+      // Remove any existing notifications first
+      const existingNotifications = document.querySelectorAll('.notification');
+      existingNotifications.forEach(notif => notif.remove());
+      
+      // Create notification element
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      
+      // Set icon based on type
+      let icon = '💡';
+      if (type === 'error' || type === 'warning') icon = '⚠️';
+      if (type === 'success') icon = '✅';
+      if (type === 'coins') icon = '💰';
+      if (type === 'gift') icon = '🎁';
+      
+      notification.innerHTML = `
+        <span style="font-size: 1.2rem;">${icon}</span>
+        <span>${message}</span>
+      `;
+      
+      // Style based on type
+      if (type === 'success' || type === 'coins' || type === 'gift') {
+        notification.style.background = 'rgba(0, 209, 154, 0.2)';
+        notification.style.borderColor = 'var(--green)';
+      } else if (type === 'warning') {
+        notification.style.background = 'rgba(255, 165, 0, 0.2)';
+        notification.style.borderColor = 'var(--orange)';
+      } else if (type === 'error') {
+        notification.style.background = 'rgba(255, 71, 87, 0.2)';
+        notification.style.borderColor = 'var(--red)';
+      }
+      
+      // Add to body
+      document.body.appendChild(notification);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        notification.style.animation = 'slideInRight 0.3s ease reverse';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }, 5000);
+      
+      // Click to dismiss
+      notification.addEventListener('click', () => {
+        notification.style.animation = 'slideInRight 0.3s ease reverse';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      });
+    }
+
+    // ============================
+    // INTERESTS SYSTEM
+    // ============================
+    function updateUI() {
+      renderInterests();
+      updateInterestCount();
+      updateManaDisplay();
+    }
+
+    function renderInterests() {
+      const display = document.getElementById('interestsDisplay');
+      
+      if (!display) return;
+      
+      display.innerHTML = '';
+      
+      if (appState.interests.length === 0) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'interest-tag';
+        placeholder.style.opacity = '0.7';
+        placeholder.style.fontStyle = 'italic';
+        placeholder.style.background = 'rgba(255,255,255,0.05)';
+        placeholder.style.border = '1px dashed var(--border)';
+        placeholder.style.color = 'var(--muted)';
+        placeholder.textContent = 'No interests added yet';
+        placeholder.style.padding = '8px 12px';
+        display.appendChild(placeholder);
+        return;
+      }
+      
+      appState.interests.forEach((interest, index) => {
+        const interestEl = document.createElement('div');
+        interestEl.className = 'interest-tag';
+        interestEl.innerHTML = `
+          <span>${interest}</span>
+          <button class="interest-tag-remove" data-index="${index}">×</button>
+        `;
+        display.appendChild(interestEl);
+      });
+      
+      // Add event listeners to remove buttons
+      document.querySelectorAll('.interest-tag-remove').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const index = parseInt(this.getAttribute('data-index'));
+          removeInterest(index);
+        });
+      });
+    }
+
+    function addInterest(interest) {
+      if (!interest || interest.trim() === '') return false;
+      
+      const cleanInterest = interest.trim().toLowerCase();
+      
+      if (appState.interests.length >= 5) {
+        addNotification('Maximum 5 interests allowed', 'warning');
+        showPopupNotification('Maximum 5 interests allowed', 'warning');
+        return false;
+      }
+      
+      if (appState.interests.includes(cleanInterest)) {
+        addNotification(`"${cleanInterest}" already added`, 'info');
+        showPopupNotification(`"${cleanInterest}" already added`, 'info');
+        return false;
+      }
+      
+      if (cleanInterest.length > 20) {
+        addNotification('Interest must be 20 characters or less', 'warning');
+        showPopupNotification('Interest must be 20 characters or less', 'warning');
+        return false;
+      }
+      
+      appState.interests.push(cleanInterest);
+      saveToStorage();
+      updateUI();
+      addNotification(`Added interest: ${cleanInterest}`, 'success');
+      showPopupNotification(`Added interest: ${cleanInterest}`, 'success');
+      return true;
+    }
+
+    function removeInterest(index) {
+      if (index >= 0 && index < appState.interests.length) {
+        const removedInterest = appState.interests[index];
+        appState.interests.splice(index, 1);
+        saveToStorage();
+        updateUI();
+        addNotification(`Removed interest: ${removedInterest}`, 'info');
+        showPopupNotification(`Removed interest: ${removedInterest}`, 'info');
+      }
+    }
+
+    function updateInterestCount() {
+      const countElement = document.getElementById('interestCount');
+      if (countElement) {
+        countElement.textContent = `${appState.interests.length}/5`;
+      }
+    }
+
+    // ============================
+    // ONLINE COUNT SYSTEM
+    // ============================
+    
+
+    
+    // ============================
+    // CHAT FUNCTIONS - FIXED
+    // ============================
+    function startChat(mode) {
+      // Check if age verified
+      if (!appState.ageVerified) {
+        const ageModal = document.getElementById('ageVerificationModal');
+        if (ageModal) {
+          ageModal.style.display = 'flex';
+        }
+        addNotification('Please verify your age first', 'warning');
+        showPopupNotification('Please verify your age first', 'warning');
+        return;
+      }
+      
+      const button = document.getElementById(`${mode}Btn`);
+      const originalHTML = button?.innerHTML;
+      
+      if (button) {
+        button.innerHTML = '<span class="loading"></span> Connecting...';
+        button.disabled = true;
+      }
+      
+      // Show connection animation
+      showConnectionAnimation(mode);
+      
+      // Show popup notification
+      showPopupNotification(`Starting ${mode} chat...`, 'info');
+      
+      // Add interests to URL if any
+      let url = '';
+      if (mode === 'text') {
+  url = 'chat.html?mode=text';
+} else if (mode === 'video') {
+  url = 'chat.html?mode=video';
+} else if (mode === 'group') {
+  url = 'groupchat.html';
+
+  // OPTIONAL: pass interests to group chat
+  if (appState.interests.length > 0) {
+    const interestsParam = encodeURIComponent(JSON.stringify(appState.interests));
+    url += `?tags=${interestsParam}`;
+  }
+}
+
+
+      
+      // Add interests as URL parameters
+      if (appState.interests.length > 0) {
+        const interestsParam = encodeURIComponent(JSON.stringify(appState.interests));
+        url += `&tags=${interestsParam}`;
+      }
+      
+      // Add notification to bell
+      addNotification(`Starting ${mode} chat with ${appState.interests.length || 'no'} interests`, 'info');
+      
+      // Simulate finding match
+      setTimeout(() => {
+        // Redirect to chat page after short delay
+        setTimeout(() => {
+          window.location.href = url;
+        }, 1500);
+        
+      }, 1000);
+      
+      // Reset button after 3 seconds if redirect fails
+      setTimeout(() => {
+        if (button) {
+          button.innerHTML = originalHTML;
+          button.disabled = false;
+        }
+      }, 3000);
+    }
+
+    // ============================
+    // ANIMATIONS
+    // ============================
+    function showGiftAnimation() {
+      const gift = document.createElement('div');
+      gift.className = 'gift-animation';
+      gift.textContent = '🎁';
+      gift.style.zIndex = '9999';
+      document.body.appendChild(gift);
+      
+      setTimeout(() => gift.remove(), 800);
+    }
+
+    function showConnectionAnimation(mode) {
+      const connection = document.createElement('div');
+      connection.className = 'connection-animation';
+      
+      let icon = '💬';
+      if (mode === 'video') icon = '🎥';
+      if (mode === 'group') icon = '👥';
+      
+      connection.textContent = icon;
+      document.body.appendChild(connection);
+      
+      setTimeout(() => connection.remove(), 1000);
+    }
+
+    // ============================
+    // EVENT LISTENERS - FIXED
+    // ============================
+    function setupEventListeners() {
+      // Age verification checkboxes
+      const agreeTos = document.getElementById('agreeTos');
+      const agreePrivacy = document.getElementById('agreePrivacy');
+      const confirmBtn = document.getElementById('confirmBtn');
+      const exitBtn = document.getElementById('exitBtn');
+      
+      if (agreeTos) {
+        agreeTos.addEventListener('change', updateConfirmButton);
+      }
+      
+      if (agreePrivacy) {
+        agreePrivacy.addEventListener('change', updateConfirmButton);
+      }
+      
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => verifyAge(true));
+      }
+      
+      if (exitBtn) {
+        exitBtn.addEventListener('click', () => verifyAge(false));
+      }
+      const ageModalContent = document.querySelector('.age-modal-content');
+if (ageModalContent) {
+  ageModalContent.addEventListener('click', e => e.stopPropagation());
+}
+
+      // Chat buttons - ADDED null checks
+      const textBtn = document.getElementById('textBtn');
+      const videoBtn = document.getElementById('videoBtn');
+      const groupBtn = document.getElementById('groupBtn');
+      
+      if (textBtn) {
+        textBtn.addEventListener('click', () => startChat('text'));
+      }
+      
+      if (videoBtn) {
+        videoBtn.addEventListener('click', () => startChat('video'));
+      }
+      
+      if (groupBtn) {
+        groupBtn.addEventListener('click', () => startChat('group'));
+      }
+      
+      // Gift button
+      const giftBtn = document.getElementById('giftBtn');
+      if (giftBtn) {
+        giftBtn.addEventListener('click', claimDailyGift);
+      }
+      
+      // Interest input
+      const interestInput = document.getElementById('interestInput');
+      if (interestInput) {
+        interestInput.addEventListener('keydown', function(event) {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            if (addInterest(this.value)) {
+              this.value = '';
+              this.focus();
+            }
+          }
+        });
+      }
+      
+      // Interest suggestions
+      document.querySelectorAll('.interest-suggestion').forEach(button => {
+        button.addEventListener('click', function() {
+          const interest = this.getAttribute('data-interest');
+          if (interest) {
+            const cleanInterest = interest.replace(/[^\w\s]/gi, '').trim().toLowerCase() || interest.toLowerCase();
+            if (addInterest(cleanInterest)) {
+              this.style.transform = 'scale(0.95)';
+              setTimeout(() => {
+                this.style.transform = '';
+              }, 200);
+            }
+          }
+        });
+      });
+      
+      // Modal links
+      document.querySelectorAll('#tosLink, #termsLink, #tosLink2').forEach(link => {
+        if (link) {
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const termsModal = document.getElementById('termsModal');
+            if (termsModal) {
+              termsModal.style.display = 'flex';
+            }
+          });
+        }
+      });
+      
+      document.querySelectorAll('#privacyLink, #privacyLink2, #privacyLink3, #privacyLink4').forEach(link => {
+        if (link) {
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const privacyModal = document.getElementById('privacyModal');
+            if (privacyModal) {
+              privacyModal.style.display = 'flex';
+            }
+          });
+        }
+      });
+      
+      // Modal close buttons
+      const closePrivacyModal = document.getElementById('closePrivacyModal');
+      if (closePrivacyModal) {
+        closePrivacyModal.addEventListener('click', function() {
+          document.getElementById('privacyModal').style.display = 'none';
+        });
+      }
+      
+      const closeTermsModal = document.getElementById('closeTermsModal');
+      if (closeTermsModal) {
+        closeTermsModal.addEventListener('click', function() {
+          document.getElementById('termsModal').style.display = 'none';
+        });
+      }
+      
+      const understandPrivacyBtn = document.getElementById('understandPrivacyBtn');
+      if (understandPrivacyBtn) {
+        understandPrivacyBtn.addEventListener('click', function() {
+          document.getElementById('privacyModal').style.display = 'none';
+          addNotification('Privacy policy acknowledged', 'success');
+          showPopupNotification('Privacy policy acknowledged', 'success');
+        });
+      }
+      
+      const understandTermsBtn = document.getElementById('understandTermsBtn');
+      if (understandTermsBtn) {
+        understandTermsBtn.addEventListener('click', function() {
+          document.getElementById('termsModal').style.display = 'none';
+          addNotification('Terms of service acknowledged', 'success');
+          showPopupNotification('Terms of service acknowledged', 'success');
+        });
+      }
+      
+      // Close modals on outside click
+      document.addEventListener('click', function (event) {
+  // Close ONLY normal modals, NOT age modal
+  if (event.target.classList.contains('modal')) {
+    event.target.style.display = 'none';
+  }
+});
+
+      
+      // Home link
+      const homeLink = document.getElementById('homeLink');
+      if (homeLink) {
+        homeLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+    }
+  </script>
+  
+    
+</body>
+</html>
