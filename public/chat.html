@@ -1101,17 +1101,40 @@
 
     partnerCountry: null,
     iceServers: {
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:stun2.l.google.com:19302" }
-      ]
-    },
-    captionTimeouts: {
-      local: null,
-      remote: null
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject"
     }
+  ]
+}
+
   };
+  function recoverRemoteVideo() {
+  console.warn("🔄 Recovering remote video");
+
+  if (!state.peerConnection) return;
+
+  try {
+    state.peerConnection.restartIce();
+
+    state.peerConnection.getReceivers().forEach(r => {
+      if (r.track?.kind === "video") {
+        r.track.enabled = false;
+        r.track.enabled = true;
+      }
+    });
+
+    if (elements.remoteVideo.srcObject) {
+      elements.remoteVideo.srcObject = elements.remoteVideo.srcObject;
+      elements.remoteVideo.play().catch(() => {});
+    }
+  } catch (e) {
+    console.error("Recovery failed", e);
+  }
+}
 
   // =========== DOM ELEMENTS ===========
   const elements = {
@@ -1437,31 +1460,39 @@ elements.toggleVideoChat?.addEventListener("click", () => {
   try {
     state.peerConnection = new RTCPeerConnection(state.iceServers);
 
-    // 🔹 ICE / connection debug
+    // 🔁 ICE recovery
     state.peerConnection.oniceconnectionstatechange = () => {
-      console.log(
-        "ICE:",
-        state.peerConnection.iceConnectionState,
-        "CONN:",
-        state.peerConnection.connectionState
-      );
+      const ice = state.peerConnection.iceConnectionState;
+      console.log("ICE:", ice);
+
+      if (ice === "disconnected" || ice === "failed") {
+        recoverRemoteVideo();
+      }
     };
 
-    // 🔹 Add local tracks
+    // 🔁 Connection recovery (KEYFRAME FORCE)
+    state.peerConnection.onconnectionstatechange = () => {
+      const conn = state.peerConnection.connectionState;
+      console.log("CONN:", conn);
+
+      if (conn === "connected") {
+        setTimeout(recoverRemoteVideo, 500);
+      }
+    };
+
+    // ➕ Local tracks
     if (state.localStream) {
       state.localStream.getTracks().forEach(track => {
         state.peerConnection.addTrack(track, state.localStream);
       });
     }
 
-    // 🔹 Remote stream
+    // 🎥 Remote stream
     state.peerConnection.ontrack = (event) => {
-      if (!event.streams || !event.streams[0]) return;
+      if (!event.streams?.[0]) return;
 
       elements.remoteVideo.srcObject = event.streams[0];
-
-      // IMPORTANT for autoplay
-      elements.remoteVideo.muted = true; // 👈 REQUIRED
+      elements.remoteVideo.muted = true;
       elements.remoteVideo.playsInline = true;
       elements.remoteVideo.autoplay = true;
 
@@ -1473,7 +1504,7 @@ elements.toggleVideoChat?.addEventListener("click", () => {
       }, 300);
     };
 
-    // 🔹 ICE candidates
+    // ❄ ICE candidates
     state.peerConnection.onicecandidate = (event) => {
       if (event.candidate && state.roomId) {
         socket.emit("signal", {
@@ -1487,6 +1518,8 @@ elements.toggleVideoChat?.addEventListener("click", () => {
     console.error("PeerConnection error:", err);
   }
 }
+
+
 
 
   async function handleRemoteSDP(sdp) {
@@ -2023,15 +2056,17 @@ clearTypingIndicator();
 
 
   // Handle visibility change
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && state.isVideoMode) {
-      if (elements.localVideo.srcObject) elements.localVideo.pause();
-      if (elements.remoteVideo.srcObject) elements.remoteVideo.pause();
-    } else if (state.isVideoMode) {
-      if (elements.localVideo.srcObject) elements.localVideo.play().catch(() => {});
-      if (elements.remoteVideo.srcObject) elements.remoteVideo.play().catch(() => {});
+  document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.isVideoMode) {
+    if (elements.remoteVideo.srcObject) {
+      elements.remoteVideo.srcObject = elements.remoteVideo.srcObject;
+      elements.remoteVideo.play().catch(() => {});
+      recoverRemoteVideo(); // 🔥 THIS LINE
     }
-  });
+  }
+});
+
+
 </script>
 </body>
 </html>
