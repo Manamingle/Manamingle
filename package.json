@@ -20,6 +20,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.0.0",
     "express-session": "^1.18.2",
+    "geoip-lite": "^1.4.10",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "redis": "^5.10.0",
