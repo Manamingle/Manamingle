@@ -110,22 +110,66 @@ async function backupState() {
 
 /* ================= MIDDLEWARE ================= */
 // Security headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.socket.io"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "wss:", "ws:", "https:"],
-      imgSrc: ["'self'", "data:", "https:"],
-      mediaSrc: ["'self'", "blob:", "mediastream:"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
 
-    }
-  },
-  crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdn.socket.io"
+        ],
+
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://cdnjs.cloudflare.com"
+        ],
+
+        styleSrcElem: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://cdnjs.cloudflare.com"
+        ],
+
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com",
+          "https://cdnjs.cloudflare.com"
+        ],
+
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          "https:"
+        ],
+
+        mediaSrc: [
+          "'self'",
+          "blob:",
+          "mediastream:"
+        ],
+
+        connectSrc: [
+          "'self'",
+          "wss:",
+          "ws:",
+          "https:"
+        ]
+      }
+    },
+
+    // Required for WebRTC + media
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  })
+);
+
 
 // Rate limiting for API endpoints
 const apiLimiter = rateLimit({
@@ -2597,7 +2641,8 @@ async function startServer() {
     👉 Admin Panel: http://${HOST}:${PORT}/admin
     👉 Health Check: http://${HOST}:${PORT}/health
     👉 👉 TURN Endpoint: http://${HOST}:${PORT}/api/turn
- Servers: http://${HOST}:${PORT}/ice-servers
+ TURN Endpoint: http://${HOST}:${PORT}/api/turn
+
     
     📊 Room Limits:
     • 1-on-1 Text/Video/Audio: 2 users
