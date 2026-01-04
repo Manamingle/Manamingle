@@ -40,13 +40,18 @@
     }
 
     html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      font-family: 'Baloo Tamma 2', cursive, -apple-system, BlinkMacSystemFont, sans-serif;
-      position: fixed;
-      touch-action: manipulation;
-    }
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    position: relative;   /* iOS FIX */
+    overflow: auto;
+  }
+}
+
 
     body {
       color: var(--text);
@@ -639,10 +644,16 @@
       border-top: 1px solid var(--border);
       flex-shrink: 0;
       min-height: 70px;
-      z-index: 100;
-      position: relative;
+      
+      
       contain: layout;
     }
+    .chat-input-area {
+  position: sticky;
+  bottom: 0;
+  z-index: 999;
+  padding-bottom: env(safe-area-inset-bottom);
+}
 
     .skip-btn {
       display: flex;
@@ -711,6 +722,11 @@
       user-select: text;
       caret-color: var(--blue);
     }
+    .chat-input {
+  min-height: 44px;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
 
     .chat-input::placeholder {
       color: var(--muted);
@@ -1630,7 +1646,13 @@
     if (!('ontouchstart' in window)) return;
     
     let initialViewportHeight = window.innerHeight;
-    
+    window.addEventListener('resize', () => {
+  if (state.keyboardOpen) {
+    document.querySelector('.chat-input-area')
+      .scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+});
+
     // Listen for resize events (keyboard show/hide)
     window.addEventListener('resize', () => {
       const currentHeight = window.innerHeight;
@@ -1993,12 +2015,11 @@
       // Get user media with appropriate constraints
       const constraints = {
         video: {
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
-          frameRate: { ideal: 24, max: 30 },
-          facingMode: "user",
-          aspectRatio: 1.777777778
-        },
+  width: { ideal: 640, max: 640 },
+  height: { ideal: 360, max: 360 },
+  frameRate: { ideal: 24, max: 24 },
+  facingMode: "user"
+},
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -2010,11 +2031,12 @@
       // For mobile devices, adjust constraints
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         constraints.video = {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          frameRate: { ideal: 24 },
-          facingMode: "user"
-        };
+  width: { ideal: 640, max: 640 },
+  height: { ideal: 360, max: 360 },
+  frameRate: { ideal: 24, max: 24 },
+  facingMode: "user"
+};
+
       }
       
       state.localStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -2112,43 +2134,36 @@ async function createPeerConnection() {
 
   /* ================= DATA CHANNEL ================= */
 
-  try {
-    state.dataChannel = state.peerConnection.createDataChannel("chat", {
-      ordered: true
-    });
-
-    state.dataChannel.onopen = () => {
-      console.log("Data channel opened");
-    };
-
-    state.dataChannel.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "message") {
-          handleDataChannelMessage(data.content, data.messageId);
-        }
-      } catch {}
-    };
-
-    state.dataChannel.onerror = (e) =>
-      console.warn("DataChannel error:", e);
-
-  } catch (e) {
-    console.warn("DataChannel creation failed:", e);
-  }
+  
 
   // Incoming DataChannel (non-initiator)
-  state.peerConnection.ondatachannel = (event) => {
-    const channel = event.channel;
-    channel.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "message") {
-          handleDataChannelMessage(data.content, data.messageId);
-        }
-      } catch {}
-    };
-  };
+  function applySenderBitrateLimits(pc) {
+  pc.getSenders().forEach(sender => {
+    if (!sender.track) return;
+    if (sender.track.kind !== "video") return;
+
+    const params = sender.getParameters();
+    if (!params.encodings) params.encodings = [{}];
+
+    params.encodings[0].maxBitrate = 800_000; // ✅ 800 kbps (TURN friendly)
+    params.encodings[0].maxFramerate = 24;   // ✅ limit FPS
+    params.encodings[0].scaleResolutionDownBy = 1.2; // ✅ slight downscale
+
+    sender.setParameters(params).catch(console.warn);
+  });
+}
+function applyAudioBitrate(pc) {
+  pc.getSenders().forEach(sender => {
+    if (!sender.track || sender.track.kind !== "audio") return;
+
+    const params = sender.getParameters();
+    if (!params.encodings) params.encodings = [{}];
+
+    params.encodings[0].maxBitrate = 32_000; // ✅ 32 kbps voice
+    sender.setParameters(params).catch(console.warn);
+  });
+}
+
 
   /* ================= LOCAL MEDIA ================= */
 
@@ -2156,32 +2171,47 @@ async function createPeerConnection() {
     state.localStream.getTracks().forEach(track => {
       state.peerConnection.addTrack(track, state.localStream);
     });
+    applySenderBitrateLimits(state.peerConnection);
+    applyAudioBitrate(state.peerConnection);
   }
 
   /* ================= REMOTE MEDIA ================= */
 
   state.peerConnection.ontrack = (event) => {
-    const stream = event.streams[0];
-    if (!stream) return;
+  const stream = event.streams[0];
+  if (!stream) return;
 
-    elements.remoteVideo.srcObject = stream;
-    elements.remoteVideo.playsInline = true;
-    elements.remoteVideo.muted = false;
+  console.log("🎥 Remote stream received:", stream.getTracks());
 
-    const play = () => {
-      elements.remoteVideo.play().catch(() => {
+  const video = elements.remoteVideo;
+
+  video.srcObject = stream;
+  video.playsInline = true;
+  video.setAttribute("playsinline", "");
+
+  // 🔒 Start muted for autoplay reliability
+  video.muted = true;
+
+  const play = () => {
+    video.play()
+      .then(() => {
+        // 🔓 Unmute AFTER playback starts
+        video.muted = false;
+      })
+      .catch(() => {
         setTimeout(play, 300);
       });
-    };
-
-    if (elements.remoteVideo.readyState >= 2) {
-      play();
-    } else {
-      elements.remoteVideo.onloadedmetadata = play;
-    }
-
-    elements.remoteStatus.style.display = "none";
   };
+
+  if (video.readyState >= 2) {
+    play();
+  } else {
+    video.onloadedmetadata = play;
+  }
+
+  elements.remoteStatus.style.display = "none";
+};
+
 
   /* ================= ICE ================= */
 
@@ -2194,6 +2224,23 @@ async function createPeerConnection() {
       });
     }
   };
+  state.peerConnection.onicecandidate = (event) => {
+  if (event.candidate?.candidate?.includes("typ relay")) {
+    console.warn("⚠ TURN relay in use – lowering quality");
+    state.connectionQuality = "turn";
+
+    // Further downgrade when TURN is detected
+    applySenderBitrateLimits(state.peerConnection);
+  }
+
+  if (event.candidate && state.roomId) {
+    socket.emit("signal", {
+      room: state.roomId,
+      candidate: event.candidate,
+      sender: socket.id
+    });
+  }
+};
 
   state.peerConnection.onconnectionstatechange = () => {
     const s = state.peerConnection.connectionState;
@@ -2266,23 +2313,55 @@ async function handleRemoteCandidate(candidate) {
 }
 
 
-  function attemptReconnect() {
-    if (!state.roomId || !state.isVideoMode) return;
-    
-    if (state.reconnectAttempts < 3) {
-      state.reconnectAttempts++;
-      showNotification(`Reconnecting... (Attempt ${state.reconnectAttempts}/3)`, "warning");
-      
-      setTimeout(() => {
-        if (state.peerConnection && state.peerConnection.connectionState === "failed") {
-          restartIce();
-        }
-      }, 2000 * state.reconnectAttempts);
-    } else {
-      showNotification("Failed to reconnect. Skipping...", "error");
-      setTimeout(skipChat, 1000);
-    }
+function attemptReconnect() {
+  if (!state.roomId || !state.isVideoMode || !state.peerConnection) return;
+
+  const pc = state.peerConnection;
+  const stateNow = pc.connectionState;
+
+  // Only act on real connection problems
+  if (!["failed", "disconnected"].includes(stateNow)) return;
+
+  if (state.reconnectAttempts < 3) {
+    state.reconnectAttempts++;
+
+    showNotification(
+      `Reconnecting... (Attempt ${state.reconnectAttempts}/3)`,
+      "warning"
+    );
+
+    const delay = 2000 * state.reconnectAttempts;
+
+    setTimeout(() => {
+      // Re-check state before restarting ICE
+      if (!pc) return;
+
+      const currentState = pc.connectionState;
+
+      // 🔒 Do NOT restart ICE if already connected again
+      if (currentState === "connected") return;
+
+      // 🔒 Avoid aggressive ICE restarts when TURN relay is active
+      if (state.connectionQuality === "turn") {
+        console.warn("TURN relay active — skipping ICE restart to save bandwidth");
+        return;
+      }
+
+      console.log("🔄 Restarting ICE (safe)");
+      restartIce();
+    }, delay);
+
+  } else {
+    showNotification("Failed to reconnect. Skipping...", "error");
+
+    // Final cleanup instead of infinite TURN usage
+    setTimeout(() => {
+      cleanupVideo();
+      skipChat();
+    }, 1000);
   }
+}
+
 
   async function restartIce() {
     if (!state.peerConnection) return;
@@ -2356,12 +2435,7 @@ async function handleRemoteCandidate(candidate) {
   function cleanupVideo() {
     console.log("Cleaning up video...");
     
-    if (state.dataChannel) {
-      try {
-        state.dataChannel.close();
-      } catch (e) {}
-      state.dataChannel = null;
-    }
+   
     
     if (state.peerConnection) {
       try {
@@ -2435,15 +2509,7 @@ async function handleRemoteCandidate(candidate) {
   });
 
   // OPTIONAL DataChannel (no UI impact)
-  if (state.dataChannel?.readyState === "open") {
-    try {
-      state.dataChannel.send(JSON.stringify({
-        type: "message",
-        content: msg,
-        messageId
-      }));
-    } catch {}
-  }
+  
 
   elements.chatInput.value = "";
   elements.chatInput.style.height = "auto";
@@ -2454,12 +2520,7 @@ async function handleRemoteCandidate(candidate) {
 
 
 
-function handleDataChannelMessage(content, messageId) {
-  if (state.receivedMessageIds.has(messageId)) return;
 
-  state.receivedMessageIds.add(messageId);
-  appendMessage(content, "stranger", messageId);
-}
 
 
 
@@ -3043,14 +3104,19 @@ function handleDataChannelMessage(content, messageId) {
   socket.on("signal", async ({ sdp, candidate, sender }) => {
   if (sender === socket.id) return;
 
-  if (sdp) {
-    await handleRemoteSDP(sdp);
-  }
+  try {
+    if (sdp) {
+      await handleRemoteSDP(sdp);
+    }
 
-  if (candidate) {
-    await handleRemoteCandidate(candidate);
+    if (candidate) {
+      await handleRemoteCandidate(candidate);
+    }
+  } catch (e) {
+    console.error("Signal handling error:", e);
   }
 });
+
 
 
   // =========== INITIALIZE ===========
