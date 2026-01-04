@@ -1669,7 +1669,11 @@ body{
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' }
   ];
-  
+  function shouldCreateOffer(myId, peerId) {
+  // Deterministic rule to avoid WebRTC offer collision
+  return myId > peerId;
+}
+
   // Payment tracking
   let vipHistory = [];
   let currentPaymentMethod = null;
@@ -2009,6 +2013,15 @@ body{
       if (socket) {
         socket.emit('vip-upgraded', vipData);
       }
+      if (socket && roomId) {
+  socket.emit('vip-status-update', {
+    roomId: roomId,
+    userId: socket.id,
+    nickname: nickname,
+    isVIP: true
+  });
+}
+
       
       // Show success modal
       document.getElementById('paymentProcessingModal').style.display = 'none';
@@ -2164,6 +2177,13 @@ body{
       isVIP: isVIP,
       userId: socket.id
     });
+    socket.emit('broadcast-user-data', {
+  roomId: roomId,
+  userId: socket.id,
+  nickname: nickname,
+  isVIP: isVIP
+});
+
     
     // Update room title
     const title = document.getElementById('roomTitle');
@@ -2391,13 +2411,7 @@ body{
     if (recordBtn) recordBtn.style.display = 'flex';
     
     // Notify others in the room
-    if (socket && roomId) {
-      socket.emit('vip-status-update', {
-        roomId: roomId,
-        isVIP: true,
-        nickname: nickname
-      });
-    }
+    
   }
 
   function handleVIPRemoved(data) {
@@ -2925,9 +2939,9 @@ body{
   }
 
   function addVideo(userId, stream, isLocal = false) {
-    // Remove existing video for this user
-    const existing = document.getElementById('video-' + userId);
-    if (existing) existing.remove();
+  let existing = document.getElementById('video-' + userId);
+  if (existing) return existing;
+
     
     const card = document.createElement('div');
     card.className = 'video-card' + (isLocal ? ' me' : '');
@@ -3041,13 +3055,22 @@ body{
       }
       
       pc.ontrack = (event) => {
-        console.log('Received remote stream from:', peerId);
-        if (event.streams && event.streams[0]) {
-          setTimeout(() => {
-            addVideo(peerId, event.streams[0]);
-          }, 100);
-        }
-      };
+  const stream = event.streams[0];
+  if (!stream) return;
+
+  let card = document.getElementById('video-' + peerId);
+
+  // ✅ Create panel only once
+  if (!card) {
+    card = addVideo(peerId, stream, false);
+  } else {
+    const video = card.querySelector('video');
+    if (!video.srcObject) {
+      video.srcObject = stream;
+    }
+  }
+};
+
       
       pc.onicecandidate = (event) => {
         if (event.candidate && socket) {
@@ -3061,17 +3084,20 @@ body{
       };
       
       pc.oniceconnectionstatechange = () => {
-        console.log(`ICE connection state for ${peerId}: ${pc.iceConnectionState}`);
-        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          console.log(`ICE connection failed for ${peerId}`);
-          setTimeout(() => {
-            if (pc.iceConnectionState !== 'connected' && pc.iceConnectionState !== 'checking') {
-              console.log(`Attempting to reconnect to ${peerId}`);
-              createPeerConnection(peerId);
-            }
-          }, 2000);
-        }
-      };
+  console.log(`ICE state for ${peerId}:`, pc.iceConnectionState);
+
+  if (pc.iceConnectionState === 'failed') {
+    console.warn(`ICE failed for ${peerId}, closing connection`);
+    pc.close();
+    delete peers[peerId];
+
+    const card = document.getElementById('video-' + peerId);
+    if (card) card.remove();
+
+    updateGridLayout();
+  }
+};
+
       
       pc.onconnectionstatechange = () => {
         console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
@@ -3088,25 +3114,37 @@ body{
         socket.emit('request-user-data', { userId: peerId, roomId: roomId });
       }
       
-      // Create offer if we're initiating the connection
-      setTimeout(async () => {
-        try {
-          const offer = await pc.createOffer({
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: true
-          });
-          await pc.setLocalDescription(offer);
-          socket.emit('signal', {
-            to: peerId,
-            roomId: roomId,
-            sdp: pc.localDescription,
-            type: 'video'
-          });
-          console.log('Sent offer to:', peerId);
-        } catch (error) {
-          console.error('Error creating offer:', error);
-        }
-      }, 1000 + Math.random() * 500); // Random delay to avoid collision
+      // ✅ Create offer ONLY if we are the initiator (collision-free)
+      if (shouldCreateOffer(socket.id, peerId)) {
+  Promise.resolve().then(async () => {
+    try {
+      if (!pc.getSenders().length) {
+        console.warn('No senders yet, skipping offer for', peerId);
+        return;
+      }
+
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
+
+      await pc.setLocalDescription(offer);
+
+      socket.emit('signal', {
+        to: peerId,
+        roomId: roomId,
+        sdp: pc.localDescription,
+        type: 'video'
+      });
+
+      console.log('📤 Offer sent to:', peerId);
+    } catch (err) {
+      console.error('❌ Offer creation failed:', err);
+    }
+  });
+}
+
+
       
       peers[peerId] = pc;
       return pc;
