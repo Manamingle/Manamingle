@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Mana Mingle - Chat</title>
@@ -37,6 +37,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
     body {
       font-family: 'Baloo Tamma 2', cursive;
       color: var(--text);
@@ -48,11 +54,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       margin: 0;
-      overflow: hidden;
       touch-action: manipulation;
       overscroll-behavior: none;
+      position: fixed;
+      width: 100%;
+      height: 100%;
     }
 
     /* =========== BACKGROUND ANIMATIONS =========== */
@@ -107,6 +115,7 @@
       border-radius: 0;
       width: 100vw;
       height: 100dvh;
+      max-height: 100dvh;
       overflow: hidden;
       box-shadow: 0 30px 80px rgba(0,0,0,0.45);
       backdrop-filter: blur(12px);
@@ -269,7 +278,7 @@
       border-radius: 8px;
       font-size: 0.8rem;
       backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255,255,255,0.1);
       z-index: 5;
       display: flex;
       align-items: center;
@@ -386,7 +395,7 @@
       border-radius: 16px;
       max-width: 85%;
       line-height: 1.4;
-      animation: fadeIn 0.25s ease, floatMessage 3s infinite ease-in-out;
+      animation: fadeIn 0.25s ease;
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255,255,255,0.06);
       box-shadow: 0 8px 20px rgba(0,0,0,0.25);
@@ -450,6 +459,37 @@
       text-align: left;
     }
 
+    /* =========== MATCH STATUS IN CHAT AREA =========== */
+    .match-status {
+      text-align: center;
+      padding: 15px;
+      background: rgba(0, 198, 255, 0.1);
+      border-radius: 12px;
+      margin: 10px auto;
+      max-width: 90%;
+      border: 1px solid rgba(0, 198, 255, 0.3);
+      color: var(--text);
+      font-size: 0.95rem;
+      animation: fadeIn 0.5s ease;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .match-status.hidden {
+      display: none;
+    }
+
+    .match-info {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      font-size: 0.85rem;
+      color: var(--blue);
+      flex-wrap: wrap;
+    }
+
     /* =========== WELCOME BANNER =========== */
     .welcome-banner {
       text-align: center;
@@ -463,62 +503,6 @@
       font-size: 0.95rem;
       animation: fadeIn 0.5s ease, floatMessage 4s infinite ease-in-out;
       backdrop-filter: blur(10px);
-    }
-
-    /* =========== FINDING MATCH INDICATORS =========== */
-    .finding-match-indicator {
-      text-align: center;
-      padding: 20px;
-      color: var(--muted);
-      font-style: italic;
-      background: rgba(0,198,255,0.1);
-      border-radius: 12px;
-      margin: 10px auto;
-      max-width: 90%;
-      border: 1px solid rgba(0,198,255,0.2);
-      animation: pulse 2s infinite, floatMessage 5s infinite ease-in-out;
-      backdrop-filter: blur(10px);
-    }
-
-    .finding-match {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      display: none;
-      backdrop-filter: blur(20px);
-    }
-
-    .finding-match.show {
-      display: flex;
-    }
-
-    .finding-match-content {
-      background: rgba(255,255,255,0.05);
-      padding: 40px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      text-align: center;
-      max-width: 500px;
-      width: 90%;
-      backdrop-filter: blur(20px);
-      animation: fadeIn 0.5s ease;
-    }
-
-    .finding-match .spinner {
-      width: 60px;
-      height: 60px;
-      border: 4px solid transparent;
-      border-top-color: var(--blue);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 25px;
     }
 
     /* =========== VIDEO CAPTIONS =========== */
@@ -569,7 +553,7 @@
       animation: typing 1.4s infinite;
     }
 
-    /* =========== CHAT INPUT =========== */
+    /* =========== CHAT INPUT - FIXED FOR MOBILE =========== */
     .chat-input-area {
       display: flex;
       align-items: center;
@@ -581,6 +565,8 @@
       flex-shrink: 0;
       min-height: 70px;
       z-index: 100;
+      position: sticky;
+      bottom: 0;
     }
 
     .skip-btn {
@@ -622,6 +608,7 @@
       transition: all 0.2s ease;
       max-width: 100%;
       animation: fadeIn 0.5s ease;
+      position: relative;
     }
 
     .input-wrapper:focus-within {
@@ -631,7 +618,7 @@
 
     .chat-input {
       flex: 1;
-      padding: 10px 5px;
+      padding: 12px 8px;
       border: none;
       outline: none;
       background: transparent;
@@ -643,10 +630,13 @@
       -moz-appearance: none;
       appearance: none;
       width: 100%;
+      height: 44px;
+      line-height: 20px;
     }
 
     .chat-input::placeholder {
       color: var(--muted);
+      font-size: 16px;
     }
 
     .send-btn {
@@ -815,6 +805,65 @@
       opacity: 0.5;
     }
 
+    /* =========== MESSAGE HISTORY =========== */
+    .message-history-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.8);
+      border: 2px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      z-index: 1000;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+
+    .message-history-btn:hover {
+      background: rgba(168,85,247,0.3);
+      border-color: var(--purple);
+      transform: scale(1.1);
+    }
+
+    .message-history {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 10000;
+      display: none;
+      flex-direction: column;
+      backdrop-filter: blur(20px);
+    }
+
+    .message-history.show {
+      display: flex;
+    }
+
+    .message-history-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .message-history-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
     /* =========== RESPONSIVE =========== */
     @media (max-width: 768px) {
       .chat-header {
@@ -855,12 +904,8 @@
         min-width: 40px;
       }
       
-      .finding-match-content {
-        padding: 30px;
-      }
-      
       .chat-input-area {
-        padding: 10px;
+        padding: 8px;
         gap: 6px;
       }
       
@@ -869,8 +914,9 @@
       }
       
       .chat-input {
-        padding: 8px 4px;
-        font-size: 15px !important;
+        padding: 10px 6px;
+        font-size: 16px !important;
+        height: 40px;
       }
       
       .skip-btn, .send-btn {
@@ -880,6 +926,15 @@
     }
     
     @media (max-width: 480px) {
+      body {
+        padding: 0;
+      }
+      
+      .chat-container {
+        border-radius: 0;
+        height: 100dvh;
+      }
+      
       .chat-header {
         padding: 8px 10px;
         flex-wrap: wrap;
@@ -887,10 +942,12 @@
       
       .video-area {
         min-height: 180px;
+        padding: 6px;
       }
       
       .video-controls {
         gap: 4px;
+        padding: 8px 0 0;
       }
       
       .control-btn {
@@ -899,28 +956,70 @@
         min-width: 36px;
       }
       
-      .finding-match-content {
-        padding: 20px;
-      }
-      
-      .finding-match .spinner {
-        width: 40px;
-        height: 40px;
-      }
-      
       .chat-input-area {
         padding: 8px;
         gap: 4px;
+        min-height: 64px;
       }
       
       .skip-btn {
         min-width: 36px;
         padding: 8px 10px;
+        font-size: 0.8rem;
       }
       
       .send-btn {
         min-width: 36px;
         padding: 8px 10px;
+        font-size: 0.8rem;
+      }
+      
+      .chat-input {
+        font-size: 16px !important;
+        height: 40px;
+        padding: 10px 6px;
+      }
+      
+      .sound-toggle, .message-history-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+      }
+    }
+
+    /* For very small screens */
+    @media (max-width: 320px) {
+      .chat-input-area {
+        flex-wrap: nowrap;
+      }
+      
+      .skip-btn .text, .send-btn .text {
+        display: none;
+      }
+      
+      .skip-btn, .send-btn {
+        min-width: 44px;
+      }
+      
+      .partner-info span {
+        max-width: 80px;
+      }
+    }
+
+    /* Landscape mode fixes */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .video-area {
+        height: 30vh;
+        min-height: 150px;
+      }
+      
+      .chat-input-area {
+        min-height: 60px;
+      }
+      
+      .chat-input {
+        height: 36px;
+        padding: 8px 6px;
       }
     }
 
@@ -982,20 +1081,14 @@
   <div class="floating-shapes"></div>
 
   <div class="chat-container">
-    <!-- Finding Match Modal (only for video) -->
-    <div class="finding-match" id="findingMatch">
-      <div class="finding-match-content">
-        <div class="spinner"></div>
-        <h3>Finding Video Match...</h3>
-        <p id="matchMessage" style="color: var(--muted); margin-top: 10px;">
-          Looking for someone with similar interests...
-        </p>
-        <div id="matchTags" style="margin-top: 15px; font-size: 0.9rem; color: var(--blue);">
-          <strong>Your interests:</strong> <span id="currentTags"></span>
-        </div>
-        <div id="matchStats" style="margin-top: 15px; font-size: 0.8rem; color: var(--muted);">
-          <span id="onlineStats">Connecting to server...</span>
-        </div>
+    <!-- Match Status in Chat Area -->
+    <div class="match-status hidden" id="matchStatusElement">
+      <div class="spinner" style="width: 30px; height: 30px; border: 3px solid transparent; border-top-color: var(--blue); border-radius: 50%; margin: 0 auto; animation: spin 1s linear infinite;"></div>
+      <div>Finding a match...</div>
+      <div class="match-info">
+        <span id="matchQueue">0 in queue</span>
+        <span id="matchTypeDisplay">Random</span>
+        <span id="matchTime">0s</span>
       </div>
     </div>
 
@@ -1072,12 +1165,7 @@
 
     <!-- CHAT MESSAGES -->
     <div class="chat-messages" id="messages">
-      <div class="finding-match-indicator" id="matchIndicator">
-        🔍 Finding a match... We'll connect you with someone soon!
-        <div id="matchStatus" style="margin-top: 10px; font-size: 0.85rem;">
-          <span id="queuePosition">0</span> users in queue | <span id="matchType">Random</span>
-        </div>
-      </div>
+      <!-- Messages will appear here -->
     </div>
 
     <!-- TYPING INDICATOR -->
@@ -1098,6 +1186,9 @@
       </button>
     </div>
   </div>
+
+  <!-- Message History Button -->
+  <div class="message-history-btn" id="historyBtn" title="Message History">📜</div>
 
   <!-- Notification Container -->
   <div id="notificationContainer"></div>
@@ -1137,6 +1228,17 @@
     </div>
   </div>
 
+  <!-- Message History Modal -->
+  <div class="message-history" id="messageHistory">
+    <div class="message-history-header">
+      <h3 style="color: var(--blue);">Message History</h3>
+      <button id="closeHistoryBtn" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 2rem; padding: 0 10px;">×</button>
+    </div>
+    <div class="message-history-content" id="historyContent">
+      <!-- History messages will appear here -->
+    </div>
+  </div>
+
 <script>
   // =========== CONFIGURATION ===========
   const socket = io({
@@ -1171,6 +1273,7 @@
     
     // Matching
     isMatching: false,
+    matchStartTime: null,
     isInitiator: false,
     isInterestMatch: false,
     currentPartnerTags: [],
@@ -1179,7 +1282,7 @@
     // Messaging
     sentMessageIds: new Set(),
     receivedMessageIds: new Set(),
-    messageIdCounter: 0,
+    messageHistory: [],
     isTyping: false,
     typingTimeout: null,
     
@@ -1189,7 +1292,7 @@
     // Stats
     messagesSent: 0,
     messagesReceived: 0,
-    sessionStartTime: Date.now(),
+    sessionStartTime: null,
     connectionQuality: 'good',
     
     // WebRTC
@@ -1198,16 +1301,7 @@
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
-        { urls: "stun:stun3.l.google.com:19302" },
-        {
-          urls: [
-            "turn:openrelay.metered.ca:80",
-            "turn:openrelay.metered.ca:443",
-            "turn:openrelay.metered.ca:443?transport=tcp"
-          ],
-          username: "openrelayproject",
-          credential: "openrelayproject"
-        }
+        { urls: "stun:stun3.l.google.com:19302" }
       ],
       iceCandidatePoolSize: 10
     },
@@ -1215,7 +1309,8 @@
     // Timeouts
     captionTimeouts: { local: null, remote: null },
     connectionCheckInterval: null,
-    statsUpdateInterval: null
+    statsUpdateInterval: null,
+    matchUpdateInterval: null
   };
 
   // =========== DOM ELEMENTS ===========
@@ -1225,6 +1320,12 @@
     chatInput: document.getElementById("chatInput"),
     statusPill: document.getElementById("statusPill"),
     onlineCount: document.getElementById("onlineCount"),
+    
+    // Match status
+    matchStatusElement: document.getElementById("matchStatusElement"),
+    matchQueue: document.getElementById("matchQueue"),
+    matchTypeDisplay: document.getElementById("matchTypeDisplay"),
+    matchTime: document.getElementById("matchTime"),
     
     // Partner info
     partnerAvatar: document.getElementById("partnerAvatar"),
@@ -1245,13 +1346,6 @@
     toggleCam: document.getElementById("toggleCam"),
     endCall: document.getElementById("endCall"),
     
-    // Matching
-    findingMatch: document.getElementById("findingMatch"),
-    matchIndicator: document.getElementById("matchIndicator"),
-    matchMessage: document.getElementById("matchMessage"),
-    currentTags: document.getElementById("currentTags"),
-    onlineStats: document.getElementById("onlineStats"),
-    
     // Captions
     localCaption: document.getElementById("localCaption"),
     remoteCaption: document.getElementById("remoteCaption"),
@@ -1269,13 +1363,11 @@
     qualityDot: document.getElementById("qualityDot"),
     qualityText: document.getElementById("qualityText"),
     
-    // Stats
-    statMessages: document.getElementById("statMessages"),
-    statReceived: document.getElementById("statReceived"),
-    statTime: document.getElementById("statTime"),
-    statConnection: document.getElementById("statConnection"),
-    statMatchType: document.getElementById("statMatchType"),
-    statInterests: document.getElementById("statInterests")
+    // History
+    messageHistory: document.getElementById("messageHistory"),
+    historyContent: document.getElementById("historyContent"),
+    historyBtn: document.getElementById("historyBtn"),
+    closeHistoryBtn: document.getElementById("closeHistoryBtn")
   };
 
   // =========== INITIALIZATION ===========
@@ -1301,9 +1393,6 @@
     // Create background animation dots
     createBackgroundDots();
     
-    // Start stats update
-    state.statsUpdateInterval = setInterval(updateChatStats, 1000);
-    
     // Initialize video if needed
     if (state.isVideoMode) {
       await initializeVideo();
@@ -1319,10 +1408,8 @@
     // Show/hide video area
     elements.videoArea.style.display = state.isVideoMode ? 'flex' : 'none';
     
-    // Update finding match display
-    if (elements.currentTags && state.tags.length > 0) {
-      elements.currentTags.textContent = state.tags.join(', ');
-    }
+    // Show history button
+    elements.historyBtn.style.display = 'block';
     
     // Setup sound toggle
     updateSoundToggle();
@@ -1408,19 +1495,18 @@
     console.log("Starting matching process...");
     
     state.isMatching = true;
+    state.matchStartTime = Date.now();
     state.sessionStartTime = Date.now();
+    
+    // Show match status in chat area
+    showMatchStatus();
+    
+    // Start match time update
+    state.matchUpdateInterval = setInterval(updateMatchTime, 1000);
     
     // Disable chat input while matching
     elements.chatInput.disabled = true;
     elements.sendBtn.disabled = true;
-    
-    // Show appropriate matching indicator
-    if (state.isVideoMode) {
-      elements.findingMatch.classList.add('show');
-    } else {
-      elements.matchIndicator.style.display = 'block';
-      updateMatchIndicator();
-    }
     
     // Send join request to server
     socket.emit("join_chat", {
@@ -1436,22 +1522,41 @@
   function stopMatching() {
     state.isMatching = false;
     
-    // ALWAYS hide both indicators
-    elements.findingMatch.classList.remove('show');
-    elements.matchIndicator.style.display = 'none';
+    // Hide match status
+    hideMatchStatus();
     
-    console.log("Matching stopped, indicators hidden");
+    // Clear match update interval
+    if (state.matchUpdateInterval) {
+      clearInterval(state.matchUpdateInterval);
+      state.matchUpdateInterval = null;
+    }
+    
+    console.log("Matching stopped");
   }
 
-  function updateMatchIndicator() {
-    if (!state.isMatching || !elements.matchIndicator) return;
+  function showMatchStatus() {
+    elements.matchStatusElement.classList.remove('hidden');
     
-    const queueEl = document.getElementById('queuePosition');
-    const typeEl = document.getElementById('matchType');
+    // Update match info
+    if (elements.matchTypeDisplay) {
+      elements.matchTypeDisplay.textContent = state.tags.length > 0 ? 'Interest-based' : 'Random';
+    }
     
-    if (queueEl) queueEl.textContent = Math.floor(Math.random() * 10) + 1;
-    if (typeEl) {
-      typeEl.textContent = state.tags.length > 0 ? 'Interest-based' : 'Random';
+    if (elements.matchQueue) {
+      elements.matchQueue.textContent = '1 in queue'; // Will be updated by server
+    }
+  }
+
+  function hideMatchStatus() {
+    elements.matchStatusElement.classList.add('hidden');
+  }
+
+  function updateMatchTime() {
+    if (!state.isMatching || !state.matchStartTime) return;
+    
+    const elapsed = Math.floor((Date.now() - state.matchStartTime) / 1000);
+    if (elements.matchTime) {
+      elements.matchTime.textContent = `${elapsed}s`;
     }
   }
 
@@ -1465,6 +1570,10 @@
       document.getElementById("chatStats")?.classList.remove("show");
     });
     
+    // History
+    elements.historyBtn.addEventListener('click', showMessageHistory);
+    elements.closeHistoryBtn.addEventListener('click', hideMessageHistory);
+    
     // Stats
     document.getElementById('statsBtn').addEventListener('click', toggleStats);
     
@@ -1475,7 +1584,11 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        skipChat();
+        if (elements.messageHistory.classList.contains('show')) {
+          hideMessageHistory();
+        } else {
+          skipChat();
+        }
       }
       if (e.key === "Enter" && !e.shiftKey && document.activeElement === elements.chatInput) {
         e.preventDefault();
@@ -1489,17 +1602,19 @@
     
     // Chat input - FIXED FOR MOBILE
     elements.chatInput.addEventListener("input", notifyTyping);
+    
+    // Fix for mobile keyboard
     elements.chatInput.addEventListener("focus", () => {
+      // Ensure input is visible on mobile
       setTimeout(() => {
-        elements.messages.scrollTop = elements.messages.scrollHeight;
-      }, 100);
+        elements.chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
     });
     
     // Prevent iOS zoom on focus
     elements.chatInput.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      elements.chatInput.focus();
-    }, { passive: false });
+      // Prevent default only if we need to handle special behavior
+    }, { passive: true });
     
     // Buttons
     elements.sendBtn.addEventListener("click", sendMessage);
@@ -1515,6 +1630,9 @@
     
     // Connection monitoring
     state.connectionCheckInterval = setInterval(checkConnectionQuality, 5000);
+    
+    // Start stats update
+    state.statsUpdateInterval = setInterval(updateChatStats, 1000);
   }
 
   function goBackToHome() {
@@ -1568,10 +1686,13 @@
       
       // Apply to local video - MIRRORED (user sees themselves naturally)
       elements.localVideo.srcObject = state.localStream;
-      elements.localStatus.style.display = "none";
       
-      // Set up video playback for mobile
-      setupVideoPlayback();
+      // Force play on mobile
+      await elements.localVideo.play().catch(e => {
+        console.log("Local video play warning:", e);
+      });
+      
+      elements.localStatus.style.display = "none";
       
       console.log("Video initialized successfully");
       
@@ -1588,26 +1709,6 @@
       
       // Fallback to text mode
       fallbackToTextMode();
-    }
-  }
-
-  function setupVideoPlayback() {
-    // Ensure videos play on mobile
-    elements.localVideo.setAttribute('playsinline', '');
-    elements.localVideo.setAttribute('webkit-playsinline', '');
-    elements.localVideo.setAttribute('muted', '');
-    
-    elements.remoteVideo.setAttribute('playsinline', '');
-    elements.remoteVideo.setAttribute('webkit-playsinline', '');
-    
-    // Force play and handle autoplay restrictions
-    const playPromise = elements.localVideo.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(e => {
-        console.warn("Local video play failed:", e);
-        // Show play button overlay if needed
-        elements.localVideo.controls = true;
-      });
     }
   }
 
@@ -1665,17 +1766,12 @@
           elements.remoteVideo.style.transform = 'scaleX(1)';
           
           // Ensure video plays on mobile
-          const playPromise = elements.remoteVideo.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(e => {
-              console.warn("Remote video play failed, retrying...", e);
-              // Show play button if autoplay blocked
-              elements.remoteVideo.controls = true;
-              setTimeout(() => {
-                elements.remoteVideo.play().catch(() => {});
-              }, 100);
-            });
-          }
+          elements.remoteVideo.play().catch(e => {
+            console.warn("Remote video play failed, retrying...", e);
+            setTimeout(() => {
+              elements.remoteVideo.play().catch(() => {});
+            }, 100);
+          });
         }
       };
       
@@ -1713,16 +1809,6 @@
           elements.remoteStatus.style.display = "flex";
           attemptReconnect();
         }
-      };
-      
-      // ICE connection state
-      state.peerConnection.oniceconnectionstatechange = () => {
-        console.log("ICE connection state:", state.peerConnection.iceConnectionState);
-      };
-      
-      // ICE gathering state
-      state.peerConnection.onicegatheringstatechange = () => {
-        console.log("ICE gathering state:", state.peerConnection.iceGatheringState);
       };
       
       console.log("Peer connection created successfully");
@@ -1930,7 +2016,7 @@
       }
     }
     
-    const messageId = `${Date.now()}-${state.messageIdCounter++}`;
+    const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     // Update stats
     state.messagesSent++;
@@ -1939,10 +2025,20 @@
     // Add to sent messages
     state.sentMessageIds.add(messageId);
     
+    // Add to history
+    const messageData = {
+      id: messageId,
+      content: msg,
+      sender: 'you',
+      timestamp: new Date().toISOString(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    state.messageHistory.push(messageData);
+    
     // Display message
     appendMessage(msg, "you", messageId);
     
-    // Show caption in video mode - FIXED
+    // Show caption in video mode
     if (state.isVideoMode) {
       showVideoCaption('local', msg);
     }
@@ -2028,6 +2124,47 @@
   function clearTypingIndicator() {
     const indicator = document.getElementById("typing-indicator");
     if (indicator) indicator.innerHTML = "";
+  }
+
+  // =========== MESSAGE HISTORY ===========
+  function showMessageHistory() {
+    // Clear current content
+    elements.historyContent.innerHTML = '';
+    
+    // Add messages to history
+    if (state.messageHistory.length === 0) {
+      elements.historyContent.innerHTML = '<div style="text-align: center; color: var(--muted); padding: 20px;">No messages yet</div>';
+    } else {
+      state.messageHistory.forEach(msg => {
+        const div = document.createElement("div");
+        div.className = `message ${msg.sender}`;
+        div.style.margin = '10px 0';
+        div.style.maxWidth = '100%';
+        
+        const content = document.createElement("div");
+        content.textContent = msg.content;
+        div.appendChild(content);
+        
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "message-time";
+        timeDiv.textContent = msg.time;
+        div.appendChild(timeDiv);
+        
+        elements.historyContent.appendChild(div);
+      });
+    }
+    
+    // Show history
+    elements.messageHistory.classList.add('show');
+    
+    // Scroll to bottom
+    setTimeout(() => {
+      elements.historyContent.scrollTop = elements.historyContent.scrollHeight;
+    }, 100);
+  }
+
+  function hideMessageHistory() {
+    elements.messageHistory.classList.remove('show');
   }
 
   // =========== SOUND FUNCTIONS ===========
@@ -2266,14 +2403,10 @@
     elements.connectionQuality.style.display = "none";
     
     // Clear messages
-    elements.messages.innerHTML = `
-      <div class="finding-match-indicator" id="matchIndicator">
-        🔍 Finding new match...
-        <div id="matchStatus" style="margin-top: 10px; font-size: 0.85rem;">
-          Searching ${state.tags.length > 0 ? 'for similar interests' : 'random connection'}...
-        </div>
-      </div>
-    `;
+    elements.messages.innerHTML = '';
+    
+    // Show match status
+    showMatchStatus();
     
     // Clear typing
     clearTypingIndicator();
@@ -2292,15 +2425,9 @@
     state.partnerCountry = null;
     state.messagesSent = 0;
     state.sessionStartTime = Date.now();
+    state.matchStartTime = Date.now();
     state.sentMessageIds.clear();
     state.receivedMessageIds.clear();
-    
-    // Show matching indicator
-    if (state.isVideoMode) {
-      elements.findingMatch.classList.add('show');
-    } else {
-      elements.matchIndicator.style.display = 'block';
-    }
     
     // Restart matching after delay
     setTimeout(() => {
@@ -2332,8 +2459,8 @@
     if (elements.onlineCount) {
       elements.onlineCount.textContent = count;
     }
-    if (elements.onlineStats) {
-      elements.onlineStats.textContent = `${count} users online`;
+    if (elements.matchQueue) {
+      elements.matchQueue.textContent = `${Math.max(1, count)} in queue`;
     }
   });
 
@@ -2341,16 +2468,15 @@
     console.log("Waiting for match...", data);
     setStatus("Finding match...", "waiting");
     
-    if (data.position) {
-      const queueEl = document.getElementById('queuePosition');
-      if (queueEl) queueEl.textContent = data.position;
+    if (elements.matchQueue && data.position) {
+      elements.matchQueue.textContent = `${data.position} in queue`;
     }
   });
 
   socket.on("matched", async (data) => {
     console.log("Matched with partner:", data);
     
-    // Stop matching indicators - FIXED
+    // Stop matching
     stopMatching();
     
     // Enable chat
@@ -2449,10 +2575,20 @@
     // Add to received messages
     state.receivedMessageIds.add(data.messageId);
     
+    // Add to history
+    const messageData = {
+      id: data.messageId,
+      content: data.message,
+      sender: 'stranger',
+      timestamp: new Date().toISOString(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    state.messageHistory.push(messageData);
+    
     // Display message
     appendMessage(data.message, "stranger", data.messageId);
     
-    // Show caption in video mode - FIXED
+    // Show caption in video mode
     if (state.isVideoMode && data.type === "video_chat") {
       showVideoCaption("remote", data.message);
     }
@@ -2527,6 +2663,7 @@
   window.addEventListener('beforeunload', () => {
     console.log("Page unloading, cleaning up...");
     cleanupVideo();
+    stopMatching();
     
     if (state.roomId) {
       socket.emit("leave_room", { room: state.roomId });
@@ -2535,6 +2672,7 @@
     // Clear intervals
     if (state.connectionCheckInterval) clearInterval(state.connectionCheckInterval);
     if (state.statsUpdateInterval) clearInterval(state.statsUpdateInterval);
+    if (state.matchUpdateInterval) clearInterval(state.matchUpdateInterval);
   });
 
   // Handle visibility change
@@ -2551,13 +2689,17 @@
   });
 
   // Handle orientation change
+  let orientationTimeout;
   window.addEventListener("orientationchange", () => {
-    // Debounce orientation change handling
-    clearTimeout(window.orientationTimeout);
-    window.orientationTimeout = setTimeout(() => {
+    clearTimeout(orientationTimeout);
+    orientationTimeout = setTimeout(() => {
       if (state.isVideoMode && state.peerConnection) {
         restartIce();
       }
+      // Ensure input is visible
+      setTimeout(() => {
+        elements.chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
     }, 500);
   });
 </script>
