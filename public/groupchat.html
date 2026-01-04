@@ -62,11 +62,12 @@ body{
   position: absolute;
   border-radius: 50%;
   background: radial-gradient(circle, var(--accent), transparent 70%);
-  animation: float 15s infinite linear;
+  animation: floatParticles 15s infinite linear;
   opacity: 0.15;
 }
 
-@keyframes float {
+@keyframes floatParticle {
+  
   0% {
     transform: translate(0, 0) rotate(0deg);
   }
@@ -2554,97 +2555,131 @@ function shouldCreateOffer(myId, otherId) {
   }
 
   function updateVideoPanel(panelNumber) {
-    const panel = videoPanels[panelNumber].element;
-    if (!panel) return;
-    
-    const data = videoPanels[panelNumber];
-    const placeholder = panel.querySelector('.video-placeholder');
-    const label = panel.querySelector('.video-label');
-    const coinsDisplay = panel.querySelector('.video-coins');
-    const existingVideo = data.videoElement;
-    const existingReportBtn = panel.querySelector('.report-btn');
-    
-    // Remove existing report button
-    if (existingReportBtn) {
-      existingReportBtn.remove();
-    }
-    
-    if (existingVideo) {
-      existingVideo.remove();
-      data.videoElement = null;
-    }
-    
-    if (!data.userId) {
-      // Empty panel
-      panel.classList.remove('me');
-      placeholder.style.display = 'flex';
-      label.textContent = panelNumber == 1 ? 'You' : 'Anonymous';
-      panel.style.border = '2px solid var(--border)';
-      coinsDisplay.style.display = 'none';
-      return;
-    }
-    
-    if (data.userId === userId) {
-      // Local video
-      panel.classList.add('me');
-      placeholder.style.display = 'none';
-      label.textContent = 'You';
-      panel.style.border = '2px solid #00d19a';
-      coinsDisplay.style.display = 'flex';
-      coinsDisplay.querySelector('span:nth-child(2)').textContent = coins;
-      
-      if (localStream) {
-        const video = document.createElement('video');
-        video.autoplay = true;
-        video.playsInline = true;
-        video.muted = true;
-        video.srcObject = localStream;
-        video.onloadedmetadata = () => video.play();
-        panel.querySelector('.video-container').appendChild(video);
-        data.videoElement = video;
-        data.stream = localStream;
-      }
-    } else {
-      // Remote user
-      panel.classList.remove('me');
-      panel.style.border = '2px solid var(--accent)';
-      
-      // Add report button
-      const reportBtn = document.createElement('button');
-      reportBtn.className = 'report-btn';
-      reportBtn.innerHTML = '🚨 Report';
-      reportBtn.onclick = () => openReportModal(data.userId);
-      panel.appendChild(reportBtn);
-      
-      // Check if we have a peer connection for this user
-      if (peers[data.userId] && peers[data.userId].remoteStream) {
-        const stream = peers[data.userId].remoteStream;
-        placeholder.style.display = 'none';
-        label.textContent = 'Anonymous';
-        
-        const video = document.createElement('video');
-        video.autoplay = true;
-        video.playsInline = true;
-        video.srcObject = stream;
-        video.onloadedmetadata = () => video.play();
-        panel.querySelector('.video-container').appendChild(video);
-        data.videoElement = video;
-        data.stream = stream;
-        
-        // Show coins if available
-        if (data.coins > 0) {
-          coinsDisplay.style.display = 'flex';
-          coinsDisplay.querySelector('span:nth-child(2)').textContent = data.coins;
-        } else {
-          coinsDisplay.style.display = 'none';
-        }
-      } else {
-        placeholder.style.display = 'flex';
-        label.textContent = 'Anonymous';
-        coinsDisplay.style.display = 'none';
-      }
-    }
+  const panel = videoPanels[panelNumber].element;
+  if (!panel) return;
+
+  const data = videoPanels[panelNumber];
+  const placeholder = panel.querySelector('.video-placeholder');
+  const label = panel.querySelector('.video-label');
+  const coinsDisplay = panel.querySelector('.video-coins');
+  const container = panel.querySelector('.video-container');
+
+  const existingReportBtn = panel.querySelector('.report-btn');
+
+  /* ================= UNCHANGED ================= */
+  if (existingReportBtn) {
+    existingReportBtn.remove();
   }
+
+  /* ================= EMPTY PANEL ================= */
+  if (!data.userId) {
+    panel.classList.remove('me');
+    placeholder.style.display = 'flex';
+    label.textContent = panelNumber === 1 ? 'You' : 'Anonymous';
+    panel.style.border = '2px solid var(--border)';
+    coinsDisplay.style.display = 'none';
+
+    // FIX: do NOT keep stale video
+    container.innerHTML = '';
+    data.videoElement = null;
+    data.stream = null;
+    return;
+  }
+
+  /* ================= LOCAL VIDEO ================= */
+  if (data.userId === userId) {
+    panel.classList.add('me');
+    placeholder.style.display = 'none';
+    label.textContent = 'You';
+    panel.style.border = '2px solid #00d19a';
+
+    coinsDisplay.style.display = 'flex';
+    coinsDisplay.querySelector('span:nth-child(2)').textContent = coins;
+
+    // FIX: create video ONLY ONCE
+    if (!data.videoElement && localStream) {
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.playsInline = true;
+      video.muted = true;
+      video.srcObject = localStream;
+
+      video.onloadedmetadata = () => {
+        video.play().catch(() => {});
+      };
+
+      container.appendChild(video);
+      data.videoElement = video;
+      data.stream = localStream;
+    }
+    return;
+  }
+
+  /* ================= REMOTE USER ================= */
+  panel.classList.remove('me');
+  panel.style.border = '2px solid var(--accent)';
+
+  /* ================= UNCHANGED REPORT BUTTON ================= */
+  const reportBtn = document.createElement('button');
+  reportBtn.className = 'report-btn';
+  reportBtn.innerHTML = '🚨 Report';
+  reportBtn.onclick = () => openReportModal(data.userId);
+  panel.appendChild(reportBtn);
+
+  /* ================= REMOTE STREAM HANDLING ================= */
+  const peer = peers[data.userId];
+
+  if (!peer || !peer.remoteStream) {
+    placeholder.style.display = 'flex';
+    label.textContent = 'Anonymous';
+    coinsDisplay.style.display = 'none';
+
+    // FIX: don’t leave ghost video
+    container.innerHTML = '';
+    data.videoElement = null;
+    data.stream = null;
+    return;
+  }
+
+  placeholder.style.display = 'none';
+  label.textContent = 'Anonymous';
+
+  // FIX: DO NOT recreate video every update
+  if (!data.videoElement) {
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = false;
+    video.setAttribute('playsinline', '');
+    video.srcObject = peer.remoteStream;
+
+    // 🔥 FIX: SAFE AUTOPLAY LOOP (CRITICAL)
+    const play = () => {
+      video.play().catch(() => {
+        setTimeout(play, 300);
+      });
+    };
+
+    if (video.readyState >= 2) {
+      play();
+    } else {
+      video.onloadedmetadata = play;
+    }
+
+    container.appendChild(video);
+    data.videoElement = video;
+    data.stream = peer.remoteStream;
+  }
+
+  /* ================= COINS (UNCHANGED LOGIC) ================= */
+  if (data.coins > 0) {
+    coinsDisplay.style.display = 'flex';
+    coinsDisplay.querySelector('span:nth-child(2)').textContent = data.coins;
+  } else {
+    coinsDisplay.style.display = 'none';
+  }
+}
+
 
   function updateLocalVideoPanel() {
     for (const [panelNum, data] of Object.entries(videoPanels)) {
@@ -3261,8 +3296,27 @@ async function handleWebRTCSignal(data) {
 
   const pc = new RTCPeerConnection({
     iceServers: ice.iceServers,
-    iceCandidatePoolSize: 10
+    iceCandidatePoolSize: 10,
+    iceTransportPolicy: "all"
   });
+/* ================= TURN BANDWIDTH LIMIT (PRODUCTION) ================= */
+pc.addEventListener("icecandidateerror", (e) => {
+  console.warn("ICE candidate error:", e);
+});
+
+/* 🔥 LIMIT OUTGOING BITRATE (SAVES TURN $$$) */
+pc.getSenders().forEach(sender => {
+  if (!sender.track) return;
+
+  const params = sender.getParameters();
+  if (!params.encodings) params.encodings = [{}];
+
+  // SAFE TURN-SAVING LIMITS
+  params.encodings[0].maxBitrate =
+    sender.track.kind === "video" ? 350_000 : 64_000;
+
+  sender.setParameters(params).catch(() => {});
+});
 
   peers[peerId] = pc;
   pc.remoteStream = new MediaStream();
@@ -3274,18 +3328,37 @@ async function handleWebRTCSignal(data) {
 
   // Handle remote tracks
   pc.ontrack = e => {
-    e.streams[0].getTracks().forEach(track => {
-      pc.remoteStream.addTrack(track);
-    });
+  if (!pc.remoteStream) {
+    pc.remoteStream = new MediaStream();
+  }
 
-    for (const [panelNum, panelData] of Object.entries(videoPanels)) {
-      if (panelData.userId === peerId) {
-        panelData.stream = pc.remoteStream;
-        updateVideoPanel(Number(panelNum));
-        break;
-      }
+  e.streams[0].getTracks().forEach(track => {
+    pc.remoteStream.addTrack(track);
+  });
+
+  // 🔥 FORCE panel assignment + UI refresh
+  let panelFound = false;
+
+  for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+    if (panelData.userId === peerId) {
+      panelData.stream = pc.remoteStream;
+      updateVideoPanel(Number(panelNum));
+      panelFound = true;
+      break;
     }
-  };
+  }
+
+  // 🔥 SAFETY: assign panel if missing
+  if (!panelFound) {
+    const panelNum = findAvailablePanel();
+    if (panelNum) {
+      assignVideoPanel(peerId, panelNum, false);
+      videoPanels[panelNum].stream = pc.remoteStream;
+      updateVideoPanel(panelNum);
+    }
+  }
+};
+
 
   // ICE candidates
   pc.onicecandidate = e => {
@@ -3301,10 +3374,27 @@ async function handleWebRTCSignal(data) {
 
   // Cleanup
   pc.onconnectionstatechange = () => {
-    if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
-      cleanupPeer(peerId);
-    }
-  };
+  const state = pc.connectionState;
+  console.log("PC state:", peerId, state);
+
+  // 🚫 DO NOT RESTART ICE IF CONNECTED
+  if (state === "connected") return;
+
+  // ⚠️ Avoid aggressive cleanup on temporary drops
+  if (state === "disconnected") {
+    setTimeout(() => {
+      if (pc.connectionState === "disconnected") {
+        cleanupPeer(peerId);
+      }
+    }, 4000);
+    return;
+  }
+
+  if (state === "failed" || state === "closed") {
+    cleanupPeer(peerId);
+  }
+};
+
 
   // CREATE OFFER (ONLY ONE SIDE)
   if (shouldCreateOffer(userId, peerId)) {
@@ -3331,11 +3421,11 @@ async function handleWebRTCSignal(data) {
     try {
       const constraints = {
         video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          frameRate: { ideal: 24 },
-          facingMode: 'user'
-        },
+  width: { ideal: 480 },
+  height: { ideal: 360 },
+  frameRate: { max: 20 },
+  facingMode: 'user'
+},
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -3937,7 +4027,7 @@ function confirmMediaUpload() {
   closeMediaUploadModal();
 }
 
-socket.on("receive_media", handleReceiveMedia);
+
 
 
 
