@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#04060a">
 
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
 :root{
@@ -20,9 +21,14 @@
   --green:#00d19a;
   --danger:#ff7675;
   --orange:#ff9f43;
-  --vip:#ffd700;
   --border:rgba(255,255,255,0.15);
   --coin:#ffd700;
+  --panel-bg: rgba(20, 25, 40, 0.9);
+  --admin:#9b59b6;
+  --creator:#e74c3c;
+  --vip:#f1c40f;
+  --manager:#3498db;
+  --supporter:#2ecc71;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -57,7 +63,7 @@ body{
   border-radius: 50%;
   background: radial-gradient(circle, var(--accent), transparent 70%);
   animation: float 15s infinite linear;
-  opacity: 0.2;
+  opacity: 0.15;
 }
 
 @keyframes float {
@@ -88,7 +94,7 @@ body{
   border-radius:20px;
   padding:30px 25px;
   width:100%;
-  max-width:320px;
+  max-width:340px;
   text-align:center;
   box-shadow:0 0 40px rgba(0,198,255,.25);
   animation:popIn .5s ease;
@@ -104,24 +110,6 @@ body{
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height:1.3;
-}
-
-.coin-balance {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid var(--coin);
-  color: var(--coin);
-  padding: 10px 15px;
-  border-radius: 12px;
-  margin: 15px 0;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.coin-balance .icon {
-  font-size: 1.2rem;
 }
 
 .start-card button{
@@ -180,6 +168,28 @@ body{
   background: rgba(255,255,255,0.15) !important;
 }
 
+/* Nickname Input */
+.nickname-input {
+  width: 100%;
+  padding: 14px 16px;
+  margin: 20px 0 15px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 1rem;
+  font-family: 'Baloo Tamma 2', cursive;
+  outline: none;
+  min-height: 44px;
+  backdrop-filter: blur(5px);
+  display: none;
+}
+
+.nickname-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,198,255,0.1);
+}
+
 @keyframes popIn{
   from{opacity:0;transform:scale(.9)}
   to{opacity:1;transform:scale(1)}
@@ -193,7 +203,7 @@ body{
 .app{
   width:100%;
   height:100vh;
-  background:rgba(255,255,255,.04);
+  background:var(--bg);
   display:flex;
   flex-direction:column;
   overflow:hidden;
@@ -212,6 +222,9 @@ body{
   background:rgba(0,0,0,0.3);
   flex-shrink:0;
   min-height:60px;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 100;
 }
 
 .header h1{
@@ -221,6 +234,9 @@ body{
   text-overflow:ellipsis;
   margin-right:10px;
   flex:1;
+  background: linear-gradient(45deg, #00c6ff, #00d19a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Coin display in header */
@@ -228,26 +244,16 @@ body{
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid var(--coin);
   color: var(--coin);
-  padding: 6px 12px;
-  border-radius: 10px;
+  padding: 8px 14px;
+  border-radius: 12px;
   font-size: 0.9rem;
   font-weight: bold;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   margin-right: 10px;
-}
-
-/* VIP Badge */
-.vip-badge {
-  background: linear-gradient(45deg, #ffd700, #ff9900);
-  color: #000;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: bold;
-  margin-left: 8px;
-  display: inline-block;
+  backdrop-filter: blur(5px);
+  z-index: 10;
 }
 
 /* ===== INVITE BAR ===== */
@@ -256,6 +262,22 @@ body{
   align-items:center;
   gap:8px;
   justify-content:flex-end;
+  position: relative;
+  z-index: 10;
+}
+
+.invite-link-display {
+  background: rgba(0, 198, 255, 0.1);
+  border: 1px solid var(--accent);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  backdrop-filter: blur(5px);
+  display: none;
 }
 
 .invite-bar button{
@@ -276,6 +298,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+  backdrop-filter: blur(5px);
 }
 
 .invite-bar button:active{
@@ -299,6 +322,7 @@ body{
   flex-shrink:0;
   min-height:44px;
   min-width:44px;
+  backdrop-filter: blur(5px);
 }
 
 .back-btn:active{
@@ -322,6 +346,7 @@ body{
   flex-direction:column;
   gap:10px;
   -webkit-overflow-scrolling:touch;
+  background: rgba(0,0,0,0.1);
 }
 
 .msg{
@@ -333,16 +358,19 @@ body{
   animation:fadeIn 0.3s ease;
   position:relative;
   font-size:0.95rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .me{
-  background:linear-gradient(135deg,#00c6ff,#0072ff);
+  background:linear-gradient(135deg,rgba(0,198,255,0.3),rgba(0,114,255,0.3));
   align-self:flex-end;
   margin-left:auto;
+  border: 1px solid rgba(0,198,255,0.2);
 }
 
 .other{
-  background:rgba(255,255,255,.1);
+  background:rgba(255,255,255,.08);
   align-self:flex-start;
 }
 
@@ -354,6 +382,7 @@ body{
   font-size: 0.9rem;
   text-align: center;
   max-width: 90%;
+  padding: 10px 15px;
 }
 
 .typing-indicator {
@@ -367,6 +396,7 @@ body{
   display: flex;
   align-items: center;
   gap: 5px;
+  backdrop-filter: blur(5px);
 }
 
 .typing-dots {
@@ -395,9 +425,10 @@ body{
   gap:10px;
   padding:12px 16px;
   border-top:1px solid var(--border);
-  background:rgba(0,0,0,0.2);
+  background:rgba(0,0,0,0.3);
   flex-shrink:0;
   align-items:center;
+  backdrop-filter: blur(10px);
 }
 
 .chat-input input{
@@ -411,6 +442,8 @@ body{
   font-family:'Baloo Tamma 2',cursive;
   outline:none;
   min-height:44px;
+  backdrop-filter: blur(5px);
+  font-size: 16px !important; /* Prevents zoom on iOS */
 }
 
 .chat-input input:focus{
@@ -435,6 +468,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+  backdrop-filter: blur(5px);
 }
 
 .chat-input button:active{
@@ -454,6 +488,7 @@ body{
   justify-content: center;
   min-width: 44px;
   min-height: 44px;
+  backdrop-filter: blur(5px);
 }
 
 /* Media preview */
@@ -464,6 +499,7 @@ body{
   background: rgba(0,0,0,0.3);
   border-radius: 12px;
   border: 1px solid var(--border);
+  backdrop-filter: blur(5px);
 }
 
 .preview-container {
@@ -477,6 +513,7 @@ body{
   max-height: 100px;
   border-radius: 8px;
   object-fit: cover;
+  border: 1px solid var(--border);
 }
 
 .preview-info {
@@ -503,6 +540,12 @@ body{
   max-height: 200px;
   border-radius: 8px;
   border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.media-message img:hover, .media-message video:hover {
+  transform: scale(1.02);
 }
 
 /* ===== VIDEO CHAT ===== */
@@ -511,6 +554,7 @@ body{
   flex:1;
   flex-direction:column;
   min-height:0;
+  background: rgba(0,0,0,0.5);
 }
 
 /* Video Grid - Fixed 4-panel layout */
@@ -525,21 +569,41 @@ body{
   min-width:0;
   position:relative;
   background: rgba(0,0,0,0.2);
+  box-sizing: border-box;
+  width:100%;
+  height:100%;
 }
 
 /* Video Card - Always 4 panels */
 .video-card{
   position:relative;
   background:var(--card);
-  border-radius:14px;
+  border-radius:16px;
   overflow:hidden;
-  border:1px solid var(--border);
+  border:2px solid var(--border);
   display:flex;
   flex-direction:column;
   min-height:0;
   min-width:0;
   background: #000;
-  aspect-ratio: 4/3;
+  transition: all 0.3s ease;
+  width:100%;
+  height:100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.video-card:active {
+  transform: scale(0.98);
+}
+
+.video-container {
+  width:100%;
+  height:100%;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .video-card video{
@@ -547,11 +611,13 @@ body{
   height:100%;
   object-fit:cover;
   background:#000;
-  min-height:0;
-  min-width:0;
-  flex:1;
   display:block;
   transform: scaleX(1);
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
 }
 
 .video-card.me video{
@@ -576,9 +642,75 @@ body{
 }
 
 .video-placeholder i {
-  font-size: 2rem;
+  font-size: 3rem;
   margin-bottom: 10px;
   color: var(--accent);
+  opacity: 0.5;
+}
+
+/* OPO Emojis */
+.opo-emoji {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  z-index: 20;
+  pointer-events: none;
+  animation: emojiFloat 2s ease-in-out forwards;
+}
+
+@keyframes emojiFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -200%) scale(0.8);
+  }
+}
+
+/* Special Emojis */
+.special-emoji {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 4rem;
+  z-index: 25;
+  pointer-events: none;
+  animation: specialEmojiFloat 2.5s ease-in-out forwards;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+}
+
+@keyframes specialEmojiFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -120%) scale(1.5) rotate(-10deg);
+  }
+  40% {
+    transform: translate(-50%, -150%) scale(1.3) rotate(10deg);
+  }
+  60% {
+    transform: translate(-50%, -180%) scale(1.2) rotate(-5deg);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -200%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -250%) scale(0.8);
+  }
 }
 
 /* Speaking indicator */
@@ -587,37 +719,231 @@ body{
   border-color:var(--green);
 }
 
-/* Video Controls */
-.video-controls{
+/* Watermark logo */
+.watermark-logo {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 8px;
+  padding: 3px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.watermark-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 5px;
+}
+
+/* Video panel coins */
+.video-coins {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0,0,0,0.8);
+  color: var(--coin);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255,215,0,0.3);
+}
+
+/* Video label - ANONYMOUS FOR VIDEO CHAT */
+.video-label{
   position:absolute;
-  bottom:12px;
+  top:10px;
+  left:10px;
+  background:rgba(0,0,0,0.7);
+  color:white;
+  padding:6px 12px;
+  border-radius:10px;
+  font-size:0.8rem;
+  z-index:5;
+  max-width:80%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  backdrop-filter: blur(5px);
+}
+
+/* Badge system */
+.user-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 5px;
+  text-transform: uppercase;
+}
+
+.badge-creator { background: var(--creator); color: white; }
+.badge-admin { background: var(--admin); color: white; }
+.badge-manager { background: var(--manager); color: white; }
+.badge-supporter { background: var(--supporter); color: white; }
+.badge-vip { background: var(--vip); color: black; }
+
+/* Report button on video panel */
+.report-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 118, 117, 0.8);
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+.report-btn:hover {
+  background: rgba(255, 118, 117, 1);
+  transform: scale(1.05);
+}
+
+.report-btn:active {
+  transform: scale(0.95);
+}
+
+/* Recording indicator */
+.recording-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(231, 76, 60, 0.9);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  border: 2px solid #e74c3c;
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+}
+
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-radius: 50%;
+  animation: recordingPulse 1s infinite;
+}
+
+@keyframes recordingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Record button - Only in video chat */
+.record-btn {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  background: rgba(231, 76, 60, 0.3);
+  border: 2px solid #e74c3c;
+  color: rgba(255,255,255,0.5);
+  padding: 12px 16px;
+  border-radius: 12px;
+  cursor: not-allowed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  display: none; /* Hidden by default, shown only in video chat */
+}
+
+.record-btn.enabled {
+  background: rgba(231, 76, 60, 0.8);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+}
+
+.record-btn.enabled:hover {
+  background: rgba(231, 76, 60, 1);
+  transform: scale(1.05);
+}
+
+.record-btn.enabled:active {
+  transform: scale(0.95);
+}
+
+.record-btn.recording {
+  background: rgba(231, 76, 60, 0.9);
+  animation: recordingGlow 2s infinite;
+}
+
+@keyframes recordingGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(231, 76, 60, 0.5); }
+  50% { box-shadow: 0 0 30px rgba(231, 76, 60, 0.8); }
+}
+
+/* Video Controls - FLOATING - FIXED POSITION */
+.video-controls{
+  position:fixed;
+  bottom:20px;
   left:50%;
   transform:translateX(-50%);
   display:flex;
-  gap:8px;
-  background:rgba(0,0,0,0.7);
-  padding:8px 12px;
-  border-radius:12px;
+  gap:12px;
+  background:rgba(0,0,0,0.9);
+  padding:12px 16px;
+  border-radius:16px;
   backdrop-filter:blur(10px);
-  z-index:10;
+  z-index:1000;
   border:1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .ctrl-btn{
   background:rgba(255,255,255,0.1);
   border:1px solid rgba(255,255,255,0.2);
   color:white;
-  padding:10px;
-  border-radius:8px;
+  padding:12px;
+  border-radius:10px;
   cursor:pointer;
-  font-size:1rem;
+  font-size:1.1rem;
   transition:all 0.2s ease;
-  min-width:44px;
-  min-height:44px;
+  min-width:48px;
+  min-height:48px;
   display:flex;
   align-items:center;
   justify-content:center;
   touch-action:manipulation;
+}
+
+.ctrl-btn:hover {
+  background:rgba(255,255,255,0.15);
+  transform: translateY(-2px);
 }
 
 .ctrl-btn:active{
@@ -635,61 +961,47 @@ body{
   display:flex;
   justify-content:center;
   border-bottom:1px solid var(--border);
-  background:rgba(0,0,0,0.2);
+  background:rgba(0,0,0,0.3);
   flex-shrink:0;
   min-height:60px;
   align-items:center;
-}
-
-/* Video label */
-.video-label{
-  position:absolute;
-  top:8px;
-  left:8px;
-  background:rgba(0,0,0,0.5);
-  color:white;
-  padding:4px 10px;
-  border-radius:8px;
-  font-size:0.8rem;
-  z-index:5;
-  max-width:80%;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  display:flex;
-  align-items:center;
-  gap:5px;
+  backdrop-filter: blur(10px);
 }
 
 /* ===== MODALS ===== */
 .modal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.85);
+  background:rgba(0,0,0,.9);
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:1000;
+  z-index:2000;
   padding:20px;
-  backdrop-filter:blur(5px);
+  backdrop-filter:blur(10px);
   touch-action:manipulation;
+  animation: fadeIn 0.3s ease;
 }
 
 .modal-box{
-  background:#0c1220;
+  background:linear-gradient(145deg,#0c1220,#060a14);
   padding:24px;
-  border-radius:16px;
+  border-radius:20px;
   width:100%;
-  max-width:320px;
+  max-width:360px;
   border:1px solid var(--border);
   box-shadow:0 20px 50px rgba(0,0,0,0.5);
   animation:popIn 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .modal-box h3{
   margin-bottom:16px;
   font-size:1.3rem;
   text-align:center;
+  background: linear-gradient(45deg, #00c6ff, #00d19a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .modal-box input{
@@ -704,6 +1016,8 @@ body{
   font-family:'Baloo Tamma 2',cursive;
   outline:none;
   min-height:44px;
+  backdrop-filter: blur(5px);
+  font-size: 16px !important; /* Prevents zoom on iOS */
 }
 
 .modal-box input:focus{
@@ -729,6 +1043,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+  backdrop-filter: blur(5px);
 }
 
 .modal-box button:active{
@@ -737,7 +1052,7 @@ body{
 
 /* Coin payment modal */
 .coin-payment-modal .modal-box {
-  max-width: 380px;
+  max-width: 400px;
 }
 
 .coin-cost {
@@ -754,14 +1069,15 @@ body{
 .coin-balance-check {
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid var(--coin);
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 15px;
   margin: 15px 0;
   text-align: center;
+  backdrop-filter: blur(5px);
 }
 
 .coin-balance-check .balance {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: bold;
   color: var(--coin);
 }
@@ -776,22 +1092,24 @@ body{
 .media-type-select {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
   margin: 15px 0;
 }
 
 .media-type-btn {
   background: rgba(255,255,255,0.05);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 15px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
 }
 
 .media-type-btn:hover {
   background: rgba(255,255,255,0.1);
+  transform: translateY(-2px);
 }
 
 .media-type-btn.selected {
@@ -800,9 +1118,147 @@ body{
 }
 
 .media-type-icon {
-  font-size: 2rem;
-  margin-bottom: 8px;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
   display: block;
+}
+
+/* Report modal */
+.report-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.report-option {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.report-option:hover {
+  background: rgba(255,118,117,0.1);
+  border-color: var(--danger);
+}
+
+.report-option.selected {
+  background: rgba(255,118,117,0.2);
+  border-color: var(--danger);
+}
+
+/* Payment gateway modal - REAL MONEY */
+.payment-gateway-modal .modal-box {
+  max-width: 450px;
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.payment-option {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+  background: rgba(0,198,255,0.1);
+  border-color: var(--accent);
+}
+
+.payment-option.selected {
+  background: rgba(0,198,255,0.2);
+  border-color: var(--accent);
+}
+
+.payment-icon {
+  font-size: 1.5rem;
+}
+
+.payment-details {
+  flex: 1;
+}
+
+.payment-price {
+  font-size: 1.2rem;
+  color: var(--coin);
+  font-weight: bold;
+}
+
+.real-money-price {
+  font-size: 1.2rem;
+  color: var(--green);
+  font-weight: bold;
+}
+
+/* Admin modal */
+.admin-modal .modal-box {
+  max-width: 500px;
+}
+
+.user-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 15px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+}
+
+.user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge-selector {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.badge-option {
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.badge-option:hover {
+  opacity: 0.8;
+}
+
+.badge-option.selected {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(255,255,255,0.2);
 }
 
 /* ===== MOBILE RESPONSIVE ===== */
@@ -810,7 +1266,7 @@ body{
   .start-card{
     padding:25px 20px;
     max-width:90%;
-    border-radius:16px;
+    border-radius:18px;
   }
   
   .start-card h1{
@@ -835,8 +1291,8 @@ body{
   }
   
   .coin-display {
-    padding: 5px 10px;
-    font-size: 0.8rem;
+    padding: 6px 12px;
+    font-size: 0.85rem;
   }
   
   .video-grid{
@@ -845,16 +1301,16 @@ body{
   }
   
   .video-controls{
-    bottom:8px;
-    padding:6px 10px;
-    gap:6px;
+    bottom:15px;
+    padding:10px 14px;
+    gap:8px;
   }
   
   .ctrl-btn{
-    padding:8px;
-    min-width:40px;
-    min-height:40px;
-    font-size:0.9rem;
+    padding:10px;
+    min-width:44px;
+    min-height:44px;
+    font-size:1rem;
   }
   
   .chat-input{
@@ -888,6 +1344,40 @@ body{
   .video-card {
     aspect-ratio: 1/1;
   }
+  
+  .watermark-logo {
+    width: 25px;
+    height: 25px;
+    bottom: 6px;
+    right: 6px;
+  }
+  
+  .video-coins {
+    font-size: 0.6rem;
+    padding: 3px 6px;
+    bottom: 6px;
+    left: 6px;
+  }
+  
+  .record-btn {
+    bottom: 80px;
+    right: 15px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .invite-link-display {
+    max-width: 100px;
+    font-size: 0.7rem;
+    padding: 6px 8px;
+  }
+  
+  .report-btn {
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
 }
 
 @media (max-width: 360px) {
@@ -904,13 +1394,18 @@ body{
   }
   
   .video-controls{
-    gap:4px;
+    gap:6px;
   }
   
   .ctrl-btn{
-    min-width:36px;
-    min-height:36px;
-    padding:6px;
+    min-width:40px;
+    min-height:40px;
+    padding:8px;
+  }
+  
+  .video-grid {
+    padding: 6px;
+    gap: 6px;
   }
 }
 
@@ -920,19 +1415,19 @@ body{
   }
   
   .header{
-    padding:6px 12px;
+    padding:8px 12px;
     min-height:50px;
   }
   
   .video-controls{
-    bottom:6px;
-    padding:4px 8px;
+    bottom:10px;
+    padding:8px 12px;
   }
   
   .ctrl-btn{
-    padding:6px;
-    min-width:36px;
-    min-height:36px;
+    padding:8px;
+    min-width:40px;
+    min-height:40px;
   }
   
   button {
@@ -947,24 +1442,29 @@ body{
   .video-grid {
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: 1fr;
-    gap: 6px;
+    gap: 8px;
   }
   
   .video-card {
     aspect-ratio: 16/9;
+  }
+  
+  .record-btn {
+    bottom: 60px;
+    right: 10px;
   }
 }
 
 /* Notification */
 .copy-notification{
   position:fixed;
-  top:20px;
+  top:80px;
   left:50%;
   transform:translateX(-50%);
-  background:rgba(0,0,0,0.85);
+  background:rgba(0,0,0,0.9);
   color:white;
   padding:12px 20px;
-  border-radius:10px;
+  border-radius:12px;
   border:1px solid var(--accent);
   z-index:1000;
   animation:slideDown 0.3s ease;
@@ -972,6 +1472,7 @@ body{
   font-size:0.9rem;
   text-align:center;
   max-width:90%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 @keyframes slideDown{
@@ -1000,21 +1501,22 @@ body{
   to { transform: rotate(360deg); }
 }
 
-/* Connection Status */
+/* Connection Status - FIXED POSITION */
 .connection-status {
   position: fixed;
-  top: 10px;
-  right: 10px;
-  background: rgba(0,0,0,0.8);
-  padding: 6px 12px;
-  border-radius: 10px;
-  font-size: 0.7rem;
+  top: 70px;
+  right: 15px;
+  background: rgba(0,0,0,0.9);
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.75rem;
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   backdrop-filter: blur(10px);
   border: 1px solid var(--border);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 .status-dot {
@@ -1022,24 +1524,31 @@ body{
   height: 8px;
   border-radius: 50%;
   display: inline-block;
+  animation: pulse 2s infinite;
 }
 
 .status-connected { background: var(--green); }
 .status-connecting { background: var(--orange); }
 .status-disconnected { background: var(--danger); }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 /* Participant counter */
 .participant-counter {
   background: rgba(0, 198, 255, 0.1);
   border: 1px solid rgba(0, 198, 255, 0.3);
   color: #00c6ff;
-  padding: 4px 8px;
-  border-radius: 10px;
+  padding: 5px 10px;
+  border-radius: 12px;
   font-size: 0.8rem;
   margin-left: 10px;
   display: flex;
   align-items: center;
   gap: 5px;
+  backdrop-filter: blur(5px);
 }
 
 /* Mobile Home Button */
@@ -1062,6 +1571,7 @@ body{
   justify-content: center;
   backdrop-filter: blur(10px);
   display: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 @media (max-width: 768px) {
@@ -1082,11 +1592,22 @@ body{
   margin-left: 5px;
 }
 
-/* VIP media free indicator */
-.vip-free {
-  background: rgba(0, 209, 154, 0.1);
-  border-color: var(--green);
-  color: var(--green);
+/* Nickname display in text chat */
+.nickname-display {
+  font-weight: bold;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nickname-display.me {
+  color: #00d19a;
+}
+
+.nickname-display.other {
+  color: #00c6ff;
 }
 
 /* Improve scrollbars */
@@ -1118,6 +1639,10 @@ body{
   .modal-box input {
     font-size: 16px !important;
   }
+  
+  body {
+    min-height: -webkit-fill-available;
+  }
 }
 
 /* Animation for new user join */
@@ -1141,18 +1666,186 @@ body{
   padding: 20px;
 }
 
-/* Media recording timer */
-.recording-timer {
+/* Coin animation */
+.coin-animation {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(255, 118, 117, 0.8);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: bold;
-  z-index: 10;
+  font-size: 1.5rem;
+  z-index: 1000;
+  animation: coinFly 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes coinFly {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(0.5) rotate(360deg);
+  }
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 198, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 198, 255, 0);
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Glow animation */
+@keyframes glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Button press animation */
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.button-press {
+  animation: buttonPress 0.2s ease;
+}
+
+/* Message animation */
+@keyframes messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-slide {
+  animation: messageSlide 0.3s ease;
+}
+
+/* Media upload animation */
+@keyframes mediaUpload {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.media-upload-animation {
+  animation: mediaUpload 0.3s ease;
+}
+
+/* Admin controls */
+.admin-controls {
+  display: flex;
+  gap: 10px;
+  margin-left: 10px;
+}
+
+.admin-btn {
+  background: rgba(155, 89, 182, 0.2);
+  border: 1px solid var(--admin);
+  color: var(--admin);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  backdrop-filter: blur(5px);
+}
+
+/* Recording canvas */
+#recordingCanvas {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  width: 1280px;
+  height: 720px;
+  z-index: -9999;
+}
+
+/* Click coin animation */
+.coin-transfer {
+  position: fixed;
+  font-size: 2rem;
+  z-index: 1000;
+  animation: coinTransfer 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes coinTransfer {
+  0% {
+    opacity: 1;
+    transform: translate(var(--start-x), var(--start-y)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--end-x), var(--end-y)) scale(0.5);
+  }
+}
+
+/* Fix for UI overlaps */
+.video-label {
+  z-index: 5 !important;
+}
+
+.report-btn {
+  z-index: 20 !important;
+}
+
+.video-container {
+  z-index: 1 !important;
+}
+
+.video-placeholder {
+  z-index: 1 !important;
+}
+
+/* Nickname modal */
+.nickname-modal .modal-box {
+  max-width: 400px;
+}
+
+.nickname-modal input {
+  margin-bottom: 15px;
 }
 </style>
 
@@ -1169,21 +1862,13 @@ body{
 <div class="start-overlay" id="startOverlay">
   <div class="start-card">
     <h1>ManaMingle Group Chat</h1>
-    <div class="coin-balance" id="startCoinBalance">
-      <span class="icon">🪙</span>
-      <span id="coinCount">0</span> Coins
-    </div>
-    <button id="startTextBtn">
+    <button id="startTextBtn" class="floating">
       <span>💬</span>
       <span>Group Text Chat</span>
     </button>
-    <button id="startVideoBtn">
+    <button id="startVideoBtn" class="floating">
       <span>🎥</span>
       <span>Group Video Chat</span>
-    </button>
-    <button id="viewVIPBtn" class="vip-btn">
-      <span>💎</span>
-      <span>VIP: Free Media</span>
     </button>
     <button id="homeBtn" class="home-btn">
       <span>🏠</span>
@@ -1201,13 +1886,13 @@ body{
         <span>👥</span>
         <span id="participantCountText">0</span>
       </span>
-      <span class="vip-badge" id="myVipBadge" style="display:none;">VIP</span>
     </div>
     <div class="coin-display" id="headerCoinDisplay">
       <span>🪙</span>
       <span id="currentCoins">0</span>
     </div>
     <div class="invite-bar">
+      <div class="invite-link-display" id="inviteLinkDisplay"></div>
       <button id="copyInviteBtn" title="Copy Invite Link">📋</button>
       <button class="back-btn" id="backBtn">⬅</button>
     </div>
@@ -1231,7 +1916,7 @@ body{
       </div>
     </div>
     <div class="chat-input">
-      <div class="media-upload-btn" id="mediaUploadBtn" title="Send photo/video">
+      <div class="media-upload-btn" id="mediaUploadBtn" title="Send media (30-50 coins)">
         📎
       </div>
       <input id="msgInput" placeholder="Type a message…" autocomplete="off">
@@ -1243,42 +1928,82 @@ body{
   <div class="video-chat" id="videoChat">
     <div class="video-grid" id="videoGrid">
       <!-- Fixed 4 video panels -->
-      <div class="video-card" id="video-panel-1">
-        <div class="video-placeholder">
-          <i>👤</i>
-          <span>Waiting for user...</span>
+      <div class="video-card" id="video-panel-1" data-panel="1">
+        <div class="video-container">
+          <div class="video-placeholder">
+            <i>👤</i>
+            <span>Anonymous</span>
+          </div>
+          <div class="video-coins" style="display:none;">
+            <span>🪙</span>
+            <span id="panelCoins1">0</span>
+          </div>
         </div>
-        <div class="video-label">Anonymous 1</div>
+        <div class="video-label">You</div>
+        <div class="watermark-logo">
+          <div style="color: #00c6ff; font-weight: bold; font-size: 0.7rem;">MM</div>
+        </div>
       </div>
-      <div class="video-card" id="video-panel-2">
-        <div class="video-placeholder">
-          <i>👤</i>
-          <span>Waiting for user...</span>
+      <div class="video-card" id="video-panel-2" data-panel="2">
+        <div class="video-container">
+          <div class="video-placeholder">
+            <i>👤</i>
+            <span>Anonymous</span>
+          </div>
+          <div class="video-coins" style="display:none;">
+            <span>🪙</span>
+            <span id="panelCoins2">0</span>
+          </div>
         </div>
-        <div class="video-label">Anonymous 2</div>
+        <div class="video-label">Anonymous</div>
+        <div class="watermark-logo">
+          <div style="color: #00c6ff; font-weight: bold; font-size: 0.7rem;">MM</div>
+        </div>
       </div>
-      <div class="video-card" id="video-panel-3">
-        <div class="video-placeholder">
-          <i>👤</i>
-          <span>Waiting for user...</span>
+      <div class="video-card" id="video-panel-3" data-panel="3">
+        <div class="video-container">
+          <div class="video-placeholder">
+            <i>👤</i>
+            <span>Anonymous</span>
+          </div>
+          <div class="video-coins" style="display:none;">
+            <span>🪙</span>
+            <span id="panelCoins3">0</span>
+          </div>
         </div>
-        <div class="video-label">Anonymous 3</div>
+        <div class="video-label">Anonymous</div>
+        <div class="watermark-logo">
+          <div style="color: #00c6ff; font-weight: bold; font-size: 0.7rem;">MM</div>
+        </div>
       </div>
-      <div class="video-card" id="video-panel-4">
-        <div class="video-placeholder">
-          <i>👤</i>
-          <span>Waiting for user...</span>
+      <div class="video-card" id="video-panel-4" data-panel="4">
+        <div class="video-container">
+          <div class="video-placeholder">
+            <i>👤</i>
+            <span>Anonymous</span>
+          </div>
+          <div class="video-coins" style="display:none;">
+            <span>🪙</span>
+            <span id="panelCoins4">0</span>
+          </div>
         </div>
-        <div class="video-label">Anonymous 4</div>
+        <div class="video-label">Anonymous</div>
+        <div class="watermark-logo">
+          <div style="color: #00c6ff; font-weight: bold; font-size: 0.7rem;">MM</div>
+        </div>
       </div>
     </div>
-    <div class="video-header">
-      <div class="video-controls" id="globalControls">
-        <button class="ctrl-btn" data-action="toggleMic" title="Toggle Mic (M)">🎤</button>
-        <button class="ctrl-btn" data-action="toggleCam" title="Toggle Camera (C)">📷</button>
-        <button class="ctrl-btn" data-action="recordVideo" title="Record 5s Video (50 coins)" id="recordVideoBtn">🎬</button>
-      </div>
-    </div>
+  </div>
+</div>
+
+<!-- Nickname Modal -->
+<div class="modal nickname-modal" id="nicknameModal" style="display:none;">
+  <div class="modal-box">
+    <h3>Enter Your Nickname</h3>
+    <p style="text-align:center; margin-bottom:20px; color:rgba(255,255,255,0.8);">Enter a nickname for text chat (3-20 characters)</p>
+    <input type="text" id="nicknameInputModal" placeholder="Enter your nickname" maxlength="20">
+    <button id="confirmNicknameBtn">Join Text Chat</button>
+    <button id="cancelNicknameBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
   </div>
 </div>
 
@@ -1297,13 +2022,11 @@ body{
         <span class="media-type-icon">🖼️</span>
         <div>Photo</div>
         <div class="coin-cost">30 coins</div>
-        <div class="vip-free" style="font-size:0.8rem; margin-top:5px; display:none;" id="photoFree">FREE for VIP</div>
       </div>
       <div class="media-type-btn" data-type="video">
         <span class="media-type-icon">🎥</span>
         <div>5s Video</div>
         <div class="coin-cost">50 coins</div>
-        <div class="vip-free" style="font-size:0.8rem; margin-top:5px; display:none;" id="videoFree">FREE for VIP</div>
       </div>
     </div>
     
@@ -1316,7 +2039,7 @@ body{
 <div class="modal" id="mediaUploadModal" style="display:none;">
   <div class="modal-box">
     <h3 id="mediaUploadTitle">Upload Photo</h3>
-    <p id="mediaUploadCost" style="text-align:center; margin:10px 0; color:var(--coin);"></p>
+    <p id="mediaUploadCost" style="text-align:center; margin:10px 0; color:var(--coin); font-weight: bold;"></p>
     
     <input type="file" id="mediaFileInput" accept="image/*,video/*" style="display:none;">
     
@@ -1327,37 +2050,134 @@ body{
       </button>
       
       <div id="mediaPreviewContainer" style="margin-top:20px; display:none;">
-        <img id="uploadPreview" style="max-width:200px; max-height:200px; border-radius:8px; margin:0 auto; display:block;">
-        <video id="uploadVideoPreview" style="max-width:200px; max-height:200px; border-radius:8px; margin:10px auto; display:none;" controls></video>
+        <img id="uploadPreview" style="max-width:200px; max-height:200px; border-radius:8px; margin:0 auto; display:block; border: 2px solid var(--accent);">
+        <video id="uploadVideoPreview" style="max-width:200px; max-height:200px; border-radius:8px; margin:10px auto; display:none; border: 2px solid var(--accent);" controls></video>
         <div style="margin-top:10px; font-size:0.9rem;" id="selectedFileName"></div>
       </div>
     </div>
     
-    <button id="confirmUploadBtn" class="vip-btn" disabled>Upload & Pay</button>
+    <button id="confirmUploadBtn" disabled>Upload & Pay</button>
     <button id="cancelUploadBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Back</button>
   </div>
 </div>
 
-<!-- Video Recording Modal -->
-<div class="modal" id="videoRecordModal" style="display:none;">
+<!-- Report Modal -->
+<div class="modal" id="reportModal" style="display:none;">
   <div class="modal-box">
-    <h3>🎬 Record Video</h3>
+    <h3>🚨 Report User</h3>
+    <p id="reportTarget" style="text-align:center; margin-bottom:20px; color:var(--danger);"></p>
     
-    <div class="coin-balance-check">
-      <div>Cost: <span class="coin-cost">50 coins</span></div>
-      <div>Your balance: <span class="balance" id="recordCoinBalance">0</span> coins</div>
-      <div class="insufficient" id="recordInsufficient" style="display:none;">Not enough coins for recording!</div>
+    <div class="report-options">
+      <div class="report-option" data-reason="Inappropriate content">
+        <div style="font-weight:bold;">Inappropriate content</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Sharing inappropriate or offensive material</div>
+      </div>
+      <div class="report-option" data-reason="Harassment">
+        <div style="font-weight:bold;">Harassment</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Bullying, threats, or harassment</div>
+      </div>
+      <div class="report-option" data-reason="Spam">
+        <div style="font-weight:bold;">Spam</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Excessive messages or promotions</div>
+      </div>
+      <div class="report-option" data-reason="Other">
+        <div style="font-weight:bold;">Other</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Another issue not listed</div>
+      </div>
     </div>
     
-    <div style="text-align:center; margin:20px 0;">
-      <video id="recordPreview" autoplay muted style="width:100%; max-height:200px; background:#000; border-radius:8px; border:1px solid var(--border);"></video>
-      <div class="recording-timer" id="recordTimer" style="display:none;">5s</div>
-    </div>
+    <textarea id="reportDescription" placeholder="Additional details (optional)" style="width:100%; height:80px; padding:12px; margin-top:15px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:white; font-family:'Baloo Tamma 2',cursive; resize:none;"></textarea>
     
-    <button id="startRecordBtn">🎬 Start Recording (5s)</button>
-    <button id="cancelRecordBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
+    <button id="submitReportBtn">Submit Report</button>
+    <button id="cancelReportBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
   </div>
 </div>
+
+<!-- Payment Gateway Modal - REAL MONEY -->
+<div class="modal payment-gateway-modal" id="paymentModal" style="display:none;">
+  <div class="modal-box">
+    <h3>🎬 Enable Recording</h3>
+    <p style="text-align:center; margin-bottom:20px; color:rgba(255,255,255,0.8);">Unlock the ability to record video panels</p>
+    
+    <div class="payment-options">
+      <div class="payment-option" data-amount="4.99" data-duration="24">
+        <span class="payment-icon">💳</span>
+        <div class="payment-details">
+          <div style="font-weight:bold;">24 Hours Access</div>
+          <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Record video panels for 24 hours</div>
+        </div>
+        <div class="real-money-price">$4.99</div>
+      </div>
+      <div class="payment-option" data-amount="19.99" data-duration="168">
+        <span class="payment-icon">💎</span>
+        <div class="payment-details">
+          <div style="font-weight:bold;">7 Days Access</div>
+          <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Record video panels for 7 days</div>
+        </div>
+        <div class="real-money-price">$19.99</div>
+      </div>
+      <div class="payment-option" data-amount="49.99" data-duration="720">
+        <span class="payment-icon">👑</span>
+        <div class="payment-details">
+          <div style="font-weight:bold;">30 Days Access</div>
+          <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">Record video panels for 30 days</div>
+        </div>
+        <div class="real-money-price">$49.99</div>
+      </div>
+    </div>
+    
+    <button id="confirmPaymentBtn" disabled>Purchase & Enable Recording</button>
+    <button id="cancelPaymentBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
+  </div>
+</div>
+
+<!-- Admin Modal -->
+<div class="modal admin-modal" id="adminModal" style="display:none;">
+  <div class="modal-box">
+    <h3>👑 Admin Controls</h3>
+    
+    <div style="margin:15px 0;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="font-weight:bold;">Room ID:</div>
+        <div id="adminRoomId" style="background:rgba(0,198,255,0.1); padding:5px 10px; border-radius:6px; font-family:monospace;"></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="font-weight:bold;">Participants:</div>
+        <div id="adminParticipantCount" style="background:rgba(0,209,154,0.1); padding:5px 10px; border-radius:6px;"></div>
+      </div>
+    </div>
+    
+    <div class="user-list" id="adminUserList">
+      <!-- Users will appear here -->
+    </div>
+    
+    <div style="margin-top:20px;">
+      <div style="font-weight:bold; margin-bottom:10px;">Assign Badge:</div>
+      <div class="badge-selector">
+        <div class="badge-option badge-creator" data-badge="creator">Creator</div>
+        <div class="badge-option badge-admin" data-badge="admin">Admin</div>
+        <div class="badge-option badge-manager" data-badge="manager">Manager</div>
+        <div class="badge-option badge-supporter" data-badge="supporter">Supporter</div>
+        <div class="badge-option badge-vip" data-badge="vip">VIP</div>
+      </div>
+    </div>
+    
+    <button id="saveBadgesBtn" style="margin-top:20px;">Save Changes</button>
+    <button id="closeAdminBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Close</button>
+  </div>
+</div>
+
+<!-- Recording Indicator -->
+<div class="recording-indicator" id="recordingIndicator" style="display:none;">
+  <div class="recording-dot"></div>
+  <span>Recording...</span>
+</div>
+
+<!-- Record Button - Only shows in video chat -->
+<button class="record-btn" id="recordBtn" title="Purchase recording feature">
+  <span>⏺️</span>
+  <span>Record</span>
+</button>
 
 <!-- Connection Status -->
 <div class="connection-status" id="connectionStatus" style="display:none;">
@@ -1365,71 +2185,131 @@ body{
   <span id="statusText">Connecting...</span>
 </div>
 
+<!-- Video Controls - FLOATING -->
+<div class="video-controls" id="globalControls" style="display:none;">
+  <button class="ctrl-btn" data-action="toggleMic" title="Toggle Mic (M)">🎤</button>
+  <button class="ctrl-btn" data-action="toggleCam" title="Toggle Camera (C)">📷</button>
+</div>
+
+<!-- Admin Controls Button -->
+<button class="admin-btn" id="adminBtn" style="display:none; position:fixed; bottom:20px; left:20px; z-index:1000;">
+  <span>👑</span>
+  <span>Admin</span>
+</button>
+
+<!-- Recording Canvas (hidden) -->
+<canvas id="recordingCanvas"></canvas>
+
 <!-- Notification Container -->
 <div id="notificationContainer"></div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
   /* ===== GLOBAL STATE ===== */
-  let socket = null;
-  let roomId = null;
-  let nickname = "Anonymous";
-  let localStream = null;
-  let screenStream = null;
-  let mediaRecorder = null;
-  const peers = {};
-  const userData = new Map();
-  let speakerInterval = null;
-  let isTextMode = false;
-  let isVideoMode = false;
-  let inviteMode = 'group_video';
-  let isVIP = false;
-  let coins = 100; // Starting coins
-  
+  let iceConfig = null;
+
+async function loadIceServers() {
+  if (iceConfig) return iceConfig;
+
+  const res = await fetch("/api/turn");
+  if (!res.ok) throw new Error("TURN fetch failed");
+  iceConfig = await res.json();
+  return iceConfig;
+}
+
+/* ===== GLOBAL STATE ===== */
+let socket = null;
+let roomId = null;
+let nickname = null;
+let localStream = null;
+const peers = {};
+const userData = new Map();
+let speakerInterval = null;
+let isTextMode = false;
+let isVideoMode = false;
+let inviteMode = 'group_video';
+let coins = 1000;
+let participantCount = 0;
+let isAdmin = false;
+let isCreator = false;
+let badges = {};
+let userId = null;
+const pendingCandidates = {};
   // Media upload state
   let selectedMediaType = null;
   let selectedMediaFile = null;
   let mediaUploadCost = 0;
   
-  // Video recording state
+  // Recording state
+  let isRecordingEnabled = false;
+  let isRecording = false;
+  let recordingEndTime = 0;
+  let mediaRecorder = null;
+  let recordedChunks = [];
   let recordingStream = null;
-  let recordStartTime = null;
-  let recordTimerInterval = null;
+  let recordingCanvas = null;
+  let recordingContext = null;
   
-  // Video panel assignment
-  const videoPanels = {
-    1: { userId: null, peerId: null },
-    2: { userId: null, peerId: null },
-    3: { userId: null, peerId: null },
-    4: { userId: null, peerId: null }
-  };
+ /* ===== VIDEO PANELS ===== */
+const videoPanels = {
+  1: { userId: null, peerId: null, stream: null, videoElement: null, element: null },
+  2: { userId: null, peerId: null, stream: null, videoElement: null, element: null },
+  3: { userId: null, peerId: null, stream: null, videoElement: null, element: null },
+  4: { userId: null, peerId: null, stream: null, videoElement: null, element: null }
+};
+  // Report state
+  let reportTarget = null;
+  let selectedReportReason = null;
   
+  // Payment state
+  let selectedPaymentOption = null;
+  
+  // Admin state
+  let selectedAdminUser = null;
+  let selectedAdminBadge = null;
+  
+  // Special emojis
+  const specialEmojis = ['💖', '✨', '🌟', '💎', '👑', '🔥', '💯', '🌈', '🦄', '🍀', '⚡', '🎊', '🎁', '🎉', '🏆'];
+ /* ===== MEDIA / MESSAGE STATE ===== */
+const receivedMessageIds = new Set();
+const receivedMediaIds = new Set();
+const MEDIA_CHUNK_SIZE = 64 * 1024;
+const incomingMedia = {}; // ✅ FIX
   // ICE Servers configuration
-  const iceServers = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
-  ];
-
+  
+function shouldCreateOffer(myId, otherId) {
+  return myId < otherId;
+}
   /* ===== INITIALIZATION ===== */
   document.addEventListener('DOMContentLoaded', function () {
     console.log('ManaMingle Group Chat - Initializing...');
     
-    // Load coins and VIP status from localStorage
+    // Load coins and recording status from localStorage
     loadUserData();
     
     // Parse URL parameters
     const params = new URLSearchParams(window.location.search);
     const inviteRoom = params.get('room');
+    const tagsParam = params.get('tags');
+    
+    if (tagsParam) {
+      try {
+        const tags = JSON.parse(decodeURIComponent(tagsParam));
+        console.log('Loaded tags from URL:', tags);
+      } catch (e) {
+        console.error('Failed to parse tags:', e);
+      }
+    }
     
     if (inviteRoom) {
       roomId = inviteRoom;
       inviteMode = params.get('mode') || 'group_video';
       
       if (inviteMode === 'group_text') {
-        startTextMode();
+        // Show nickname modal when joining via invite link
+        setTimeout(() => {
+          document.getElementById('nicknameModal').style.display = 'flex';
+        }, 500);
       } else {
         startVideoMode();
       }
@@ -1446,90 +2326,98 @@ body{
     
     // Update coin display
     updateCoinDisplay();
+    
+    // Check recording status
+    checkRecordingStatus();
+    
+    // Initialize recording canvas
+    recordingCanvas = document.getElementById('recordingCanvas');
+    recordingContext = recordingCanvas.getContext('2d');
+    
+    // Initialize video panel elements
+    for (let i = 1; i <= 4; i++) {
+      videoPanels[i].element = document.getElementById(`video-panel-${i}`);
+    }
   });
 
   function loadUserData() {
-    // Load coins
-    const savedCoins = localStorage.getItem('manamingle_coins');
+    // Load coins from localStorage
+    const savedCoins = localStorage.getItem('manaCoins');
     if (savedCoins) {
-      coins = parseInt(savedCoins, 10);
+      coins = parseInt(savedCoins, 10) || 1000;
+      console.log('Loaded coins:', coins);
     }
     
-    // Load VIP status
-    const vipData = localStorage.getItem('manamingle_vip');
-    if (vipData) {
-      try {
-        const { expiry, active } = JSON.parse(vipData);
-        const now = new Date();
-        const expiryDate = new Date(expiry);
-        
-        if (active && expiryDate > now) {
-          isVIP = true;
-          console.log('✅ VIP user detected');
-        }
-      } catch (e) {
-        console.warn('Invalid VIP data');
+    // Load nickname from localStorage
+    const savedNickname = localStorage.getItem('userNickname');
+    if (savedNickname) {
+      nickname = savedNickname;
+    }
+    
+    // Load recording status
+    const recordingData = localStorage.getItem('recordingEnabled');
+    if (recordingData) {
+      const data = JSON.parse(recordingData);
+      isRecordingEnabled = data.enabled || false;
+      recordingEndTime = data.endTime || 0;
+      
+      // Check if recording access is still valid
+      if (recordingEndTime > Date.now()) {
+        enableRecordingFeature();
+      } else {
+        isRecordingEnabled = false;
+        localStorage.removeItem('recordingEnabled');
       }
     }
+    
+    // Load badges
+    const savedBadges = localStorage.getItem('userBadges');
+    if (savedBadges) {
+      badges = JSON.parse(savedBadges);
+    }
+    
+    // Generate unique userId
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
   function saveUserData() {
-    localStorage.setItem('manamingle_coins', coins.toString());
+    localStorage.setItem('manaCoins', coins.toString());
+    if (nickname) {
+      localStorage.setItem('userNickname', nickname);
+    }
+    localStorage.setItem('userBadges', JSON.stringify(badges));
   }
 
   function updateCoinDisplay() {
-    document.getElementById('coinCount').textContent = coins;
     document.getElementById('currentCoins').textContent = coins;
     document.getElementById('modalCoinBalance').textContent = coins;
-    document.getElementById('recordCoinBalance').textContent = coins;
     
-    // Update VIP free indicators
-    if (isVIP) {
-      document.getElementById('photoFree').style.display = 'block';
-      document.getElementById('videoFree').style.display = 'block';
-    }
-  }
-
-  function createCSSParticles() {
-    const container = document.getElementById('threeContainer');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    for (let i = 0; i < 20; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'animation-particle';
-      particle.style.width = Math.random() * 15 + 5 + 'px';
-      particle.style.height = particle.style.width;
-      particle.style.left = Math.random() * 100 + 'vw';
-      particle.style.top = Math.random() * 100 + 'vh';
-      particle.style.animationDuration = Math.random() * 20 + 10 + 's';
-      particle.style.animationDelay = Math.random() * 5 + 's';
-      container.appendChild(particle);
-    }
-  }
-
-  function setupMobileHandlers() {
-    // Prevent double-tap zoom
-    document.addEventListener('dblclick', function(e) {
-      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-        e.preventDefault();
+    // Update coin display on video panels
+    for (let i = 1; i <= 4; i++) {
+      if (videoPanels[i].userId === userId) {
+        document.getElementById(`panelCoins${i}`).textContent = coins;
       }
-    });
-    
-    // Handle iOS viewport height issues
-    function setVH() {
-      let vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
-    
-    setVH();
-    window.addEventListener('resize', setVH);
-    window.addEventListener('orientationchange', setVH);
+  }
+
+  function checkRecordingStatus() {
+    if (isRecordingEnabled && recordingEndTime > Date.now()) {
+      const remainingHours = Math.ceil((recordingEndTime - Date.now()) / (1000 * 60 * 60));
+      console.log(`Recording feature active for ${remainingHours} more hours`);
+    }
   }
 
   /* ===== CHAT MODE FUNCTIONS ===== */
   function startTextMode() {
     console.log('Starting TEXT mode');
+    
+    // Check if nickname is already entered
+    if (!nickname) {
+      document.getElementById('nicknameModal').style.display = 'flex';
+      document.getElementById('nicknameInputModal').focus();
+      return;
+    }
+    
     isTextMode = true;
     isVideoMode = false;
     inviteMode = 'group_text';
@@ -1538,12 +2426,11 @@ body{
     document.getElementById('appContainer').style.display = 'flex';
     document.getElementById('textChat').style.display = 'flex';
     document.getElementById('videoChat').style.display = 'none';
+    document.getElementById('headerCoinDisplay').style.display = 'flex';
+    document.getElementById('recordBtn').style.display = 'none'; // Hide record button in text chat
     
     // Initialize socket
     initSocket();
-    
-    // Set nickname for text chat
-    nickname = "Anonymous" + Math.floor(Math.random() * 1000);
     
     // Join or create group
     if (roomId) {
@@ -1551,13 +2438,18 @@ body{
         roomId,
         mode: inviteMode,
         nickname,
-        isVIP: isVIP
+        coins: coins,
+        badges: badges[userId] || null,
+        userId: userId
       });
     } else {
       socket.emit('create-group', {
         mode: inviteMode,
         nickname,
-        isVIP: isVIP
+        coins: coins,
+        badges: badges[userId] || null,
+        userId: userId,
+        isCreator: true
       });
     }
     
@@ -1567,50 +2459,59 @@ body{
     }, 500);
   }
 
-  function startVideoMode() {
+  async function startVideoMode() {
     console.log('Starting VIDEO mode');
     isVideoMode = true;
     isTextMode = false;
     inviteMode = 'group_video';
     
+    // In video mode, use anonymous
+    nickname = 'Anonymous';
+    
     document.getElementById('startOverlay').style.display = 'none';
     document.getElementById('appContainer').style.display = 'flex';
     document.getElementById('textChat').style.display = 'none';
     document.getElementById('videoChat').style.display = 'flex';
+    document.getElementById('headerCoinDisplay').style.display = 'none';
+    document.getElementById('globalControls').style.display = 'flex';
+    document.getElementById('recordBtn').style.display = 'flex'; // Show record button in video chat
     
     // Initialize socket
     initSocket();
     
-    // Start camera
-    startCamera()
-      .then(() => {
-        nickname = "Anonymous" + Math.floor(Math.random() * 1000);
-        
-        // Take panel 1 for self
-        assignVideoPanel(socket.id, 1, true);
-        updateLocalVideoPanel();
-        
-        // Join or create group
-        if (roomId) {
-          socket.emit('join-group', {
-            roomId,
-            mode: inviteMode,
-            nickname,
-            isVIP: isVIP
-          });
-        } else {
-          socket.emit('create-group', {
-            mode: inviteMode,
-            nickname,
-            isVIP: isVIP
-          });
-        }
-      })
-      .catch(error => {
-        console.error('Camera error:', error);
-        showNotification('Camera permission required for video chat', 'error');
-        goBack();
-      });
+    try {
+      // Start camera
+      await startCamera();
+      
+      // Take panel 1 for self
+      assignVideoPanel(userId, 1, true);
+      updateLocalVideoPanel();
+      
+      // Join or create group
+      if (roomId) {
+        socket.emit('join-group', {
+          roomId,
+          mode: inviteMode,
+          nickname,
+          coins: coins,
+          badges: badges[userId] || null,
+          userId: userId
+        });
+      } else {
+        socket.emit('create-group', {
+          mode: inviteMode,
+          nickname,
+          coins: coins,
+          badges: badges[userId] || null,
+          userId: userId,
+          isCreator: true
+        });
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      showNotification('Camera permission required for video chat', 'error');
+      goBack();
+    }
   }
 
   /* ===== VIDEO PANEL MANAGEMENT ===== */
@@ -1620,12 +2521,23 @@ body{
       if (data.userId === userId) {
         data.userId = null;
         data.peerId = null;
+        data.nickname = panelNum == 1 ? 'You' : 'Anonymous';
+        data.coins = 0;
+        data.badge = null;
+        if (data.videoElement) {
+          data.videoElement.remove();
+          data.videoElement = null;
+        }
+        updateVideoPanel(parseInt(panelNum));
       }
     }
     
     // Assign to new panel
     videoPanels[panelNumber].userId = userId;
     videoPanels[panelNumber].peerId = isLocal ? null : userId;
+    videoPanels[panelNumber].nickname = isLocal ? 'You' : 'Anonymous';
+    videoPanels[panelNumber].coins = isLocal ? coins : 0;
+    videoPanels[panelNumber].badge = isLocal ? badges[userId] : null;
     
     // Update UI
     updateVideoPanel(panelNumber);
@@ -1633,7 +2545,8 @@ body{
 
   function findAvailablePanel() {
     for (const [panelNum, data] of Object.entries(videoPanels)) {
-      if (!data.userId || data.userId === socket.id) {
+      if (!data.userId)
+{
         return parseInt(panelNum);
       }
     }
@@ -1641,31 +2554,44 @@ body{
   }
 
   function updateVideoPanel(panelNumber) {
-    const panel = document.getElementById(`video-panel-${panelNumber}`);
+    const panel = videoPanels[panelNumber].element;
     if (!panel) return;
     
     const data = videoPanels[panelNumber];
     const placeholder = panel.querySelector('.video-placeholder');
     const label = panel.querySelector('.video-label');
-    const existingVideo = panel.querySelector('video');
+    const coinsDisplay = panel.querySelector('.video-coins');
+    const existingVideo = data.videoElement;
+    const existingReportBtn = panel.querySelector('.report-btn');
+    
+    // Remove existing report button
+    if (existingReportBtn) {
+      existingReportBtn.remove();
+    }
     
     if (existingVideo) {
       existingVideo.remove();
+      data.videoElement = null;
     }
     
     if (!data.userId) {
       // Empty panel
       panel.classList.remove('me');
       placeholder.style.display = 'flex';
-      label.textContent = `Anonymous ${panelNumber}`;
+      label.textContent = panelNumber == 1 ? 'You' : 'Anonymous';
+      panel.style.border = '2px solid var(--border)';
+      coinsDisplay.style.display = 'none';
       return;
     }
     
-    if (data.userId === socket.id) {
+    if (data.userId === userId) {
       // Local video
       panel.classList.add('me');
       placeholder.style.display = 'none';
       label.textContent = 'You';
+      panel.style.border = '2px solid #00d19a';
+      coinsDisplay.style.display = 'flex';
+      coinsDisplay.querySelector('span:nth-child(2)').textContent = coins;
       
       if (localStream) {
         const video = document.createElement('video');
@@ -1674,39 +2600,55 @@ body{
         video.muted = true;
         video.srcObject = localStream;
         video.onloadedmetadata = () => video.play();
-        panel.appendChild(video);
+        panel.querySelector('.video-container').appendChild(video);
+        data.videoElement = video;
+        data.stream = localStream;
       }
     } else {
       // Remote user
       panel.classList.remove('me');
+      panel.style.border = '2px solid var(--accent)';
+      
+      // Add report button
+      const reportBtn = document.createElement('button');
+      reportBtn.className = 'report-btn';
+      reportBtn.innerHTML = '🚨 Report';
+      reportBtn.onclick = () => openReportModal(data.userId);
+      panel.appendChild(reportBtn);
       
       // Check if we have a peer connection for this user
-      if (peers[data.userId]) {
-        const pc = peers[data.userId];
-        if (pc.remoteStream) {
-          placeholder.style.display = 'none';
-          label.textContent = 'Anonymous';
-          
-          const video = document.createElement('video');
-          video.autoplay = true;
-          video.playsInline = true;
-          video.srcObject = pc.remoteStream;
-          video.onloadedmetadata = () => video.play();
-          panel.appendChild(video);
+      if (peers[data.userId] && peers[data.userId].remoteStream) {
+        const stream = peers[data.userId].remoteStream;
+        placeholder.style.display = 'none';
+        label.textContent = 'Anonymous';
+        
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.playsInline = true;
+        video.srcObject = stream;
+        video.onloadedmetadata = () => video.play();
+        panel.querySelector('.video-container').appendChild(video);
+        data.videoElement = video;
+        data.stream = stream;
+        
+        // Show coins if available
+        if (data.coins > 0) {
+          coinsDisplay.style.display = 'flex';
+          coinsDisplay.querySelector('span:nth-child(2)').textContent = data.coins;
         } else {
-          placeholder.style.display = 'flex';
-          label.textContent = 'Anonymous';
+          coinsDisplay.style.display = 'none';
         }
       } else {
         placeholder.style.display = 'flex';
         label.textContent = 'Anonymous';
+        coinsDisplay.style.display = 'none';
       }
     }
   }
 
   function updateLocalVideoPanel() {
     for (const [panelNum, data] of Object.entries(videoPanels)) {
-      if (data.userId === socket.id) {
+      if (data.userId === userId) {
         updateVideoPanel(parseInt(panelNum));
         break;
       }
@@ -1719,6 +2661,106 @@ body{
     }
   }
 
+  function handleVideoPanelClick(panelNumber) {
+    if (!isVideoMode || !socket) return;
+    
+    const panelData = videoPanels[panelNumber];
+    if (!panelData.userId || panelData.userId === userId) return;
+    
+    // Check if user has enough coins
+    if (coins < 10) {
+      showNotification('You need at least 10 coins to send special emoji', 'error');
+      return;
+    }
+    
+    // Deduct coins from sender
+    coins -= 10;
+    updateCoinDisplay();
+    saveUserData();
+    
+    // Send coin transfer to the clicked user
+    socket.emit('coin-transfer', {
+      roomId: roomId,
+      fromUserId: userId,
+      toUserId: panelData.userId,
+      amount: 10,
+      type: 'special_emoji'
+    });
+    
+    // Show special emoji animation
+    showSpecialEmoji(panelNumber);
+    
+    // Show coin animation
+    showCoinTransferAnimation(panelNumber);
+    
+    showNotification('Sent special emoji! -10 coins', 'success');
+  }
+
+  function showSpecialEmoji(panelNumber) {
+    const panel = videoPanels[panelNumber].element;
+    if (!panel) return;
+    
+    const randomEmoji = specialEmojis[Math.floor(Math.random() * specialEmojis.length)];
+    
+    const emojiElement = document.createElement('div');
+    emojiElement.className = 'special-emoji';
+    emojiElement.textContent = randomEmoji;
+    
+    panel.appendChild(emojiElement);
+    
+    // Remove after animation
+    setTimeout(() => {
+      emojiElement.remove();
+    }, 2500);
+  }
+
+  function showOPOEmoji(panelNumber) {
+    const panel = videoPanels[panelNumber].element;
+    if (!panel) return;
+    
+    const opoEmojis = ['😍', '🔥', '💖', '🌟', '🎉', '💯', '👑', '💎'];
+    const randomEmoji = opoEmojis[Math.floor(Math.random() * opoEmojis.length)];
+    
+    const emojiElement = document.createElement('div');
+    emojiElement.className = 'opo-emoji';
+    emojiElement.textContent = randomEmoji;
+    
+    panel.appendChild(emojiElement);
+    
+    // Remove after animation
+    setTimeout(() => {
+      emojiElement.remove();
+    }, 2000);
+  }
+
+  function showCoinTransferAnimation(panelNumber) {
+    const panel = videoPanels[panelNumber].element;
+    if (!panel) return;
+    
+    const rect = panel.getBoundingClientRect();
+    const startX = window.innerWidth / 2;
+    const startY = window.innerHeight / 2;
+    const endX = rect.left + rect.width / 2;
+    const endY = rect.top + rect.height / 2;
+    
+    const coin = document.createElement('div');
+    coin.className = 'coin-transfer';
+    coin.textContent = '🪙';
+    coin.style.position = 'fixed';
+    coin.style.left = startX + 'px';
+    coin.style.top = startY + 'px';
+    coin.style.zIndex = '9999';
+    coin.style.fontSize = '2rem';
+    coin.style.setProperty('--start-x', '0px');
+    coin.style.setProperty('--start-y', '0px');
+    coin.style.setProperty('--end-x', `${endX - startX}px`);
+    coin.style.setProperty('--end-y', `${endY - startY}px`);
+    
+    document.body.appendChild(coin);
+    
+    setTimeout(() => coin.remove(), 1000);
+  }
+
   /* ===== SOCKET.IO INITIALIZATION ===== */
   function initSocket() {
     if (socket && socket.connected) return;
@@ -1726,7 +2768,8 @@ body{
     updateConnectionStatus('connecting');
     
     try {
-      const serverUrl = window.location.origin;
+      const serverUrl = window.location.hostname.includes('localhost') ? 
+        'http://localhost:3000' : 'https://manamingle.site';
       console.log('Connecting to server:', serverUrl);
       
       socket = io(serverUrl, {
@@ -1736,9 +2779,11 @@ body{
         reconnectionDelay: 1000,
         timeout: 15000,
         query: {
-          isVIP: isVIP,
           coins: coins,
-          nickname: nickname
+          nickname: nickname,
+          type: isVideoMode ? 'video' : 'text',
+          badges: JSON.stringify(badges),
+          userId: userId
         }
       });
       
@@ -1753,26 +2798,29 @@ body{
       socket.on('user-joined', handleUserJoined);
       socket.on('user-left', handleUserLeft);
       socket.on('room-full', handleRoomFull);
-      socket.on('group-emptying', handleGroupEmptying);
       
       // Messaging Events
       socket.on('receive_message', handleReceiveMessage);
-      socket.on('user-typing', handleUserTyping);
-      
-      // Media Events
-      socket.on('media_received', handleMediaReceived);
+      socket.on('receive_media', handleReceiveMedia);
       
       // WebRTC Events
       socket.on('signal', handleWebRTCSignal);
       socket.on('existing-peers', handleExistingPeers);
       
-      // VIP & Coin Events
-      socket.on('coins-updated', handleCoinsUpdated);
-      socket.on('vip-status', handleVIPStatus);
+      // User Data Events
+      socket.on('user-data-update', handleUserDataUpdate);
+      socket.on('badge-assigned', handleBadgeAssigned);
+      socket.on('coin-transfer', handleCoinTransfer);
+      socket.on('coin-update', handleCoinUpdate);
+      
+      // Admin Events
+      socket.on('admin-status', handleAdminStatus);
+      
+      // Report Events
+      socket.on('report-received', handleReportReceived);
       
       // System Events
       socket.on('room-ended', handleRoomEnded);
-      socket.on('server-shutdown', handleServerShutdown);
       
     } catch (error) {
       console.error('❌ Failed to initialize socket:', error);
@@ -1811,42 +2859,71 @@ body{
     participantCount = data.participantCount || 1;
     updateParticipantCount();
     
+    // Update room title
+    document.getElementById('roomTitle').textContent = 
+      isVideoMode ? 'Video Group Chat' : 'Text Group Chat';
+    
+    // Update invite link display
+    const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}&mode=${inviteMode}`;
+    const inviteDisplay = document.getElementById('inviteLinkDisplay');
+    inviteDisplay.textContent = `Room: ${roomId.substring(0, 8)}...`;
+    inviteDisplay.style.display = 'block';
+    inviteDisplay.title = inviteUrl;
+    
+    // Check admin status
+    isAdmin = data.isAdmin || false;
+    isCreator = data.isCreator || false;
+    
+    // Show admin button if admin
+    if (isAdmin || isCreator) {
+      document.getElementById('adminBtn').style.display = 'flex';
+    }
+    
     // Store our own data
-    userData.set(socket.id, {
+    userData.set(userId, {
       nickname: nickname,
-      isVIP: isVIP,
-      userId: socket.id
+      userId: userId,
+      coins: coins,
+      badges: badges[userId] || null,
+      isAdmin: isAdmin,
+      isCreator: isCreator
     });
     
     // Broadcast user data
     socket.emit('user-data', {
       roomId: roomId,
-      userId: socket.id,
+      userId: userId,
       nickname: nickname,
-      isVIP: isVIP
+      coins: coins,
+      badges: badges[userId] || null,
+      isAdmin: isAdmin,
+      isCreator: isCreator
     });
     
-    showNotification(`Joined ${isVideoMode ? 'Video' : 'Text'} group with ${participantCount} participants`, 'success');
+    showNotification(`Joined ${isVideoMode ? 'Video' : 'Text'} group`, 'success');
     
     // For video chat, request existing users
     if (isVideoMode && socket) {
-      socket.emit('request-peers', { roomId: roomId });
+      setTimeout(() => {
+        socket.emit('request-peers', { roomId: roomId });
+      }, 1000);
     }
   }
 
   function handleExistingPeers(data) {
-    console.log('👥 Existing peers:', data.peers);
-    if (isVideoMode && data.peers) {
-      data.peers.forEach(peerId => {
-        if (peerId !== socket.id && !peers[peerId]) {
-          console.log('Creating connection for existing peer:', peerId);
-          setTimeout(() => {
-            createPeerConnection(peerId);
-          }, 500);
-        }
-      });
-    }
-  }
+  if (!isVideoMode || !data.peers) return;
+
+  data.peers.forEach(peerData => {
+    if (peerData.userId === userId || peers[peerData.userId]) return;
+
+    const panelNum = findAvailablePanel();
+    if (!panelNum) return;
+
+    assignVideoPanel(peerData.userId, panelNum, false);
+    createPeerConnection(peerData.userId);
+  });
+}
+
 
   function handleUserJoined(data) {
     console.log('👤 User joined:', data);
@@ -1855,26 +2932,28 @@ body{
     
     // Store user data
     userData.set(data.userId, {
-      nickname: 'Anonymous',
-      isVIP: data.isVIP || false,
-      userId: data.userId
+      nickname: data.nickname || 'Anonymous',
+      userId: data.userId,
+      coins: data.coins || 0,
+      badges: data.badges || null,
+      isAdmin: data.isAdmin || false,
+      isCreator: data.isCreator || false
     });
     
-    showNotification('Anonymous joined the group', 'info');
+    showNotification(`${data.nickname || 'Anonymous'} joined the group`, 'info');
     
     // For video chat
-    if (isVideoMode && data.userId !== socket.id) {
-      // Find available panel
-      const panelNum = findAvailablePanel();
-      if (panelNum) {
-        assignVideoPanel(data.userId, panelNum);
-        
-        // Create peer connection
-        if (!peers[data.userId]) {
-          createPeerConnection(data.userId);
-        }
-      }
-    }
+    if (isVideoMode && data.userId !== userId) {
+  const panelNum = findAvailablePanel();
+  if (!panelNum) return;
+
+  assignVideoPanel(data.userId, panelNum, false);
+
+  if (!peers[data.userId]) {
+    createPeerConnection(data.userId);
+  }
+}
+
   }
 
   function handleUserLeft(data) {
@@ -1898,6 +2977,13 @@ body{
         if (panelData.userId === data.userId) {
           panelData.userId = null;
           panelData.peerId = null;
+          panelData.nickname = panelNum == 1 ? 'You' : 'Anonymous';
+          panelData.coins = 0;
+          panelData.badge = null;
+          if (panelData.videoElement) {
+            panelData.videoElement.remove();
+            panelData.videoElement = null;
+          }
           updateVideoPanel(parseInt(panelNum));
           break;
         }
@@ -1907,188 +2993,338 @@ body{
     // Remove from user data
     userData.delete(data.userId);
     
-    showNotification('Anonymous left', 'info');
+    showNotification(`${data.nickname || 'Anonymous'} left`, 'info');
+  }
+
+  function handleUserDataUpdate(data) {
+    console.log('📊 User data update:', data);
+    
+    // Update user data
+    if (userData.has(data.userId)) {
+      const user = userData.get(data.userId);
+      if (data.nickname) user.nickname = data.nickname;
+      if (data.coins !== undefined) user.coins = data.coins;
+      if (data.badges !== undefined) user.badges = data.badges;
+      if (data.isAdmin !== undefined) user.isAdmin = data.isAdmin;
+      if (data.isCreator !== undefined) user.isCreator = data.isCreator;
+      userData.set(data.userId, user);
+    }
+    
+    // Update video panel if in video mode
+    if (isVideoMode) {
+      for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+        if (panelData.userId === data.userId) {
+          if (data.coins !== undefined) panelData.coins = data.coins;
+          updateVideoPanel(parseInt(panelNum));
+          break;
+        }
+      }
+    }
+  }
+
+  function handleBadgeAssigned(data) {
+    console.log('🎖️ Badge assigned:', data);
+    
+    // Update local badge data
+    if (data.userId === userId) {
+      badges[userId] = data.badge;
+      saveUserData();
+      
+      if (data.badge) {
+        showNotification(`You received the ${data.badge} badge!`, 'success');
+      } else {
+        showNotification('Your badge was removed', 'info');
+      }
+    }
+    
+    // Update user data
+    if (userData.has(data.userId)) {
+      const user = userData.get(data.userId);
+      user.badges = data.badge;
+      userData.set(data.userId, user);
+    }
+  }
+
+  function handleCoinTransfer(data) {
+    console.log('💰 Coin transfer received:', data);
+    
+    if (data.toUserId === userId) {
+      // We received coins
+      coins += data.amount;
+      updateCoinDisplay();
+      saveUserData();
+      
+      // Update our user data on server
+      socket.emit('user-data', {
+        roomId: roomId,
+        userId: userId,
+        nickname: nickname,
+        coins: coins,
+        badges: badges[userId] || null
+      });
+      
+      showNotification(`Received ${data.amount} coins from ${data.fromNickname || 'Anonymous'}!`, 'success');
+    }
+    
+    // Update sender's coins in UI if they're in our video panel
+    if (isVideoMode) {
+      for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+        if (panelData.userId === data.fromUserId) {
+          panelData.coins -= data.amount;
+          updateVideoPanel(parseInt(panelNum));
+          break;
+        }
+      }
+    }
+  }
+
+  function handleCoinUpdate(data) {
+    console.log('💰 Coin update:', data);
+    
+    if (data.userId === userId) {
+      coins = data.coins;
+      updateCoinDisplay();
+      saveUserData();
+    }
+    
+    // Update in video panel if applicable
+    if (isVideoMode) {
+      for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+        if (panelData.userId === data.userId) {
+          panelData.coins = data.coins;
+          updateVideoPanel(parseInt(panelNum));
+          break;
+        }
+      }
+    }
+  }
+
+  function handleAdminStatus(data) {
+    console.log('👑 Admin status:', data);
+    isAdmin = data.isAdmin || false;
+    
+    if (isAdmin) {
+      document.getElementById('adminBtn').style.display = 'flex';
+      showNotification('You are now an admin', 'success');
+    } else {
+      document.getElementById('adminBtn').style.display = 'none';
+    }
+  }
+
+  function handleReportReceived(data) {
+    console.log('🚨 Report received:', data);
+    if (isAdmin || isCreator) {
+      showNotification(`New report: ${data.reason} from ${data.reporterNickname}`, 'warning');
+    }
   }
 
   function handleRoomFull(data) {
-    console.log('🚫 Room full:', data);
-    showNotification('This group is full', 'error');
-    goBack();
-  }
+  const max = data.max || (inviteMode === "group_text" ? 6 : 4);
+  showNotification(`Room is full (max ${max} users)`, "error");
+  goBack();
+}
 
-  function handleGroupEmptying(data) {
-    console.log('⚠️ Group emptying:', data);
-    showNotification('Group is emptying. You might want to leave.', 'warning');
-  }
 
-  function handleReceiveMessage(data) {
-    console.log('💬 Message received:', data);
-    addMessage(data.message, data.senderId === socket.id ? 'me' : 'other', 
-               'Anonymous', data.isVIP);
-  }
+function handleReceiveMessage(data) {
+  if (data.roomId !== roomId) return;
+  if (receivedMessageIds.has(data.messageId)) return;
 
-  function handleUserTyping(data) {
-    if (isTextMode && data.userId !== socket.id) {
-      showTypingIndicator(data.isTyping);
+  receivedMessageIds.add(data.messageId);
+
+  addMessage(
+    data.message,
+    data.senderId === userId ? "me" : "other",
+    data.nickname || "Anonymous"
+  );
+}
+
+
+
+function cleanupPeer(peerId) {
+  if (!peers[peerId]) return;
+
+  try { peers[peerId].close(); } catch {}
+  delete peers[peerId];
+
+  for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+    if (panelData.userId === peerId) {
+      panelData.userId = null;
+      panelData.peerId = null;
+      panelData.stream = null;
+      if (panelData.videoElement) {
+        panelData.videoElement.remove();
+        panelData.videoElement = null;
+      }
+      updateVideoPanel(Number(panelNum));
+      break;
     }
   }
+}
 
-  function handleMediaReceived(data) {
-    console.log('📁 Media received:', data);
-    displayMedia(data);
+
+
+function handleReceiveMedia(data) {
+  if (!data.mediaId) return;
+
+  if (!incomingMedia[data.mediaId]) {
+    incomingMedia[data.mediaId] = {
+      chunks: [],
+      totalChunks: data.totalChunks,
+      meta: data
+    };
   }
 
-  async function handleWebRTCSignal(data) {
-    console.log('📡 Signal received from:', data.from, 'type:', data.sdp ? 'SDP' : 'ICE');
-    
-    if (data.from === socket.id) return;
-    
-    let pc = peers[data.from];
-    if (!pc) {
-      pc = createPeerConnection(data.from);
-    }
-    
-    try {
-      if (data.sdp) {
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        if (data.sdp.type === 'offer') {
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          socket.emit('signal', {
-            to: data.from,
-            roomId: roomId,
-            sdp: pc.localDescription,
-            type: 'video'
-          });
+  incomingMedia[data.mediaId].chunks[data.chunkIndex] = data.chunk;
+
+  const received =
+    incomingMedia[data.mediaId].chunks.filter(Boolean).length;
+
+  if (received === data.totalChunks) {
+    const blob = new Blob(incomingMedia[data.mediaId].chunks);
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      displayMedia({
+        ...incomingMedia[data.mediaId].meta,
+        dataUrl: reader.result
+      });
+    };
+
+    reader.readAsDataURL(blob);
+    delete incomingMedia[data.mediaId];
+  }
+}
+
+
+
+async function handleWebRTCSignal(data) {
+  if (data.from === userId) return;
+
+  let pc = peers[data.from];
+  if (!pc) pc = await createPeerConnection(data.from);
+
+  /* ===== SDP HANDLING ===== */
+  if (data.sdp) {
+    await pc.setRemoteDescription(
+      new RTCSessionDescription(data.sdp)
+    );
+
+    // ✅ APPLY QUEUED ICE AFTER SDP
+    if (pendingCandidates[data.from]) {
+      for (const c of pendingCandidates[data.from]) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(c));
+        } catch (e) {
+          console.warn("Queued ICE add failed:", e);
         }
       }
-      
-      if (data.candidate) {
-        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-      }
-    } catch (error) {
-      console.error('Error handling WebRTC signal:', error);
+      delete pendingCandidates[data.from];
+    }
+
+    // ANSWER ONLY IF OFFER
+    if (data.sdp.type === "offer") {
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      socket.emit("signal", {
+        roomId,
+        from: userId,
+        to: data.from,
+        sdp: answer
+      });
     }
   }
 
-  function handleCoinsUpdated(data) {
-    console.log('🪙 Coins updated:', data.coins);
-    coins = data.coins;
-    updateCoinDisplay();
-    saveUserData();
+  /* ===== ICE HANDLING ===== */
+  if (data.candidate) {
+    if (pc.remoteDescription) {
+      try {
+        await pc.addIceCandidate(
+          new RTCIceCandidate(data.candidate)
+        );
+      } catch (e) {
+        console.warn("ICE add failed:", e);
+      }
+    } else {
+      pendingCandidates[data.from] ??= [];
+      pendingCandidates[data.from].push(data.candidate);
+    }
   }
+}
 
-  function handleVIPStatus(data) {
-    console.log('⭐ VIP status update:', data);
-    isVIP = data.isVIP;
-    updateVIPBadge();
-  }
-
-  function handleRoomEnded(data) {
-    console.log('🏁 Room ended:', data);
-    showNotification(`Room ended: ${data.reason}`, 'info');
-    goBack();
-  }
-
-  function handleServerShutdown(data) {
-    console.log('🛑 Server shutdown:', data);
-    showNotification(data.message || 'Server is restarting', 'warning');
-    setTimeout(() => {
-      location.reload();
-    }, 3000);
-  }
 
   /* ===== WEBRTC FUNCTIONS ===== */
-  function createPeerConnection(peerId) {
-    console.log('Creating peer connection for:', peerId);
-    
-    if (peers[peerId]) {
-      console.log('Peer connection already exists');
-      return peers[peerId];
+  async function createPeerConnection(peerId) {
+  if (peers[peerId]) return peers[peerId];
+
+  const ice = await loadIceServers();
+
+  const pc = new RTCPeerConnection({
+    iceServers: ice.iceServers,
+    iceCandidatePoolSize: 10
+  });
+
+  peers[peerId] = pc;
+  pc.remoteStream = new MediaStream();
+
+  // Add local tracks
+  localStream.getTracks().forEach(track => {
+    pc.addTrack(track, localStream);
+  });
+
+  // Handle remote tracks
+  pc.ontrack = e => {
+    e.streams[0].getTracks().forEach(track => {
+      pc.remoteStream.addTrack(track);
+    });
+
+    for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+      if (panelData.userId === peerId) {
+        panelData.stream = pc.remoteStream;
+        updateVideoPanel(Number(panelNum));
+        break;
+      }
     }
-    
-    try {
-      const pc = new RTCPeerConnection({
-        iceServers: iceServers,
-        iceCandidatePoolSize: 10
+  };
+
+  // ICE candidates
+  pc.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit("signal", {
+        roomId,
+        to: peerId,
+        candidate: e.candidate,
+        from: userId
       });
-      
-      // Store remote stream
-      pc.remoteStream = null;
-      
-      // Add local tracks
-      if (localStream) {
-        localStream.getTracks().forEach(track => {
-          pc.addTrack(track, localStream);
-        });
-      }
-      
-      // Handle remote stream
-      pc.ontrack = (event) => {
-        if (event.streams && event.streams[0]) {
-          pc.remoteStream = event.streams[0];
-          
-          // Update video panel
-          for (const [panelNum, panelData] of Object.entries(videoPanels)) {
-            if (panelData.userId === peerId) {
-              updateVideoPanel(parseInt(panelNum));
-              break;
-            }
-          }
-        }
-      };
-      
-      // ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate && socket) {
-          socket.emit('signal', {
-            to: peerId,
-            roomId: roomId,
-            candidate: event.candidate,
-            type: 'video'
-          });
-        }
-      };
-      
-      // Connection state
-      pc.onconnectionstatechange = () => {
-        console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
-      };
-      
-      // Create offer
-      if (shouldCreateOffer(socket.id, peerId)) {
-        setTimeout(async () => {
-          try {
-            const offer = await pc.createAnswer({
-              offerToReceiveVideo: true,
-              offerToReceiveAudio: true
-            });
-            await pc.setLocalDescription(offer);
-            
-            socket.emit('signal', {
-              to: peerId,
-              roomId: roomId,
-              sdp: pc.localDescription,
-              type: 'video'
-            });
-          } catch (error) {
-            console.error('Error creating offer:', error);
-          }
-        }, 1000);
-      }
-      
-      peers[peerId] = pc;
-      return pc;
-      
-    } catch (error) {
-      console.error('Error creating peer connection:', error);
-      return null;
     }
+  };
+
+  // Cleanup
+  pc.onconnectionstatechange = () => {
+    if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
+      cleanupPeer(peerId);
+    }
+  };
+
+  // CREATE OFFER (ONLY ONE SIDE)
+  if (shouldCreateOffer(userId, peerId)) {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    socket.emit("signal", {
+  roomId,
+  from: userId,
+  to: peerId,
+  sdp: offer
+});
+
   }
 
-  function shouldCreateOffer(myId, peerId) {
-    return myId > peerId;
-  }
+  return pc;
+}
+
+
+
 
   /* ===== VIDEO FUNCTIONS ===== */
   async function startCamera() {
@@ -2102,7 +3338,8 @@ body{
         },
         audio: {
           echoCancellation: true,
-          noiseSuppression: true
+          noiseSuppression: true,
+          autoGainControl: true
         }
       };
       
@@ -2139,12 +3376,23 @@ body{
         
         // Highlight local video panel when speaking
         for (const [panelNum, panelData] of Object.entries(videoPanels)) {
-          if (panelData.userId === socket.id) {
+          if (panelData.userId === userId) {
             const panel = document.getElementById(`video-panel-${panelNum}`);
             if (panel) {
               panel.classList.toggle('speaking', average > 10);
             }
             break;
+          }
+        }
+        
+        // Check remote users speaking
+        for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+          if (panelData.userId && panelData.userId !== userId) {
+            const panel = document.getElementById(`video-panel-${panelNum}`);
+            if (panel && panelData.stream) {
+              // In a real app, you would analyze remote audio streams
+              // This is a simplified version
+            }
           }
         }
       }, 300);
@@ -2153,139 +3401,362 @@ body{
     }
   }
 
-  /* ===== MESSAGING FUNCTIONS ===== */
-  function sendMessage() {
-    const msgInput = document.getElementById('msgInput');
-    const text = msgInput.value.trim();
-    if (!text || !socket || !roomId) return;
+  /* ===== RECORDING FUNCTIONS ===== */
+  function enableRecordingFeature() {
+    isRecordingEnabled = true;
+    const recordBtn = document.getElementById('recordBtn');
+    recordBtn.classList.add('enabled');
+    recordBtn.title = 'Click to start recording';
+    recordBtn.innerHTML = '<span>⏺️</span><span>Record</span>';
     
-    // Add message locally
-    addMessage(text, 'me', nickname, isVIP);
-    
-    // Send to server
-    socket.emit('send_message', {
-      roomId: roomId,
-      message: text,
-      nickname: 'Anonymous',
-      isVIP: isVIP,
-      type: 'text'
-    });
-    
-    // Clear input
-    msgInput.value = '';
-    msgInput.focus();
-    
-    // Stop typing indicator
-    sendTypingIndicator(false);
+    console.log('Recording feature enabled');
   }
 
-  function addMessage(text, type, sender, isVIPUser = false) {
-    const messages = document.getElementById('messages');
-    if (!messages) return;
-    
-    const div = document.createElement('div');
-    div.className = 'msg ' + type;
-    
-    const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.alignItems = 'center';
-    header.style.gap = '8px';
-    header.style.marginBottom = '4px';
-    header.style.flexWrap = 'wrap';
-    
-    const senderSpan = document.createElement('span');
-    senderSpan.textContent = sender;
-    senderSpan.style.fontWeight = 'bold';
-    senderSpan.style.color = type === 'me' ? '#00d19a' : '#00c6ff';
-    senderSpan.style.fontSize = '0.9rem';
-    header.appendChild(senderSpan);
-    
-    if (isVIPUser) {
-      const vipBadge = document.createElement('span');
-      vipBadge.textContent = 'VIP';
-      vipBadge.style.background = 'linear-gradient(45deg, #ffd700, #ff9900)';
-      vipBadge.style.color = '#000';
-      vipBadge.style.padding = '1px 6px';
-      vipBadge.style.borderRadius = '8px';
-      vipBadge.style.fontSize = '0.6rem';
-      vipBadge.style.fontWeight = 'bold';
-      header.appendChild(vipBadge);
+  function toggleRecording() {
+    if (!isRecordingEnabled) {
+      openPaymentModal();
+      return;
     }
     
-    const textSpan = document.createElement('div');
-    textSpan.textContent = text;
-    textSpan.style.marginTop = '4px';
-    textSpan.style.wordBreak = 'break-word';
-    textSpan.style.whiteSpace = 'pre-wrap';
-    
-    div.appendChild(header);
-    div.appendChild(textSpan);
-    
-    messages.appendChild(div);
-    
-    // Auto scroll to bottom
-    setTimeout(() => {
-      messages.scrollTop = messages.scrollHeight;
-    }, 100);
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
   }
 
-  function sendTypingIndicator(isTyping) {
-    if (!roomId || !socket || !isTextMode) return;
-    
-    socket.emit('typing', {
-      room: roomId,
-      userId: socket.id,
-      isTyping: isTyping
-    });
-  }
-
-  function showTypingIndicator(isTyping) {
-    // Create or update typing indicator
-    let typingIndicator = document.getElementById('typingIndicator');
-    
-    if (isTyping) {
-      if (!typingIndicator) {
-        typingIndicator = document.createElement('div');
-        typingIndicator.className = 'typing-indicator';
-        typingIndicator.id = 'typingIndicator';
-        
-        const text = document.createElement('span');
-        text.textContent = 'Anonymous is typing';
-        
-        const dots = document.createElement('div');
-        dots.className = 'typing-dots';
-        for (let i = 0; i < 3; i++) {
-          const dot = document.createElement('span');
-          dots.appendChild(dot);
+  async function startRecording() {
+    try {
+      // Get all active video streams
+      const activePanels = [];
+      for (let i = 1; i <= 4; i++) {
+        if (videoPanels[i].stream) {
+          activePanels.push({ panel: i, stream: videoPanels[i].stream });
         }
-        
-        typingIndicator.appendChild(text);
-        typingIndicator.appendChild(dots);
-        document.getElementById('messages').appendChild(typingIndicator);
       }
       
-      // Auto-remove after 3 seconds
-      setTimeout(() => {
-        if (typingIndicator && typingIndicator.parentNode) {
-          typingIndicator.remove();
+      if (activePanels.length === 0) {
+        showNotification('No video streams to record', 'error');
+        return;
+      }
+      
+      // In a production app, you would combine all streams into one
+      // For simplicity, we'll record the first active stream
+      recordingStream = activePanels[0].stream;
+      
+      // Start media recorder
+      const options = { mimeType: 'video/webm;codecs=vp9' };
+      mediaRecorder = new MediaRecorder(recordingStream, options);
+      
+      recordedChunks = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunks.push(event.data);
         }
-      }, 3000);
-    } else if (typingIndicator && typingIndicator.parentNode) {
-      typingIndicator.remove();
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create download link
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `manamingle-recording-${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        URL.revokeObjectURL(url);
+        
+        showNotification('Recording saved!', 'success');
+      };
+      
+      // Start recording
+      mediaRecorder.start(1000); // Collect data every second
+      isRecording = true;
+      
+      // Update UI
+      document.getElementById('recordBtn').classList.add('recording');
+      document.getElementById('recordBtn').innerHTML = '<span>⏹️</span><span>Stop</span>';
+      document.getElementById('recordingIndicator').style.display = 'flex';
+      
+      showNotification('Recording started', 'success');
+      
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      showNotification('Failed to start recording', 'error');
     }
+  }
+
+  function stopRecording() {
+    if (!mediaRecorder || !isRecording) return;
+    
+    mediaRecorder.stop();
+    isRecording = false;
+    
+    // Update UI
+    document.getElementById('recordBtn').classList.remove('recording');
+    document.getElementById('recordBtn').innerHTML = '<span>⏺️</span><span>Record</span>';
+    document.getElementById('recordingIndicator').style.display = 'none';
+    
+    showNotification('Recording stopped', 'info');
+  }
+
+  /* ===== MESSAGING FUNCTIONS ===== */
+  function sendMessage() {
+  const input = document.getElementById("msgInput");
+  const text = input.value.trim();
+  if (!text || !socket || !roomId) return;
+
+  const messageId = `${userId}_${Date.now()}`; // ✅ FIX
+
+  socket.emit("send_message", {
+    roomId,
+    message: text,
+    nickname,
+    userId,
+    messageId
+  });
+
+  input.value = "";
+}
+
+
+
+function addMessage(text, type, sender) {
+  const messages = document.getElementById("messages");
+  if (!messages) return;
+
+  const div = document.createElement("div");
+  div.className = `msg ${type} message-slide`;
+
+  const header = document.createElement("div");
+  header.className = `nickname-display ${type}`;
+  header.textContent = sender;
+
+  const body = document.createElement("div");
+  body.textContent = text;
+  body.style.marginTop = "4px";
+  body.style.wordBreak = "break-word";
+  body.style.whiteSpace = "pre-wrap";
+
+  div.appendChild(header);
+  div.appendChild(body);
+  messages.appendChild(div);
+
+  requestAnimationFrame(() => {
+    messages.scrollTop = messages.scrollHeight;
+  });
+}
+
+  /* ===== REPORT SYSTEM ===== */
+  function openReportModal(userId) {
+    reportTarget = userId;
+    const targetName = userData.get(userId)?.nickname || 'Anonymous';
+    document.getElementById('reportTarget').textContent = `Reporting: ${targetName}`;
+    document.getElementById('reportModal').style.display = 'flex';
+  }
+
+  function submitReport() {
+    if (!reportTarget || !selectedReportReason) {
+      showNotification('Please select a reason for reporting', 'error');
+      return;
+    }
+    
+    const description = document.getElementById('reportDescription').value.trim();
+    
+    socket.emit('submit-report', {
+      roomId: roomId,
+      targetUserId: reportTarget,
+      reason: selectedReportReason,
+      description: description,
+      reporterId: userId,
+      reporterNickname: nickname
+    });
+    
+    showNotification('Report submitted successfully', 'success');
+    closeReportModal();
+  }
+
+  function closeReportModal() {
+    document.getElementById('reportModal').style.display = 'none';
+    reportTarget = null;
+    selectedReportReason = null;
+    document.getElementById('reportDescription').value = '';
+    document.querySelectorAll('.report-option').forEach(opt => opt.classList.remove('selected'));
+  }
+
+  /* ===== PAYMENT GATEWAY ===== */
+  function openPaymentModal() {
+    document.getElementById('paymentModal').style.display = 'flex';
+  }
+
+  function selectPaymentOption(option) {
+    selectedPaymentOption = option;
+    
+    document.querySelectorAll('.payment-option').forEach(opt => {
+      opt.classList.remove('selected');
+    });
+    option.classList.add('selected');
+    
+    document.getElementById('confirmPaymentBtn').disabled = false;
+  }
+
+  function confirmPayment() {
+    if (!selectedPaymentOption) return;
+    
+    const amount = parseFloat(selectedPaymentOption.dataset.amount);
+    const duration = parseInt(selectedPaymentOption.dataset.duration);
+    
+    // In a real app, you would integrate with a payment gateway like Stripe
+    // For this demo, we'll simulate the payment
+    showNotification(`Processing payment of $${amount}...`, 'info');
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      // Enable recording
+      isRecordingEnabled = true;
+      recordingEndTime = Date.now() + (duration * 60 * 60 * 1000);
+      
+      // Save to localStorage
+      localStorage.setItem('recordingEnabled', JSON.stringify({
+        enabled: true,
+        endTime: recordingEndTime,
+        amountPaid: amount,
+        duration: duration
+      }));
+      
+      // Update UI
+      enableRecordingFeature();
+      
+      showNotification(`Payment successful! Recording enabled for ${duration/24} days!`, 'success');
+      closePaymentModal();
+    }, 1500);
+  }
+
+  function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    selectedPaymentOption = null;
+    document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+    document.getElementById('confirmPaymentBtn').disabled = true;
+  }
+
+  /* ===== ADMIN SYSTEM ===== */
+  function openAdminModal() {
+    if (!isAdmin && !isCreator) return;
+    
+    document.getElementById('adminRoomId').textContent = roomId;
+    document.getElementById('adminParticipantCount').textContent = participantCount;
+    
+    // Populate user list
+    const userList = document.getElementById('adminUserList');
+    userList.innerHTML = '';
+    
+    userData.forEach((user, userId) => {
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+      userItem.dataset.userId = userId;
+      
+      const userInfo = document.createElement('div');
+      userInfo.className = 'user-info';
+      
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = user.nickname;
+      if (user.isCreator) {
+        nameSpan.innerHTML += ' <span class="user-badge badge-creator">Creator</span>';
+      } else if (user.isAdmin) {
+        nameSpan.innerHTML += ' <span class="user-badge badge-admin">Admin</span>';
+      } else if (user.badges) {
+        nameSpan.innerHTML += ` <span class="user-badge badge-${user.badges}">${user.badges}</span>`;
+      }
+      
+      userInfo.appendChild(nameSpan);
+      userItem.appendChild(userInfo);
+      
+      const selectBtn = document.createElement('button');
+      selectBtn.className = 'back-btn';
+      selectBtn.style.padding = '5px 10px';
+      selectBtn.style.fontSize = '0.8rem';
+      selectBtn.textContent = 'Select';
+      selectBtn.onclick = () => selectAdminUser(userId, user.nickname);
+      userItem.appendChild(selectBtn);
+      
+      userList.appendChild(userItem);
+    });
+    
+    document.getElementById('adminModal').style.display = 'flex';
+  }
+
+  function selectAdminUser(userId, userName) {
+    selectedAdminUser = userId;
+    selectedAdminBadge = null;
+    
+    // Update UI
+    document.querySelectorAll('.user-item').forEach(item => {
+      item.style.background = item.dataset.userId === userId ? 'rgba(0,198,255,0.1)' : '';
+    });
+    
+    document.querySelectorAll('.badge-option').forEach(opt => {
+      opt.classList.remove('selected');
+    });
+    
+    showNotification(`Selected: ${userName}`, 'info');
+  }
+
+  function selectAdminBadge(badge) {
+    selectedAdminBadge = badge;
+    
+    document.querySelectorAll('.badge-option').forEach(opt => {
+      opt.classList.remove('selected');
+    });
+    event.target.classList.add('selected');
+  }
+
+  function saveBadges() {
+    if (!selectedAdminUser || !selectedAdminBadge) {
+      showNotification('Please select a user and a badge', 'error');
+      return;
+    }
+    
+    // Update badges locally
+    badges[selectedAdminUser] = selectedAdminBadge;
+    saveUserData();
+    
+    // Send to server
+    socket.emit('assign-badge', {
+      roomId: roomId,
+      targetUserId: selectedAdminUser,
+      badge: selectedAdminBadge,
+      adminId: userId
+    });
+    
+    // Update user data
+    if (userData.has(selectedAdminUser)) {
+      const user = userData.get(selectedAdminUser);
+      user.badges = selectedAdminBadge;
+      userData.set(selectedAdminUser, user);
+    }
+    
+    showNotification(`Assigned ${selectedAdminBadge} badge to user`, 'success');
+    
+    // Refresh admin modal
+    openAdminModal();
   }
 
   /* ===== MEDIA UPLOAD FUNCTIONS ===== */
   function showMediaTypeModal() {
+    // Only in text mode
+    if (!isTextMode) return;
+    
     document.getElementById('modalCoinBalance').textContent = coins;
     document.getElementById('insufficientCoins').style.display = 'none';
     
     // Check if user has enough coins
-    const photoCost = isVIP ? 0 : 30;
-    const videoCost = isVIP ? 0 : 50;
-    
-    if (!isVIP && coins < 30) {
+    if (coins < 30) {
       document.getElementById('insufficientCoins').style.display = 'block';
+      document.getElementById('insufficientCoins').textContent = 'Minimum 30 coins required!';
     }
     
     document.getElementById('mediaTypeModal').style.display = 'flex';
@@ -2293,186 +3764,209 @@ body{
 
   function selectMediaType(type) {
     selectedMediaType = type;
-    const cost = type === 'photo' ? (isVIP ? 0 : 30) : (isVIP ? 0 : 50);
+    const cost = type === 'photo' ? 30 : 50;
     
     document.querySelectorAll('.media-type-btn').forEach(btn => {
       btn.classList.remove('selected');
     });
     event.target.closest('.media-type-btn').classList.add('selected');
     
-    document.getElementById('proceedMediaBtn').disabled = false;
-    document.getElementById('proceedMediaBtn').textContent = `Select ${type === 'photo' ? 'Photo' : 'Video'} (${cost} coins)`;
+    // Check if user has enough coins
+    if (coins >= cost) {
+      document.getElementById('proceedMediaBtn').disabled = false;
+      document.getElementById('proceedMediaBtn').textContent = `Select ${type === 'photo' ? 'Photo' : 'Video'} (${cost} coins)`;
+    } else {
+      document.getElementById('proceedMediaBtn').disabled = true;
+      document.getElementById('insufficientCoins').style.display = 'block';
+      document.getElementById('insufficientCoins').textContent = `Need ${cost} coins!`;
+    }
   }
 
   function proceedToMediaUpload() {
-    if (!selectedMediaType) return;
-    
-    const cost = selectedMediaType === 'photo' ? (isVIP ? 0 : 30) : (isVIP ? 0 : 50);
-    
-    if (!isVIP && coins < cost) {
-      showNotification('Not enough coins!', 'error');
-      return;
-    }
-    
-    mediaUploadCost = cost;
-    document.getElementById('mediaTypeModal').style.display = 'none';
-    document.getElementById('mediaUploadModal').style.display = 'flex';
-    
-    document.getElementById('mediaUploadTitle').textContent = 
-      `Upload ${selectedMediaType === 'photo' ? 'Photo' : '5s Video'}`;
-    document.getElementById('mediaUploadCost').textContent = 
-      isVIP ? 'FREE for VIP users!' : `Cost: ${cost} coins`;
+  if (!selectedMediaType) return;
+
+  const cost = selectedMediaType === "photo" ? 30 : 50;
+
+  if (coins < cost) {
+    showNotification("Not enough coins!", "error");
+    return;
   }
+
+  mediaUploadCost = cost;
+  document.getElementById("mediaTypeModal").style.display = "none";
+  document.getElementById("mediaUploadModal").style.display = "flex";
+
+  document.getElementById("mediaUploadTitle").textContent =
+    `Upload ${selectedMediaType === "photo" ? "Photo" : "5s Video"}`;
+
+  document.getElementById("mediaUploadCost").textContent =
+    `Cost: ${cost} coins (will be deducted)`;
+}
+
 
   function browseMediaFiles() {
-    const input = document.getElementById('mediaFileInput');
-    input.accept = selectedMediaType === 'photo' ? 'image/*' : 'video/*';
-    input.click();
+  const input = document.getElementById("mediaFileInput");
+  input.accept = selectedMediaType === "photo" ? "image/*" : "video/*";
+  input.click();
+}
+
+
+function handleMediaFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  selectedMediaFile = file;
+
+  if (selectedMediaType === "photo") {
+    if (!file.type.startsWith("image/")) {
+      showNotification("Please select an image file", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification("Image too large! Max 5MB", "error");
+      return;
+    }
+  } else {
+    if (!file.type.startsWith("video/")) {
+      showNotification("Please select a video file", "error");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification("Video too large! Max 10MB", "error");
+      return;
+    }
   }
 
-  function handleMediaFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    selectedMediaFile = file;
-    
-    // Validate file
-    if (selectedMediaType === 'photo') {
-      if (!file.type.startsWith('image/')) {
-        showNotification('Please select an image file', 'error');
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        showNotification('Image too large! Max 5MB', 'error');
-        return;
-      }
-    } else {
-      if (!file.type.startsWith('video/')) {
-        showNotification('Please select a video file', 'error');
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        showNotification('Video too large! Max 10MB', 'error');
-        return;
-      }
-    }
-    
-    // Show preview
-    const previewContainer = document.getElementById('mediaPreviewContainer');
-    const previewImage = document.getElementById('uploadPreview');
-    const previewVideo = document.getElementById('uploadVideoPreview');
-    const fileName = document.getElementById('selectedFileName');
-    
-    previewContainer.style.display = 'block';
-    previewImage.style.display = 'none';
-    previewVideo.style.display = 'none';
-    
-    if (selectedMediaType === 'photo') {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        previewImage.src = e.target.result;
-        previewImage.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewVideo.src = URL.createObjectURL(file);
-      previewVideo.style.display = 'block';
-    }
-    
-    fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
-    
-    document.getElementById('confirmUploadBtn').disabled = false;
-  }
+  const previewContainer = document.getElementById("mediaPreviewContainer");
+  const previewImage = document.getElementById("uploadPreview");
+  const previewVideo = document.getElementById("uploadVideoPreview");
+  const fileName = document.getElementById("selectedFileName");
 
-  function confirmMediaUpload() {
-    if (!selectedMediaFile || !socket || !roomId) return;
-    
+  previewContainer.style.display = "block";
+  previewImage.style.display = "none";
+  previewVideo.style.display = "none";
+
+  if (selectedMediaType === "photo") {
     const reader = new FileReader();
-    reader.onload = function(e) {
-      // Deduct coins if not VIP
-      if (!isVIP) {
-        if (coins < mediaUploadCost) {
-          showNotification('Not enough coins!', 'error');
-          return;
-        }
-        coins -= mediaUploadCost;
-        updateCoinDisplay();
-        saveUserData();
-        
-        // Notify server
-        socket.emit('coins-deducted', {
-          amount: mediaUploadCost,
-          type: selectedMediaType,
-          newBalance: coins
-        });
-      }
-      
-      // Send media
-      socket.emit('send_media', {
-        roomId: roomId,
-        mediaType: selectedMediaType,
-        fileName: selectedMediaFile.name,
-        fileType: selectedMediaFile.type,
-        fileSize: selectedMediaFile.size,
-        dataUrl: e.target.result,
-        isVIP: isVIP
-      });
-      
-      // Add to chat
-      displayMedia({
-        mediaType: selectedMediaType,
-        dataUrl: e.target.result,
-        fileName: selectedMediaFile.name,
-        fileSize: selectedMediaFile.size,
-        senderId: socket.id,
-        isVIP: isVIP
-      });
-      
-      showNotification('Media sent successfully!', 'success');
-      closeMediaUploadModal();
+    reader.onload = e => {
+      previewImage.src = e.target.result;
+      previewImage.style.display = "block";
     };
-    reader.readAsDataURL(selectedMediaFile);
+    reader.readAsDataURL(file);
+  } else {
+    previewVideo.src = URL.createObjectURL(file);
+    previewVideo.style.display = "block";
   }
 
-  function displayMedia(data) {
+  fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
+  document.getElementById("confirmUploadBtn").disabled = false;
+}
+function sendMediaInChunks(file, mediaType, cost) {
+  const mediaId = `${userId}_${Date.now()}`;
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    const buffer = reader.result;
+    const totalChunks = Math.ceil(buffer.byteLength / MEDIA_CHUNK_SIZE);
+
+    for (let i = 0; i < totalChunks; i++) {
+      const chunk = buffer.slice(
+        i * MEDIA_CHUNK_SIZE,
+        (i + 1) * MEDIA_CHUNK_SIZE
+      );
+
+      socket.emit("media_chunk", {
+        roomId,
+        mediaId,
+        chunkIndex: i,
+        totalChunks,
+        chunk,
+        mediaType,
+        fileName: file.name,
+        fileSize: file.size,
+        senderId: userId,
+        nickname,
+        cost,
+        badges: badges[userId] || null
+      });
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+
+function confirmMediaUpload() {
+  if (!selectedMediaFile || !socket || !roomId) return;
+
+  const cost = selectedMediaType === "photo" ? 30 : 50;
+
+  if (coins < cost) {
+    showNotification("Not enough coins!", "error");
+    return;
+  }
+
+  coins -= cost;
+  updateCoinDisplay();
+  saveUserData();
+  showCoinAnimation(cost);
+
+  socket.emit("coins-deducted", {
+    roomId,
+    userId,
+    amount: cost,
+    newBalance: coins,
+    type: selectedMediaType
+  });
+
+  socket.emit("user-data", {
+    roomId,
+    userId,
+    nickname,
+    coins,
+    badges: badges[userId] || null
+  });
+
+  sendMediaInChunks(selectedMediaFile, selectedMediaType, cost);
+
+  showNotification(
+    `${selectedMediaType === "photo" ? "Photo" : "Video"} sent! -${cost} coins`,
+    "success"
+  );
+
+  closeMediaUploadModal();
+}
+
+socket.on("receive_media", handleReceiveMedia);
+
+
+
+  function displayMedia(data, type = null) {
     const messages = document.getElementById('messages');
     if (!messages) return;
     
     const div = document.createElement('div');
-    div.className = 'msg ' + (data.senderId === socket.id ? 'me' : 'other');
+    div.className = 'msg ' + (type || (data.senderId === userId ? 'me' : 'other')) + ' media-upload-animation';
     
     const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.alignItems = 'center';
-    header.style.gap = '8px';
-    header.style.marginBottom = '8px';
+    header.className = 'nickname-display ' + (type || (data.senderId === userId ? 'me' : 'other'));
     
     const senderSpan = document.createElement('span');
-    senderSpan.textContent = 'Anonymous';
+    senderSpan.textContent = data.nickname || 'Anonymous';
     senderSpan.style.fontWeight = 'bold';
-    senderSpan.style.color = data.senderId === socket.id ? '#00d19a' : '#00c6ff';
-    senderSpan.style.fontSize = '0.9rem';
     header.appendChild(senderSpan);
     
-    if (data.isVIP) {
-      const vipBadge = document.createElement('span');
-      vipBadge.textContent = 'VIP';
-      vipBadge.style.background = 'linear-gradient(45deg, #ffd700, #ff9900)';
-      vipBadge.style.color = '#000';
-      vipBadge.style.padding = '1px 6px';
-      vipBadge.style.borderRadius = '8px';
-      vipBadge.style.fontSize = '0.6rem';
-      vipBadge.style.fontWeight = 'bold';
-      header.appendChild(vipBadge);
+    // Add badge if available
+    if (data.senderId && badges[data.senderId]) {
+      const badgeSpan = document.createElement('span');
+      badgeSpan.className = `user-badge badge-${badges[data.senderId]}`;
+      badgeSpan.textContent = badges[data.senderId];
+      header.appendChild(badgeSpan);
     }
     
     const costSpan = document.createElement('span');
     costSpan.className = 'media-cost';
-    costSpan.textContent = data.mediaType === 'photo' ? '30 coins' : '50 coins';
-    if (data.isVIP) {
-      costSpan.classList.add('vip-free');
-      costSpan.textContent = 'FREE';
-    }
+    costSpan.textContent = data.cost + ' coins';
     header.appendChild(costSpan);
     
     const mediaContainer = document.createElement('div');
@@ -2482,12 +3976,10 @@ body{
       const img = document.createElement('img');
       img.src = data.dataUrl;
       img.alt = data.fileName;
+      img.style.cursor = 'pointer';
       img.onclick = () => {
         const win = window.open();
-        const fullImg = win.document.createElement('img');
-        fullImg.src = data.dataUrl;
-        fullImg.style.maxWidth = '100%';
-        win.document.body.appendChild(fullImg);
+        win.document.write(`<img src="${data.dataUrl}" style="max-width:100%;">`);
       };
       mediaContainer.appendChild(img);
     } else {
@@ -2495,11 +3987,19 @@ body{
       video.src = data.dataUrl;
       video.controls = true;
       video.style.maxWidth = '200px';
+      video.style.maxHeight = '200px';
       mediaContainer.appendChild(video);
     }
     
+    const infoDiv = document.createElement('div');
+    infoDiv.style.marginTop = '5px';
+    infoDiv.style.fontSize = '0.8rem';
+    infoDiv.style.color = 'rgba(255,255,255,0.6)';
+    infoDiv.textContent = `${data.fileName} (${formatFileSize(data.fileSize)})`;
+    
     div.appendChild(header);
     div.appendChild(mediaContainer);
+    div.appendChild(infoDiv);
     messages.appendChild(div);
     
     // Auto scroll
@@ -2522,159 +4022,10 @@ body{
     
     const previewContainer = document.getElementById('mediaPreviewContainer');
     previewContainer.style.display = 'none';
-  }
-
-  /* ===== VIDEO RECORDING FUNCTIONS ===== */
-  function showVideoRecordModal() {
-    const cost = isVIP ? 0 : 50;
-    document.getElementById('recordCoinBalance').textContent = coins;
     
-    if (!isVIP && coins < 50) {
-      document.getElementById('recordInsufficient').style.display = 'block';
-    } else {
-      document.getElementById('recordInsufficient').style.display = 'none';
-    }
-    
-    document.getElementById('videoRecordModal').style.display = 'flex';
-    
-    // Start camera preview
-    if (localStream) {
-      const preview = document.getElementById('recordPreview');
-      preview.srcObject = localStream;
-    }
-  }
-
-  async function startVideoRecording() {
-    const cost = isVIP ? 0 : 50;
-    
-    if (!isVIP && coins < 50) {
-      showNotification('Not enough coins to record video!', 'error');
-      return;
-    }
-    
-    try {
-      recordingStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          frameRate: { ideal: 24 }
-        },
-        audio: true
-      });
-      
-      // Start preview
-      const preview = document.getElementById('recordPreview');
-      preview.srcObject = recordingStream;
-      
-      // Start recording
-      const chunks = [];
-      mediaRecorder = new MediaRecorder(recordingStream, {
-        mimeType: 'video/webm;codecs=vp9'
-      });
-      
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-      
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          // Deduct coins if not VIP
-          if (!isVIP) {
-            coins -= 50;
-            updateCoinDisplay();
-            saveUserData();
-            
-            socket.emit('coins-deducted', {
-              amount: 50,
-              type: 'video_record',
-              newBalance: coins
-            });
-          }
-          
-          // Send recorded video
-          socket.emit('send_media', {
-            roomId: roomId,
-            mediaType: 'video',
-            fileName: `recording-${Date.now()}.webm`,
-            fileType: 'video/webm',
-            fileSize: blob.size,
-            dataUrl: e.target.result,
-            isVIP: isVIP
-          });
-          
-          // Add to chat
-          displayMedia({
-            mediaType: 'video',
-            dataUrl: e.target.result,
-            fileName: 'Recording',
-            fileSize: blob.size,
-            senderId: socket.id,
-            isVIP: isVIP
-          });
-          
-          showNotification('Video recording sent!', 'success');
-        };
-        reader.readAsDataURL(blob);
-      };
-      
-      // Start recording
-      mediaRecorder.start();
-      recordStartTime = Date.now();
-      startRecordTimer();
-      
-      // Stop recording after 5 seconds
-      setTimeout(() => {
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-          mediaRecorder.stop();
-          stopRecordTimer();
-        }
-      }, 5000);
-      
-    } catch (error) {
-      console.error('Recording error:', error);
-      showNotification('Failed to start recording', 'error');
-    }
-  }
-
-  function startRecordTimer() {
-    const timer = document.getElementById('recordTimer');
-    timer.style.display = 'block';
-    
-    let secondsLeft = 5;
-    timer.textContent = `${secondsLeft}s`;
-    
-    recordTimerInterval = setInterval(() => {
-      secondsLeft--;
-      timer.textContent = `${secondsLeft}s`;
-      
-      if (secondsLeft <= 0) {
-        clearInterval(recordTimerInterval);
-        timer.style.display = 'none';
-      }
-    }, 1000);
-  }
-
-  function stopRecordTimer() {
-    if (recordTimerInterval) {
-      clearInterval(recordTimerInterval);
-      recordTimerInterval = null;
-    }
-    
-    const timer = document.getElementById('recordTimer');
-    timer.style.display = 'none';
-    
-    // Stop streams
-    if (recordingStream) {
-      recordingStream.getTracks().forEach(track => track.stop());
-      recordingStream = null;
-    }
-    
-    // Close modal
-    document.getElementById('videoRecordModal').style.display = 'none';
+    // Reset file input
+    document.getElementById('mediaFileInput').value = '';
+    document.getElementById('confirmUploadBtn').disabled = true;
   }
 
   /* ===== CONTROL FUNCTIONS ===== */
@@ -2703,10 +4054,6 @@ body{
     }
   }
 
-  function recordVideo() {
-    showVideoRecordModal();
-  }
-
   /* ===== UI UPDATE FUNCTIONS ===== */
   function updateParticipantCount() {
     document.getElementById('participantCountText').textContent = participantCount;
@@ -2725,22 +4072,18 @@ body{
       case 'connected':
         dotEl.className = 'status-dot status-connected';
         textEl.textContent = 'Connected';
+        statusEl.style.borderColor = 'var(--green)';
         break;
       case 'connecting':
         dotEl.className = 'status-dot status-connecting';
         textEl.textContent = 'Connecting...';
+        statusEl.style.borderColor = 'var(--orange)';
         break;
       case 'disconnected':
         dotEl.className = 'status-dot status-disconnected';
         textEl.textContent = 'Disconnected';
+        statusEl.style.borderColor = 'var(--danger)';
         break;
-    }
-  }
-
-  function updateVIPBadge() {
-    const vipBadge = document.getElementById('myVipBadge');
-    if (vipBadge) {
-      vipBadge.style.display = isVIP ? 'inline-block' : 'none';
     }
   }
 
@@ -2767,12 +4110,42 @@ body{
       });
   }
 
+  function showCoinAnimation(amount) {
+    const coinDisplay = document.querySelector('.coin-display');
+    if (!coinDisplay) return;
+    
+    const rect = coinDisplay.getBoundingClientRect();
+    const startX = window.innerWidth / 2;
+    const startY = window.innerHeight / 2;
+    const endX = rect.left + rect.width / 2;
+    const endY = rect.top + rect.height / 2;
+    
+    for (let i = 0; i < Math.min(amount, 10); i++) {
+      setTimeout(() => {
+        const coin = document.createElement('div');
+        coin.className = 'coin-animation';
+        coin.textContent = '🪙';
+        coin.style.position = 'fixed';
+        coin.style.left = startX + 'px';
+        coin.style.top = startY + 'px';
+        coin.style.zIndex = '9999';
+        coin.style.fontSize = '1.5rem';
+        coin.style.setProperty('--tx', `${endX - startX}px`);
+        coin.style.setProperty('--ty', `${endY - startY}px`);
+        
+        document.body.appendChild(coin);
+        
+        setTimeout(() => coin.remove(), 1000);
+      }, i * 50);
+    }
+  }
+
   function goBack() {
     console.log('Going back...');
     
     // Leave room
     if (socket && roomId) {
-      socket.emit('leave-group', { roomId });
+      socket.emit('leave-group', { roomId, userId });
     }
     
     // Close all peer connections
@@ -2798,33 +4171,51 @@ body{
       localStream = null;
     }
     
-    // Stop recording
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-    }
-    
     // Stop active speaker detection
     if (speakerInterval) {
       clearInterval(speakerInterval);
       speakerInterval = null;
     }
     
+    // Stop recording if active
+    if (isRecording) {
+      stopRecording();
+    }
+    
     // Reset video panels
     for (let i = 1; i <= 4; i++) {
       videoPanels[i].userId = null;
       videoPanels[i].peerId = null;
+      videoPanels[i].nickname = i == 1 ? 'You' : 'Anonymous';
+      videoPanels[i].coins = 0;
+      videoPanels[i].badge = null;
+      videoPanels[i].stream = null;
+      if (videoPanels[i].videoElement) {
+        videoPanels[i].videoElement.remove();
+        videoPanels[i].videoElement = null;
+      }
       updateVideoPanel(i);
     }
     
     // Reset UI
     document.getElementById('textChat').style.display = 'none';
     document.getElementById('videoChat').style.display = 'none';
+    document.getElementById('globalControls').style.display = 'none';
+    document.getElementById('adminBtn').style.display = 'none';
+    document.getElementById('recordBtn').style.display = 'none';
+    document.getElementById('headerCoinDisplay').style.display = 'none';
     isTextMode = false;
     isVideoMode = false;
     roomId = null;
     participantCount = 0;
     updateParticipantCount();
     updateConnectionStatus('disconnected');
+    
+    // Clear chat messages
+    document.getElementById('messages').innerHTML = '';
+    
+    // Hide invite link display
+    document.getElementById('inviteLinkDisplay').style.display = 'none';
     
     // Show start overlay
     document.getElementById('startOverlay').style.display = 'flex';
@@ -2834,7 +4225,7 @@ body{
   }
 
   function goHome() {
-    window.location.href = '/';
+    window.location.href = "index.html";
   }
 
   function showNotification(message, type = 'info') {
@@ -2848,19 +4239,19 @@ body{
     switch (type) {
       case 'error':
         notification.style.borderColor = 'var(--danger)';
-        notification.style.background = 'rgba(255, 118, 117, 0.15)';
+        notification.style.background = 'rgba(255, 118, 117, 0.2)';
         break;
       case 'success':
         notification.style.borderColor = 'var(--green)';
-        notification.style.background = 'rgba(0, 209, 154, 0.15)';
+        notification.style.background = 'rgba(0, 209, 154, 0.2)';
         break;
       case 'warning':
         notification.style.borderColor = 'var(--orange)';
-        notification.style.background = 'rgba(255, 159, 67, 0.15)';
+        notification.style.background = 'rgba(255, 159, 67, 0.2)';
         break;
       default:
         notification.style.borderColor = 'var(--accent)';
-        notification.style.background = 'rgba(0, 198, 255, 0.15)';
+        notification.style.background = 'rgba(0, 198, 255, 0.2)';
     }
     
     document.body.appendChild(notification);
@@ -2873,21 +4264,96 @@ body{
     }, 3000);
   }
 
+  /* ===== UTILITY FUNCTIONS ===== */
+  function createCSSParticles() {
+    const container = document.getElementById('threeContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    for (let i = 0; i < 15; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'animation-particle';
+      particle.style.width = Math.random() * 20 + 5 + 'px';
+      particle.style.height = particle.style.width;
+      particle.style.left = Math.random() * 100 + 'vw';
+      particle.style.top = Math.random() * 100 + 'vh';
+      particle.style.animationDuration = Math.random() * 20 + 10 + 's';
+      particle.style.animationDelay = Math.random() * 5 + 's';
+      container.appendChild(particle);
+    }
+  }
+
+  function setupMobileHandlers() {
+    // Prevent double-tap zoom
+    document.addEventListener('dblclick', function(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        e.preventDefault();
+      }
+    });
+    
+    // Handle iOS viewport height issues
+    function setVH() {
+      let vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    
+    // Fix iOS input zoom
+    document.addEventListener('touchstart', function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        // iOS will zoom automatically, we just ensure it's not prevented
+      }
+    });
+  }
+
   /* ===== EVENT LISTENERS ===== */
   function setupEventListeners() {
     // Button event listeners
-    document.getElementById('startTextBtn').addEventListener('click', startTextMode);
-    document.getElementById('startVideoBtn').addEventListener('click', startVideoMode);
-    document.getElementById('viewVIPBtn').addEventListener('click', () => {
-      showNotification('VIP users get free media sharing!', 'info');
+    document.getElementById('startTextBtn').addEventListener('click', function() {
+      // Show nickname modal when text chat is selected
+      document.getElementById('nicknameModal').style.display = 'flex';
+      document.getElementById('nicknameInputModal').focus();
     });
+    
+    document.getElementById('startVideoBtn').addEventListener('click', startVideoMode);
     document.getElementById('homeBtn').addEventListener('click', goHome);
     document.getElementById('mobileHomeBtn').addEventListener('click', goHome);
     document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
     document.getElementById('copyInviteBtn').addEventListener('click', copyInvite);
     document.getElementById('backBtn').addEventListener('click', goBack);
     document.getElementById('mediaUploadBtn').addEventListener('click', showMediaTypeModal);
-    document.getElementById('recordVideoBtn').addEventListener('click', recordVideo);
+    
+    // Nickname modal
+    document.getElementById('confirmNicknameBtn').addEventListener('click', function() {
+      const nicknameInput = document.getElementById('nicknameInputModal').value.trim();
+      if (!nicknameInput) {
+        showNotification('Please enter a nickname', 'error');
+        return;
+      }
+      
+      if (nicknameInput.length < 3 || nicknameInput.length > 20) {
+        showNotification('Nickname must be 3-20 characters', 'error');
+        return;
+      }
+      
+      nickname = nicknameInput;
+      localStorage.setItem('userNickname', nickname);
+      document.getElementById('nicknameModal').style.display = 'none';
+      startTextMode();
+    });
+    
+    document.getElementById('cancelNicknameBtn').addEventListener('click', function() {
+      document.getElementById('nicknameModal').style.display = 'none';
+    });
+    
+    document.getElementById('nicknameInputModal').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('confirmNicknameBtn').click();
+      }
+    });
     
     // Media type selection
     document.querySelectorAll('.media-type-btn').forEach(btn => {
@@ -2907,12 +4373,51 @@ body{
     document.getElementById('confirmUploadBtn').addEventListener('click', confirmMediaUpload);
     document.getElementById('cancelUploadBtn').addEventListener('click', closeMediaUploadModal);
     
-    // Video recording
-    document.getElementById('startRecordBtn').addEventListener('click', startVideoRecording);
-    document.getElementById('cancelRecordBtn').addEventListener('click', () => {
-      document.getElementById('videoRecordModal').style.display = 'none';
-      stopRecordTimer();
+    // Report system
+    document.querySelectorAll('.report-option').forEach(opt => {
+      opt.addEventListener('click', function() {
+        document.querySelectorAll('.report-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedReportReason = this.dataset.reason;
+      });
     });
+    
+    document.getElementById('submitReportBtn').addEventListener('click', submitReport);
+    document.getElementById('cancelReportBtn').addEventListener('click', closeReportModal);
+    
+    // Payment gateway
+    document.querySelectorAll('.payment-option').forEach(opt => {
+      opt.addEventListener('click', function() {
+        selectPaymentOption(this);
+      });
+    });
+    
+    document.getElementById('confirmPaymentBtn').addEventListener('click', confirmPayment);
+    document.getElementById('cancelPaymentBtn').addEventListener('click', closePaymentModal);
+    
+    // Recording button
+    document.getElementById('recordBtn').addEventListener('click', toggleRecording);
+    
+    // Admin system
+    document.getElementById('adminBtn').addEventListener('click', openAdminModal);
+    
+    document.querySelectorAll('.badge-option').forEach(opt => {
+      opt.addEventListener('click', function() {
+        selectAdminBadge(this.dataset.badge);
+      });
+    });
+    
+    document.getElementById('saveBadgesBtn').addEventListener('click', saveBadges);
+    document.getElementById('closeAdminBtn').addEventListener('click', () => {
+      document.getElementById('adminModal').style.display = 'none';
+    });
+    
+    // Video panel click handlers
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById(`video-panel-${i}`).addEventListener('click', function() {
+        handleVideoPanelClick(i);
+      });
+    }
     
     // Message input
     const msgInput = document.getElementById('msgInput');
@@ -2921,14 +4426,6 @@ body{
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
-        }
-      });
-      
-      msgInput.addEventListener('input', () => {
-        if (msgInput.value.trim()) {
-          sendTypingIndicator(true);
-        } else {
-          sendTypingIndicator(false);
         }
       });
     }
@@ -2946,9 +4443,6 @@ body{
               break;
             case 'toggleCam':
               toggleCam(button);
-              break;
-            case 'recordVideo':
-              recordVideo();
               break;
           }
         }
@@ -2977,7 +4471,9 @@ body{
             if (camBtn) toggleCam(camBtn);
             break;
           case 'r':
-            recordVideo();
+            if (isRecordingEnabled) {
+              toggleRecording();
+            }
             break;
         }
       }
@@ -2993,8 +4489,14 @@ body{
     // Before unload
     window.addEventListener('beforeunload', (e) => {
       if (socket && roomId) {
-        socket.emit('leave-group', { roomId });
+        socket.emit('leave-group', { roomId, userId });
       }
+      
+      // Stop recording if active
+      if (isRecording) {
+        stopRecording();
+      }
+      
       return null;
     });
     

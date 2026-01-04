@@ -4,6 +4,8 @@ const MAX_QUEUE_SIZE = 100; // Maximum users in queue
 const RATE_LIMIT_WINDOW = 60000; // 1 minute in milliseconds
 const RATE_LIMIT_MAX = 100; // Max requests per window
 const MESSAGE_HISTORY_SIZE = 50; // Store last 50 messages per room
+const MAX_TEXT_USERS = 6;
+const MAX_VIDEO_USERS = 4;
 
 const express = require("express");
 const http = require("http");
@@ -33,22 +35,10 @@ const ADMIN_CREDENTIALS = {
 };
 
 // STUN/TURN servers configuration
-const ICE_SERVERS = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:19302" }
-];
+
 
 // Add TURN servers if configured
-if (process.env.TURN_SERVER) {
-  ICE_SERVERS.push({
-    urls: process.env.TURN_SERVER,
-    username: process.env.TURN_USERNAME || "",
-    credential: process.env.TURN_CREDENTIAL || ""
-  });
-}
+
 
 // Validate required environment variables
 if (NODE_ENV === "production") {
@@ -129,7 +119,8 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       connectSrc: ["'self'", "wss:", "ws:", "https:"],
       imgSrc: ["'self'", "data:", "https:"],
-      mediaSrc: ["'self'", "blob:"],
+      mediaSrc: ["'self'", "blob:", "mediastream:"],
+
     }
   },
   crossOriginEmbedderPolicy: false,
@@ -194,6 +185,29 @@ function authenticateAdmin(req, res, next) {
 }
 
 /* ================= ROUTES ================= */
+/* ================= ICE / TURN ENDPOINT ================= */
+app.get("/api/turn", (req, res) => {
+  if (!process.env.TURN_USERNAME || !process.env.TURN_PASSWORD) {
+    return res.status(500).json({ error: "TURN not configured" });
+  }
+
+  res.json({
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      {
+        urls: "turn:global.relay.metered.ca:443",
+        username: process.env.TURN_USERNAME,
+        credential: process.env.TURN_PASSWORD
+      },
+      {
+        urls: "turns:global.relay.metered.ca:443?transport=tcp",
+        username: process.env.TURN_USERNAME,
+        credential: process.env.TURN_PASSWORD
+      }
+    ]
+  });
+});
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   const memoryUsage = process.memoryUsage();
@@ -346,9 +360,6 @@ app.get("/debug/room/:roomId", authenticateAdmin, (req, res) => {
 });
 
 // ICE servers endpoint
-app.get("/ice-servers", (req, res) => {
-  res.json({ iceServers: ICE_SERVERS });
-});
 
 // Load testing endpoint (admin only)
 app.post("/admin/load-test", authenticateAdmin, (req, res) => {
@@ -426,7 +437,8 @@ const io = new Server(server, {
   pingInterval: 25000,
   pingTimeout: 20000,
   connectTimeout: 30000,
-  maxHttpBufferSize: 1e6, // 1MB max message size
+  maxHttpBufferSize: 10e6, // 10MB
+
   cors: corsOptions,
   allowEIO3: true,
   serveClient: false,
@@ -472,9 +484,10 @@ const ROOM_MAX_SIZE = {
   text: 2,
   video: 2,
   audio: 2,
-  group_text: 6,
-  group_video: 4
+  group_text: MAX_TEXT_USERS,
+  group_video: MAX_VIDEO_USERS
 };
+
 
 // Room timeout configurations (in milliseconds)
 const ROOM_TIMEOUTS = {
@@ -536,7 +549,8 @@ function isRateLimited(socketId, type = "message") {
     join: 10,
     skip: 20,
     signal: 200,
-    typing: 30
+    typing: 30,
+    media: 10
   };
   
   limit.count++;
@@ -748,7 +762,8 @@ function createRoom(mode, creatorSocketId, creatorData, ...otherUsers) {
     lastActivity: Date.now(),
     status: "active",
     isBanned: false,
-    messages: [], // Store message history
+    messages: [],
+
     timeout: setTimeout(() => {
       endRoom(roomId, "timeout");
     }, ROOM_TIMEOUTS[mode] || 3600000)
@@ -847,7 +862,8 @@ function endRoom(roomId, reason = "ended") {
   
   // Save message history before deleting
   backupRoomHistory(roomId);
-  
+  const history = state.messageHistory.get(roomId) || [];
+
   setTimeout(() => {
     state.rooms.delete(roomId);
     state.messageHistory.delete(roomId);
@@ -1021,9 +1037,14 @@ function acceptConnection(socket) {
     id: userId,
     ip: userIP,
     name: 'Anonymous',
+    nickname: 'Anonymous',
     mode: null,
     tags: [],
     token: null,
+    coins: 0,
+    badges: null,
+    isAdmin: false,
+    isCreator: false,
     rooms: new Set(),
     connectedAt: Date.now(),
     userAgent: socket.handshake.headers['user-agent'],
@@ -1035,7 +1056,7 @@ function acceptConnection(socket) {
   socket.emit("queue-accepted", {
     message: "You're now connected!",
     userId,
-    iceServers: ICE_SERVERS
+    
   });
 
   io.emit("online_count", { count: state.users.size });
@@ -1146,6 +1167,7 @@ io.on('connection', (socket) => {
     
     // Update user data
     userData.name = cleanNickname;
+    userData.nickname = cleanNickname;
     userData.tags = cleanTags;
     userData.token = token;
     userData.mode = validMode;
@@ -1218,7 +1240,7 @@ io.on('connection', (socket) => {
         partnerCountry,
         commonTags,
         isInitiator: true,
-        iceServers: ICE_SERVERS
+        
       });
   
       // Send to receiver
@@ -1235,7 +1257,7 @@ io.on('connection', (socket) => {
           partnerCountry: userCountry,
           commonTags,
           isInitiator: false,
-          iceServers: ICE_SERVERS
+         
         });
       }
   
@@ -1255,7 +1277,7 @@ io.on('connection', (socket) => {
       socket.emit("waiting", {
         mode,
         estimatedWait: Math.max(2, state.waiting[mode].size * 1),
-        iceServers: ICE_SERVERS
+        
       });
   
       logSecurityEvent("USER_WAITING", {
@@ -1268,54 +1290,88 @@ io.on('connection', (socket) => {
   }
   
   function handleGroupJoin(socket, mode, userData) {
+    const maxSize = ROOM_MAX_SIZE[mode];
+  if (!maxSize) {
+    socket.emit("error", { message: "Invalid group mode" });
+    return;
+  }
     const group = findGroupForUser(socket.id, mode, userData.tags);
     let roomId;
   
     if (group?.roomId) {
       // Join existing group
       roomId = group.roomId;
-      const success = addUserToRoom(socket.id, roomId, userData);
-      if (!success) {
-        socket.emit('error', { message: 'Room is full' });
+    
+      const room = state.rooms.get(roomId);
+      if (!room) {
+        socket.emit("error", { message: "Room not found" });
         return;
       }
+    
+      // 🔒 HARD LIMIT ENFORCEMENT (ABSOLUTE)
+      if (room.users.size >= ROOM_MAX_SIZE[mode]) {
+        socket.emit("room-full", {
+          roomId,
+          mode,
+          max: ROOM_MAX_SIZE[mode],
+          type: mode === "group_video" ? "video" : "text"
+        });
+        return;
+      }
+    
+      const success = addUserToRoom(socket.id, roomId, userData);
+      if (!success) {
+        // Safety fallback (should never happen)
+        socket.emit("room-full", {
+          roomId,
+          mode,
+          max: ROOM_MAX_SIZE[mode],
+          type: mode === "group_video" ? "video" : "text"
+        });
+        return;
+      }
+    
     } else if (group?.newGroup) {
       // Create new group with single user
       roomId = createRoom(mode, socket.id, userData);
+    
     } else {
-      // Should never happen, but keep fallback
+      // Fallback → waiting
       state.waiting[mode].set(socket.id, userData);
-      socket.emit("waiting", { mode, iceServers: ICE_SERVERS });
+      socket.emit("waiting", { mode });
       return;
     }
-  
-    // Remove from waiting
+    
+    // ✅ Remove from waiting
     state.waiting[mode].delete(socket.id);
     userData.rooms.add(roomId);
     socket.join(roomId);
-  
+    
     const room = state.rooms.get(roomId);
     
-    // Get list of existing peers in room (excluding current user)
-    const existingPeers = Array.from(room.users).filter(id => id !== socket.id);
+    // Existing peers (excluding current user)
+    const existingPeers = Array.from(room.users).filter(
+      id => id !== socket.id
+    );
     
-    // Get message history if any
+    // Message history
     const messageHistory = state.messageHistory.get(roomId) || [];
     
-    // Emit to new joiner
+    // ✅ Notify new joiner
     socket.emit("group-joined", {
       roomId,
       mode,
       participants: room.participants.map(p => p.name),
       participantCount: room.users.size,
+
       maxSize: ROOM_MAX_SIZE[mode],
-      existingPeers: existingPeers,
-      isNewGroup: group?.newGroup || false,
+      existingPeers,
+      isNewGroup: Boolean(group?.newGroup),
       messageHistory: messageHistory.slice(-MESSAGE_HISTORY_SIZE),
-      iceServers: ICE_SERVERS
+      
     });
-  
-    // Notify existing peers about new joiner
+    
+    // ✅ Notify existing peers
     if (existingPeers.length > 0) {
       socket.to(roomId).emit("new-peer", {
         peerId: socket.id,
@@ -1325,90 +1381,485 @@ io.on('connection', (socket) => {
         totalParticipants: room.users.size
       });
     }
-  
-    logSecurityEvent('GROUP_JOINED', {
+    
+    logSecurityEvent("GROUP_JOINED", {
       roomId,
       userId: userData.id,
       userName: userData.name,
       mode,
       groupSize: room.users.size
     });
+    
   }
   
   /* ===== MESSAGE HANDLING ===== */
+  /* ===== MESSAGE HANDLING ===== */
   socket.on("send_message", (data) => {
-    if (isRateLimited(socket.id, "message")) {
-      socket.emit('error', { 
-        message: 'Message rate limit exceeded. Please slow down.' 
-      });
-      return;
-    }
-    
-    const { room, roomId, message, type = "text" } = data;
+    if (isRateLimited(socket.id, "message")) return;
+  
+    const { room, roomId, message, messageId, type = "text", timestamp } = data;
     const targetRoomId = room || roomId;
     const userData = state.users.get(socket.id);
-    
-    if (!targetRoomId || !message || !userData) return;
-    
+  
+    if (!targetRoomId || !message || !messageId || !userData) return;
+  
     const roomData = state.rooms.get(targetRoomId);
-    if (!roomData || !roomData.users.has(socket.id)) {
-      socket.emit('error', { message: 'Not in this room' });
-      return;
-    }
-    
-    // Validate message
-    const cleanMessage = String(message)
-      .slice(0, 2000)
-      .trim();
-    
-    if (cleanMessage.length === 0) return;
-    
-    // Update room activity
-    roomData.lastActivity = Date.now();
-    
-    // Create message object
+    if (!roomData || !roomData.users.has(socket.id)) return;
+  
+    const cleanMessage = String(message).trim().slice(0, 2000);
+    if (!cleanMessage) return;
+  
     const messageData = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      messageId,
       message: cleanMessage,
-      sender: userData.name,
-      senderId: userData.id,
-      senderSocketId: socket.id,
-      type: type,
-      timestamp: Date.now(),
-      roomId: targetRoomId
-    };
-    
-    // Store message in history
-    if (!roomData.messages) roomData.messages = [];
-    roomData.messages.push(messageData);
-    
-    // Store in global message history
-    const roomHistory = state.messageHistory.get(targetRoomId) || [];
-    roomHistory.push(messageData);
-    if (roomHistory.length > MESSAGE_HISTORY_SIZE) {
-      roomHistory.shift();
-    }
-    state.messageHistory.set(targetRoomId, roomHistory);
-    
-    // Broadcast message to all in room except sender
-    socket.to(targetRoomId).emit("receive_message", messageData);
-    
-    // Also send to sender for consistency
-    socket.emit("receive_message", {
-      ...messageData,
-      self: true
-    });
-    
-    logSecurityEvent('MESSAGE_SENT', {
+      senderId: userData.id,     // NOT socket.id
+senderSocketId: socket.id, // optional but useful
+
+      senderName: userData.nickname || userData.name,
       roomId: targetRoomId,
+      type,
+      timestamp: timestamp || Date.now()
+    };
+  
+    // Save history
+ 
+    const history = state.messageHistory.get(targetRoomId) || [];
+    history.push(messageData);
+if (history.length > MESSAGE_HISTORY_SIZE) history.shift();
+
+state.messageHistory.set(targetRoomId, history);
+
+  
+    // Send to others
+    // send to everyone else
+socket.to(targetRoomId).emit("receive_message", messageData);
+
+// send to sender explicitly
+socket.emit("receive_message", {
+  ...messageData,
+  self: true
+});
+
+
+  
+    
+    
+  });
+  
+
+  
+
+  
+  /* ===== USER DATA UPDATES ===== */
+  socket.on("user-data", (data) => {
+    const { roomId, userId, nickname, coins, badges, isAdmin, isCreator } = data;
+    const userData = state.users.get(socket.id);
+    
+    if (!userData) return;
+    
+    // Update user data
+    userData.nickname = nickname || userData.name;
+    userData.coins = coins || 0;
+    userData.badges = badges || null;
+    userData.isAdmin = isAdmin || false;
+    userData.isCreator = isCreator || false;
+    userData.lastActivity = Date.now();
+    
+    // Store in global state
+    state.users.set(socket.id, userData);
+    
+    // Broadcast to room
+    if (roomId) {
+      const room = state.rooms.get(roomId);
+      if (room && room.users.has(socket.id)) {
+        socket.to(roomId).emit("user-data-update", {
+          userId: userData.id,
+          nickname: userData.nickname,
+          coins: userData.coins,
+          badges: userData.badges,
+          isAdmin: userData.isAdmin,
+          isCreator: userData.isCreator
+        });
+      }
+    }
+    
+    logSecurityEvent('USER_DATA_UPDATE', {
       userId: userData.id,
-      messageLength: cleanMessage.length,
-      type: type
+      nickname: userData.nickname,
+      coins: userData.coins,
+      badges: userData.badges,
+      roomId
     });
   });
   
+  
+  /* ===== MEDIA CHUNK HANDLER (FINAL) ===== */
+  
+
+ 
+  
+  socket.on("media_chunk", data => {
+    if (isRateLimited(socket.id, "media")) return;
+  
+    const userData = state.users.get(socket.id);
+    if (!userData) return;
+  
+    const room = state.rooms.get(data.roomId);
+    if (!room || !room.users.has(socket.id)) return;
+  
+    socket.mediaBuffers = socket.mediaBuffers || new Map();
+    const mediaBuffers = socket.mediaBuffers;
+  
+    const {
+      roomId,
+      mediaId,
+      chunkIndex,
+      totalChunks,
+      chunk,
+      mediaType,
+      fileName,
+      fileSize,
+      cost
+    } = data;
+  
+    if (!mediaBuffers.has(mediaId)) {
+      mediaBuffers.set(mediaId, {
+        chunks: [],
+        totalChunks,
+        createdAt: Date.now()
+      });
+    }
+  
+    const entry = mediaBuffers.get(mediaId);
+    entry.chunks[chunkIndex] = Buffer.from(chunk);
+  
+    if (entry.chunks.filter(Boolean).length === totalChunks) {
+      const buffer = Buffer.concat(entry.chunks);
+  
+      const mimeType =
+  mediaType === "photo"
+    ? "image/jpeg"
+    : "video/mp4";
+
+      const dataUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
+  
+      io.to(roomId).emit("receive_media", {
+        mediaId,
+        mediaType,
+        dataUrl,
+        fileName,
+        fileSize,
+        senderId: userData.id,
+        nickname: userData.nickname,
+        cost
+      });
+  
+      mediaBuffers.delete(mediaId);
+    }
+  });
+  
+    
+    
+
+  
+
+  /* ===== COIN TRANSFER (OPO Emoji) ===== */
+  socket.on("coin-transfer", (data) => {
+    const { roomId, fromUserId, toUserId, amount, type } = data;
+    const userData = state.users.get(socket.id);
+    
+    if (!userData || userData.id !== fromUserId) {
+      socket.emit('error', { message: 'Unauthorized transfer' });
+      return;
+    }
+    
+    const room = state.rooms.get(roomId);
+    if (!room || !room.users.has(socket.id)) {
+      socket.emit('error', { message: 'Not in room' });
+      return;
+    }
+    
+    // Check if user has enough coins
+    if (userData.coins < amount) {
+      socket.emit('error', { message: 'Insufficient coins' });
+      return;
+    }
+    
+    // Find receiver in room
+    let receiverSocketId = null;
+    let receiverData = null;
+    
+    for (const roomSocketId of room.users) {
+      const roomUserData = state.users.get(roomSocketId);
+      if (roomUserData && roomUserData.id === toUserId) {
+        receiverSocketId = roomSocketId;
+        receiverData = roomUserData;
+        break;
+      }
+    }
+    
+    if (!receiverData) {
+      socket.emit('error', { message: 'Receiver not found' });
+      return;
+    }
+    
+    // Update sender's coins
+    userData.coins = (userData.coins || 0) - amount;
+    userData.lastActivity = Date.now();
+    state.users.set(socket.id, userData);
+    
+    // Update receiver's coins
+    receiverData.coins = (receiverData.coins || 0) + amount;
+    receiverData.lastActivity = Date.now();
+    
+    if (receiverSocketId) {
+      state.users.set(receiverSocketId, receiverData);
+    }
+    
+    // Emit coin updates
+    socket.emit("coin-update", {
+      userId: userData.id,
+      coins: userData.coins,
+      change: -amount,
+      type: 'transfer'
+    });
+    
+    if (receiverSocketId) {
+      const receiverSocket = io.sockets.sockets.get(receiverSocketId);
+      if (receiverSocket) {
+        receiverSocket.emit("coin-update", {
+          userId: receiverData.id,
+          coins: receiverData.coins,
+          change: amount,
+          type: 'transfer'
+        });
+        
+        receiverSocket.emit("coin-transfer", {
+          fromUserId: userData.id,
+          fromNickname: userData.nickname,
+          toUserId: receiverData.id,
+          amount: amount,
+          type: type,
+          remainingCoins: receiverData.coins
+        });
+      }
+    }
+    
+    // Broadcast to room
+    socket.to(roomId).emit("coin-transfer", {
+      fromUserId: userData.id,
+      fromNickname: userData.nickname,
+      toUserId: receiverData.id,
+      amount: amount,
+      type: type
+    });
+    
+    logSecurityEvent('COIN_TRANSFER', {
+      roomId,
+      fromUserId: userData.id,
+      toUserId: receiverData.id,
+      amount,
+      type,
+      senderCoins: userData.coins,
+      receiverCoins: receiverData.coins
+    });
+    
+    // Update admin panel
+    io.to('admins').emit('admin-state', getPublicStateForAdmin());
+  });
+  
+  /* ===== COINS DEDUCTED (for media uploads) ===== */
+  socket.on("coins-deducted", (data) => {
+    const { amount, type, newBalance, roomId, userId } = data;
+    const userData = state.users.get(socket.id);
+    
+    if (!userData || userData.id !== userId) {
+      socket.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+    
+    // Update user coins
+    userData.coins = newBalance || ((userData.coins || 0) - amount);
+    userData.lastActivity = Date.now();
+    state.users.set(socket.id, userData);
+    
+    // Broadcast to room
+    if (roomId) {
+      socket.to(roomId).emit("user-data-update", {
+        userId: userData.id,
+        coins: userData.coins
+      });
+    }
+    
+    logSecurityEvent('COINS_DEDUCTED', {
+      userId: userData.id,
+      amount,
+      type,
+      newBalance: userData.coins,
+      roomId
+    });
+  });
+  
+  /* ===== SEND MEDIA ===== */
+  
+  
+  /* ===== ASSIGN BADGE (Admin function) ===== */
+  socket.on("assign-badge", (data) => {
+    const { roomId, targetUserId, badge, adminId } = data;
+    const userData = state.users.get(socket.id);
+    
+    if (!userData || !userData.isAdmin) {
+      socket.emit('error', { message: 'Not authorized' });
+      return;
+    }
+    
+    // Find target user in state.users
+    let targetSocketId = null;
+    let targetUserData = null;
+    
+    for (const [socketId, user] of state.users) {
+      if (user.id === targetUserId) {
+        targetSocketId = socketId;
+        targetUserData = user;
+        break;
+      }
+    }
+    
+    if (!targetUserData) {
+      socket.emit('error', { message: 'User not found' });
+      return;
+    }
+    
+    // Update badge
+    targetUserData.badges = badge;
+    targetUserData.lastActivity = Date.now();
+    
+    // Update in state
+    if (targetSocketId) {
+      state.users.set(targetSocketId, targetUserData);
+    }
+    
+    // Emit badge assignment
+    if (targetSocketId) {
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (targetSocket) {
+        targetSocket.emit("badge-assigned", {
+          userId: targetUserData.id,
+          badge: badge,
+          assignedBy: userData.id,
+          assignedAt: Date.now()
+        });
+      }
+    }
+    
+    // Broadcast to room if applicable
+    if (roomId) {
+      io.to(roomId).emit("badge-assigned", {
+        userId: targetUserData.id,
+        badge: badge
+      });
+    }
+    
+    logAdminAction(socket.id, "ASSIGN_BADGE", {
+      targetUserId,
+      badge,
+      roomId
+    });
+    
+    // Update admin panel
+    io.to('admins').emit('admin-state', getPublicStateForAdmin());
+  });
+  
+  /* ===== SUBMIT REPORT (Updated) ===== */
+  socket.on("submit-report", (data) => {
+    const { 
+      roomId, 
+      targetUserId, 
+      reason, 
+      description, 
+      reporterId, 
+      reporterNickname 
+    } = data;
+    
+    const userData = state.users.get(socket.id);
+    
+    if (!userData) {
+      socket.emit('error', { message: 'User session not found' });
+      return;
+    }
+    
+    // Find target user
+    let targetUserData = null;
+    for (const [_, user] of state.users) {
+      if (user.id === targetUserId) {
+        targetUserData = user;
+        break;
+      }
+    }
+    
+    const report = {
+      id: `report_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      reporterId: reporterId,
+      reporterNickname: reporterNickname,
+      reporterSocketId: socket.id,
+      targetUserId: targetUserId,
+      targetNickname: targetUserData?.nickname || 'Unknown',
+      reason: (reason || 'No reason provided').slice(0, 500),
+      description: (description || '').slice(0, 1000),
+      roomId: roomId,
+      reporterIP: userData.ip,
+      reporterToken: userData.token,
+      timestamp: Date.now(),
+      status: 'pending'
+    };
+    
+    state.reports.unshift(report);
+    
+    // Notify admins
+    io.to('admins').emit('new-report', report);
+    io.to('admins').emit('admin-state', getPublicStateForAdmin());
+    
+    // Confirm to reporter
+    socket.emit("report-received", { 
+      success: true, 
+      reportId: report.id,
+      message: 'Report submitted successfully'
+    });
+    
+    // Notify target if in same room
+    if (roomId) {
+      const room = state.rooms.get(roomId);
+      if (room) {
+        // Find target socket in room
+        for (const roomSocketId of room.users) {
+          const roomUserData = state.users.get(roomSocketId);
+          if (roomUserData && roomUserData.id === targetUserId) {
+            const targetSocket = io.sockets.sockets.get(roomSocketId);
+            if (targetSocket) {
+              targetSocket.emit("report-notification", {
+                message: 'You have been reported by another user',
+                reason: reason,
+                reportId: report.id
+              });
+            }
+            break;
+          }
+        }
+      }
+    }
+    
+    logSecurityEvent('USER_REPORTED', report);
+    
+    // Log to file
+    logToFile("reports.log", report);
+  });
+  
   /* ===== WEBRTC SIGNALING ===== */
+  
+  
   socket.on("signal", (data) => {
+    
+    
     if (isRateLimited(socket.id, "signal")) {
       console.warn(`Signal rate limited: ${socket.id}`);
       return;
@@ -1492,7 +1943,7 @@ io.on('connection', (socket) => {
     const room = state.rooms.get(roomId);
     if (!room || !room.users.has(socket.id)) return;
     
-    // Get all other peers in the room
+    // Get all other peers in the room with their data
     const peers = Array.from(room.users)
       .filter(id => id !== socket.id)
       .map(peerId => {
@@ -1500,16 +1951,20 @@ io.on('connection', (socket) => {
         return {
           socketId: peerId,
           userId: peerData?.id,
-          name: peerData?.name,
+          nickname: peerData?.nickname || 'Anonymous',
+          coins: peerData?.coins || 0,
+          badges: peerData?.badges || null,
+          isAdmin: peerData?.isAdmin || false,
+          isCreator: peerData?.isCreator || false,
           country: peerData?.country
         };
       });
     
-    socket.emit("peer-list", {
+    socket.emit("existing-peers", {
       roomId,
       peers,
       total: peers.length,
-      iceServers: ICE_SERVERS
+      
     });
   });
   
@@ -1579,49 +2034,18 @@ io.on('connection', (socket) => {
     io.to('admins').emit('admin-state', getPublicStateForAdmin());
   });
   
-  /* ===== REPORT USER ===== */
-  socket.on("report", (data) => {
-    const { room, reason, partnerId, partnerName, evidence } = data;
-    const userData = state.users.get(socket.id);
-    
-    if (!userData) return;
-    
-    const report = {
-      id: `report_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      reporterId: userData.id,
-      reporterName: userData.name,
-      reportedId: partnerId,
-      reportedName: partnerName,
-      reason: (reason || 'No reason provided').slice(0, 500),
-      evidence: evidence || null,
-      roomId: room,
-      reporterIP: userData.ip,
-      reporterToken: userData.token,
-      timestamp: Date.now(),
-      status: 'pending'
-    };
-    
-    state.reports.unshift(report);
-    
-    // Notify admins
-    io.to('admins').emit('new-report', report);
-    io.to('admins').emit('admin-state', getPublicStateForAdmin());
-    
-    // Confirm to reporter
-    socket.emit("report-received", { 
-      success: true, 
-      reportId: report.id 
-    });
-    
-    logSecurityEvent('USER_REPORTED', report);
-    
-    // Log to file
-    logToFile("reports.log", report);
-  });
-  
-  /* ===== GROUP CHAT EVENTS ===== */
+  /* ===== GROUP CHAT EVENTS (UPDATED) ===== */
   socket.on("create-group", (data) => {
-    const { mode = 'group_text', nickname = 'Anonymous', tags = [] } = data;
+    const { 
+      mode = 'group_text', 
+      nickname = 'Anonymous', 
+      tags = [], 
+      coins = 0, 
+      badges = null, 
+      userId, 
+      isCreator = false 
+    } = data;
+    
     const userData = state.users.get(socket.id);
     
     if (!userData) {
@@ -1629,16 +2053,28 @@ io.on('connection', (socket) => {
       return;
     }
     
-    userData.name = nickname;
-    userData.tags = tags;
+    userData.nickname = nickname;
+    userData.coins = coins || userData.coins || 0;
+    userData.badges = badges || userData.badges || null;
     userData.mode = mode;
+    
+    userData.isCreator = isCreator || false;
     userData.lastActivity = Date.now();
     
     handleGroupJoin(socket, mode, userData);
   });
   
   socket.on("join-group", (data) => {
-    const { roomId, mode = 'group_text', nickname = 'Anonymous' } = data;
+    const { 
+      roomId, 
+      mode = 'group_text', 
+      nickname = 'Anonymous', 
+      coins = 0, 
+      badges = null, 
+      userId, 
+      isCreator = false 
+    } = data;
+    
     const userData = state.users.get(socket.id);
     
     if (!userData) {
@@ -1646,8 +2082,13 @@ io.on('connection', (socket) => {
       return;
     }
     
-    userData.name = nickname;
+    // Update user data with provided values
+    userData.nickname = nickname;
     userData.mode = mode;
+    userData.coins = coins || userData.coins || 0;
+    userData.badges = badges || userData.badges || null;
+    
+    userData.isCreator = isCreator || false;
     userData.lastActivity = Date.now();
     
     const room = state.rooms.get(roomId);
@@ -1659,27 +2100,120 @@ io.on('connection', (socket) => {
         // Get message history
         const messageHistory = state.messageHistory.get(roomId) || [];
         
-        socket.emit("joined-room", { 
+        // Get existing peers info
+        const existingPeers = Array.from(room.users)
+          .filter(id => id !== socket.id)
+          .map(peerId => {
+            const peerData = state.users.get(peerId);
+            return {
+              socketId: peerId,
+              userId: peerData?.id,
+              nickname: peerData?.nickname || 'Anonymous',
+              coins: peerData?.coins || 0,
+              badges: peerData?.badges || null
+            };
+          });
+        
+        // Check admin status
+        const isAdmin = userData.isAdmin || false;
+        
+        socket.emit("group-joined", { 
           roomId, 
           mode: room.mode,
+          nickname: userData.nickname,
+          coins: userData.coins,
+          badges: userData.badges,
           participants: room.participants.map(p => p.name),
           participantCount: room.users.size,
+
+          maxSize: ROOM_MAX_SIZE[room.mode],
+          existingPeers: existingPeers,
           messageHistory: messageHistory.slice(-MESSAGE_HISTORY_SIZE),
-          iceServers: ICE_SERVERS
+          isAdmin: isAdmin,
+          isCreator: userData.isCreator,
+          
         });
         
         // Notify others
         socket.to(roomId).emit("user-joined", {
           userId: userData.id,
-          nickname: userData.name,
-          participantCount: room.users.size
+          nickname: userData.nickname,
+          coins: userData.coins,
+          badges: userData.badges,
+          participantCount: room.users.size,
+          socketId: socket.id
         });
+        
+        // Broadcast user data update
+        socket.to(roomId).emit("user-data-update", {
+          userId: userData.id,
+          nickname: userData.nickname,
+          coins: userData.coins,
+          badges: userData.badges,
+          isAdmin: isAdmin,
+          isCreator: userData.isCreator
+        });
+        
       } else {
         socket.emit('error', { message: 'Room is full' });
       }
     } else {
       socket.emit('error', { message: 'Room not found or unavailable' });
     }
+  });
+  
+  /* ===== LEAVE GROUP ===== */
+  socket.on("leave-group", (data) => {
+    const { roomId, userId } = data;
+    const userData = state.users.get(socket.id);
+    
+    if (!userData) return;
+    
+    if (roomId) {
+      const room = state.rooms.get(roomId);
+      if (room && room.users.has(socket.id)) {
+        // Notify others in room
+        socket.to(roomId).emit("user-left", {
+          userId: userData.id,
+          nickname: userData.nickname,
+          participantCount: room.users.size - 1,
+          roomId: roomId
+        });
+        
+        // Remove from room
+        removeUserFromRoom(socket.id, roomId, "left");
+        socket.leave(roomId);
+        userData.rooms.delete(roomId);
+        
+        // Clear user mode
+        userData.mode = null;
+        userData.lastActivity = Date.now();
+      }
+    } else {
+      // Leave all rooms
+      userData.rooms.forEach(roomId => {
+        const roomData = state.rooms.get(roomId);
+        if (roomData) {
+          socket.to(roomId).emit("user-left", {
+            userId: userData.id,
+            nickname: userData.nickname,
+            participantCount: roomData.users.size - 1,
+            roomId: roomId
+          });
+          
+          removeUserFromRoom(socket.id, roomId, "left");
+          socket.leave(roomId);
+        }
+      });
+      
+      // Clear all rooms
+      userData.rooms.clear();
+      userData.mode = null;
+      userData.lastActivity = Date.now();
+    }
+    
+    // Update admin panel
+    io.to('admins').emit('admin-state', getPublicStateForAdmin());
   });
   
   /* ===== TYPING INDICATOR ===== */
@@ -1734,7 +2268,7 @@ io.on('connection', (socket) => {
       socket.emit("admin-auth-success", {
         message: "Admin authentication successful",
         permissions: ["view", "ban", "unban", "view_logs", "view_reports", "end_rooms"],
-        iceServers: ICE_SERVERS
+        
       });
       
       // Send current state
@@ -2062,7 +2596,8 @@ async function startServer() {
     👉 Main URL: http://${HOST}:${PORT}
     👉 Admin Panel: http://${HOST}:${PORT}/admin
     👉 Health Check: http://${HOST}:${PORT}/health
-    👉 ICE Servers: http://${HOST}:${PORT}/ice-servers
+    👉 👉 TURN Endpoint: http://${HOST}:${PORT}/api/turn
+ Servers: http://${HOST}:${PORT}/ice-servers
     
     📊 Room Limits:
     • 1-on-1 Text/Video/Audio: 2 users
