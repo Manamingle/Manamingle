@@ -3,6 +3,7 @@ const MAX_USERS = 300; // Maximum concurrent users
 const MAX_QUEUE_SIZE = 100; // Maximum users in queue
 const RATE_LIMIT_WINDOW = 60000; // 1 minute in milliseconds
 const RATE_LIMIT_MAX = 100; // Max requests per window
+const MESSAGE_HISTORY_SIZE = 50; // Store last 50 messages per room
 
 const express = require("express");
 const http = require("http");
@@ -13,6 +14,7 @@ const { Server } = require("socket.io");
 const fs = require("fs").promises;
 const rateLimit = require("express-rate-limit");
 const compression = require("compression");
+const geoip = require("geoip-lite"); // For IP geolocation
 require("dotenv").config(); // Load environment variables
 
 const app = express();
@@ -30,6 +32,24 @@ const ADMIN_CREDENTIALS = {
   adminKey: process.env.ADMIN_KEY || "secure-admin-key-2024"
 };
 
+// STUN/TURN servers configuration
+const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" }
+];
+
+// Add TURN servers if configured
+if (process.env.TURN_SERVER) {
+  ICE_SERVERS.push({
+    urls: process.env.TURN_SERVER,
+    username: process.env.TURN_USERNAME || "",
+    credential: process.env.TURN_CREDENTIAL || ""
+  });
+}
+
 // Validate required environment variables
 if (NODE_ENV === "production") {
   const requiredVars = ["ADMIN_USER", "ADMIN_PASS", "ADMIN_KEY"];
@@ -44,14 +64,16 @@ if (NODE_ENV === "production") {
 /* ================= PATHS ================= */
 const publicPath = path.join(__dirname, "public");
 const logsPath = path.join(__dirname, "logs");
+const backupPath = path.join(__dirname, "backups");
 
 /* ================= LOGGING SETUP ================= */
 async function setupLogging() {
   try {
     await fs.mkdir(logsPath, { recursive: true });
-    console.log("✅ Logs directory ready");
+    await fs.mkdir(backupPath, { recursive: true });
+    console.log("✅ Logs and backups directories ready");
   } catch (error) {
-    console.error("❌ Failed to create logs directory:", error);
+    console.error("❌ Failed to create directories:", error);
   }
 }
 
@@ -66,6 +88,36 @@ async function logToFile(filename, data) {
   }
 }
 
+/* ================= BACKUP SYSTEM ================= */
+async function backupState() {
+  try {
+    const backupData = {
+      timestamp: Date.now(),
+      rooms: Array.from(state.rooms.entries()),
+      users: Array.from(state.users.entries()),
+      reports: state.reports,
+      blockedUsers: Array.from(state.blockedUsers),
+      blockedIPs: Array.from(state.blockedIPs),
+      blockedTokens: Array.from(state.blockedTokens)
+    };
+    
+    const backupFile = path.join(backupPath, `backup_${Date.now()}.json`);
+    await fs.writeFile(backupFile, JSON.stringify(backupData, null, 2));
+    
+    // Keep only last 10 backups
+    const files = await fs.readdir(backupPath);
+    if (files.length > 10) {
+      const sortedFiles = files.sort();
+      const filesToDelete = sortedFiles.slice(0, files.length - 10);
+      for (const file of filesToDelete) {
+        await fs.unlink(path.join(backupPath, file));
+      }
+    }
+  } catch (error) {
+    console.error("Backup failed:", error);
+  }
+}
+
 /* ================= MIDDLEWARE ================= */
 // Security headers
 app.use(helmet({
@@ -77,12 +129,12 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       connectSrc: ["'self'", "wss:", "ws:", "https:"],
       imgSrc: ["'self'", "data:", "https:"],
+      mediaSrc: ["'self'", "blob:"],
     }
   },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
-
 
 // Rate limiting for API endpoints
 const apiLimiter = rateLimit({
@@ -93,6 +145,14 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// IP-based rate limiting
+const ipLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per window
+  message: { error: "Too many requests from this IP." },
+  keyGenerator: (req) => req.ip
+});
+
 // CORS configuration
 const corsOptions = {
   origin: NODE_ENV === "production" 
@@ -100,7 +160,7 @@ const corsOptions = {
     : true,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
 };
 
 app.use(cors(corsOptions));
@@ -115,6 +175,7 @@ app.use(express.static(publicPath, {
     }
   }
 }));
+app.use(ipLimiter); // Apply IP-based rate limiting
 
 /* ================= ADMIN AUTH MIDDLEWARE ================= */
 function authenticateAdmin(req, res, next) {
@@ -136,6 +197,8 @@ function authenticateAdmin(req, res, next) {
 // Health check endpoint
 app.get("/health", (req, res) => {
   const memoryUsage = process.memoryUsage();
+  const rooms = Array.from(state.rooms.values());
+  
   res.json({
     status: "healthy",
     uptime: process.uptime(),
@@ -145,8 +208,14 @@ app.get("/health", (req, res) => {
       heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + "MB",
       rss: Math.round(memoryUsage.rss / 1024 / 1024) + "MB"
     },
-    connections: state.users.size,
-    environment: NODE_ENV
+    connections: {
+      users: state.users.size,
+      queue: state.connectionQueue.length,
+      rooms: rooms.length,
+      activeRooms: rooms.filter(r => r.status === 'active').length
+    },
+    environment: NODE_ENV,
+    version: "1.0.0"
   });
 });
 
@@ -155,9 +224,8 @@ app.get("/admin", authenticateAdmin, (req, res) => {
   res.sendFile(path.join(publicPath, "admin.html"));
 });
 
-
+// Admin login endpoint
 app.post("/admin/login", apiLimiter, (req, res) => {
-
   const { username, password } = req.body;
 
   if (username === ADMIN_CREDENTIALS.username && 
@@ -181,49 +249,147 @@ app.get("/admin/stats", authenticateAdmin, (req, res) => {
 });
 
 app.post("/admin/ban", authenticateAdmin, apiLimiter, (req, res) => {
-  const { type, value, reason } = req.body;
+  const { type, value, reason, duration } = req.body;
   
   if (!type || !value) {
     return res.status(400).json({ error: "Missing type or value" });
   }
   
+  const banData = {
+    type,
+    value,
+    reason: reason || "No reason provided",
+    bannedAt: Date.now(),
+    bannedBy: req.ip,
+    duration: duration || null,
+    expiresAt: duration ? Date.now() + (duration * 1000) : null
+  };
+  
   switch (type) {
     case "user":
-      state.blockedUsers.add(value);
+      state.blockedUsers.set(value, banData);
       break;
     case "ip":
-      state.blockedIPs.add(value);
+      state.blockedIPs.set(value, banData);
       break;
     case "token":
-      state.blockedTokens.add(value);
+      state.blockedTokens.set(value, banData);
       break;
     default:
       return res.status(400).json({ error: "Invalid ban type" });
   }
   
-  logAdminAction(req.ip, "BAN_ADDED", { type, value, reason });
-  res.json({ success: true, message: `Banned ${type}: ${value}` });
+  logAdminAction(req.ip, "BAN_ADDED", banData);
+  res.json({ success: true, message: `Banned ${type}: ${value}`, data: banData });
 });
 
 app.delete("/admin/ban/:type/:value", authenticateAdmin, (req, res) => {
   const { type, value } = req.params;
   
+  let success = false;
   switch (type) {
     case "user":
-      state.blockedUsers.delete(value);
+      success = state.blockedUsers.delete(value);
       break;
     case "ip":
-      state.blockedIPs.delete(value);
+      success = state.blockedIPs.delete(value);
       break;
     case "token":
-      state.blockedTokens.delete(value);
+      success = state.blockedTokens.delete(value);
       break;
     default:
       return res.status(400).json({ error: "Invalid ban type" });
   }
   
-  logAdminAction(req.ip, "BAN_REMOVED", { type, value });
-  res.json({ success: true, message: `Unbanned ${type}: ${value}` });
+  if (success) {
+    logAdminAction(req.ip, "BAN_REMOVED", { type, value });
+    res.json({ success: true, message: `Unbanned ${type}: ${value}` });
+  } else {
+    res.status(404).json({ error: `${type} not found in ban list` });
+  }
+});
+
+// Debug endpoint for room status
+app.get("/debug/room/:roomId", authenticateAdmin, (req, res) => {
+  const roomId = req.params.roomId;
+  const room = state.rooms.get(roomId);
+  
+  if (!room) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+  
+  const socketStatus = Array.from(room.users).map(socketId => {
+    const socket = io.sockets.sockets.get(socketId);
+    const userData = state.users.get(socketId);
+    return {
+      socketId,
+      connected: socket?.connected || false,
+      userId: userData?.id,
+      userName: userData?.name,
+      userAgent: userData?.userAgent,
+      ip: userData?.ip
+    };
+  });
+  
+  res.json({
+    roomId,
+    mode: room.mode,
+    status: room.status,
+    users: socketStatus,
+    totalUsers: room.users.size,
+    maxSize: ROOM_MAX_SIZE[room.mode],
+    createdAt: room.createdAt,
+    lastActivity: room.lastActivity,
+    messages: room.messages?.length || 0,
+    isBanned: room.isBanned
+  });
+});
+
+// ICE servers endpoint
+app.get("/ice-servers", (req, res) => {
+  res.json({ iceServers: ICE_SERVERS });
+});
+
+// Load testing endpoint (admin only)
+app.post("/admin/load-test", authenticateAdmin, (req, res) => {
+  const { action, count = 10 } = req.body;
+  
+  if (action === "simulate") {
+    const stats = {
+      before: {
+        users: state.users.size,
+        rooms: state.rooms.size,
+        memory: process.memoryUsage().heapUsed
+      },
+      simulated: count
+    };
+    
+    // Simulate load by creating test rooms
+    for (let i = 0; i < Math.min(count, 50); i++) {
+      const roomId = `test_${Date.now()}_${i}`;
+      state.rooms.set(roomId, {
+        id: roomId,
+        mode: 'text',
+        users: new Set(),
+        participants: [],
+        tags: ['test'],
+        createdAt: Date.now(),
+        lastActivity: Date.now(),
+        status: "active",
+        isBanned: false
+      });
+    }
+    
+    stats.after = {
+      users: state.users.size,
+      rooms: state.rooms.size,
+      memory: process.memoryUsage().heapUsed
+    };
+    
+    res.json({ success: true, stats });
+  } else {
+    res.json({ error: "Invalid action" });
+  }
 });
 
 // Main page
@@ -239,6 +405,14 @@ app.use((req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error("Server error:", err);
+  logToFile("server-errors.log", {
+    error: err.message,
+    stack: err.stack,
+    timestamp: Date.now(),
+    url: req.url,
+    ip: req.ip
+  });
+  
   res.status(500).json({ 
     error: NODE_ENV === "production" ? "Internal server error" : err.message 
   });
@@ -255,7 +429,11 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e6, // 1MB max message size
   cors: corsOptions,
   allowEIO3: true,
-  serveClient: false
+  serveClient: false,
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+    skipMiddlewares: true
+  }
 });
 
 /* ================= GLOBAL STATE ================= */
@@ -272,9 +450,9 @@ const state = {
   users: new Map(),
   reports: [],
   
-  blockedUsers: new Set(),
-  blockedIPs: new Set(),
-  blockedTokens: new Set(),
+  blockedUsers: new Map(), // Changed to Map to store ban details
+  blockedIPs: new Map(),
+  blockedTokens: new Map(),
   
   admins: new Set(),
   securityLogs: [],
@@ -283,16 +461,19 @@ const state = {
   socketRateLimits: new Map(),
   
   // Queue system for when server is full
-  connectionQueue: []
+  connectionQueue: [],
+  
+  // Message history for rooms
+  messageHistory: new Map()
 };
 
-// Room size limits (as per your requirements)
+// Room size limits
 const ROOM_MAX_SIZE = {
   text: 2,
   video: 2,
   audio: 2,
-  group_text: 6,    // Group text chat: 6 users
-  group_video: 4    // Group video chat: 4 users
+  group_text: 6,
+  group_video: 4
 };
 
 // Room timeout configurations (in milliseconds)
@@ -320,12 +501,21 @@ function getUserIP(socket) {
     : socket.handshake.address;
 }
 
+function getUserCountry(ip) {
+  try {
+    const geo = geoip.lookup(ip);
+    return geo ? geo.country : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function isRateLimited(socketId, type = "message") {
   const now = Date.now();
   const userLimits = state.socketRateLimits.get(socketId) || {};
   
   if (!userLimits[type]) {
-    userLimits[type] = { count: 1, firstRequest: now };
+    userLimits[type] = { count: 1, firstRequest: now, lastRequest: now };
     state.socketRateLimits.set(socketId, userLimits);
     return false;
   }
@@ -336,6 +526,7 @@ function isRateLimited(socketId, type = "message") {
   if (now - limit.firstRequest > 60000) { // 1 minute window
     limit.count = 1;
     limit.firstRequest = now;
+    limit.lastRequest = now;
     return false;
   }
   
@@ -344,11 +535,12 @@ function isRateLimited(socketId, type = "message") {
     message: 60, // 60 messages per minute
     join: 10,
     skip: 20,
-    signal: 200
+    signal: 200,
+    typing: 30
   };
   
-  
   limit.count++;
+  limit.lastRequest = now;
   
   if (limit.count > (maxRequests[type] || 30)) {
     logSecurityEvent('RATE_LIMIT_EXCEEDED', { socketId, type, count: limit.count });
@@ -399,9 +591,36 @@ function logAdminAction(adminId, action, details = {}) {
 }
 
 function isUserBlocked(userId, ip, token) {
-  if (state.blockedUsers.has(userId)) return true;
-  if (state.blockedIPs.has(ip)) return true;
-  if (token && state.blockedTokens.has(token)) return true;
+  // Check if user is blocked
+  if (state.blockedUsers.has(userId)) {
+    const ban = state.blockedUsers.get(userId);
+    if (ban.expiresAt && Date.now() > ban.expiresAt) {
+      state.blockedUsers.delete(userId); // Ban expired
+      return false;
+    }
+    return true;
+  }
+  
+  // Check if IP is blocked
+  if (state.blockedIPs.has(ip)) {
+    const ban = state.blockedIPs.get(ip);
+    if (ban.expiresAt && Date.now() > ban.expiresAt) {
+      state.blockedIPs.delete(ip); // Ban expired
+      return false;
+    }
+    return true;
+  }
+  
+  // Check if token is blocked
+  if (token && state.blockedTokens.has(token)) {
+    const ban = state.blockedTokens.get(token);
+    if (ban.expiresAt && Date.now() > ban.expiresAt) {
+      state.blockedTokens.delete(token); // Ban expired
+      return false;
+    }
+    return true;
+  }
+  
   return false;
 }
 
@@ -418,15 +637,9 @@ function findMatchForUser(selfSocketId, mode, userTags = []) {
     return null;
   }
   
-  // For group modes, we need to find/create a group
-  
-  
-  // For 1-on-1 modes (text, video, audio)
-  // FIRST: Try to find interest match (fast priority)
+  // Try to find interest match
   let bestInterestMatch = null;
   let bestInterestScore = -1;
-  
-  // SECOND: Fallback to random match
   let randomMatch = null;
   
   for (const [socketId, userData] of waitingUsers) {
@@ -469,26 +682,11 @@ function findMatchForUser(selfSocketId, mode, userTags = []) {
     return bestInterestMatch;
   }
   
-  // Return random match if available
-  if (randomMatch) {
-    return randomMatch;
-  }
-  
-  // Last resort: pick any waiting user
-  if (waitingUsers.length > 1) {
-    const randomIndex = Math.floor(Math.random() * waitingUsers.length);
-    const randomUser = waitingUsers[randomIndex];
-    if (randomUser[0] !== selfSocketId) {
-      return { socketId: randomUser[0], userData: randomUser[1] };
-    }
-  }
-  
-  return null;
+  return randomMatch;
 }
 
 function findGroupForUser(selfSocketId, mode, userTags = []) {
-
-  // 1️⃣ First: try to find an existing active group with space
+  // Try to find an existing active group with space
   for (const [roomId, room] of state.rooms) {
     if (
       room.mode === mode &&
@@ -496,7 +694,7 @@ function findGroupForUser(selfSocketId, mode, userTags = []) {
       !room.isBanned &&
       room.users.size < ROOM_MAX_SIZE[mode]
     ) {
-      // Optional interest matching
+      // Check interest matching
       if (
         userTags.length === 0 ||
         hasCommonInterest(userTags, room.tags || [])
@@ -506,13 +704,12 @@ function findGroupForUser(selfSocketId, mode, userTags = []) {
     }
   }
 
-  // 2️⃣ No group found → CREATE A NEW GROUP WITH THIS USER ONLY
+  // No group found → create a new group
   return {
     newGroup: true,
-    members: [] // 👈 empty means group starts with 1 user
+    members: []
   };
 }
-
 
 function createRoom(mode, creatorSocketId, creatorData, ...otherUsers) {
   const roomId = generateRoomId();
@@ -532,13 +729,15 @@ function createRoom(mode, creatorSocketId, creatorData, ...otherUsers) {
       userId: user.data.id,
       name: user.data.name || 'Anonymous',
       tags: user.data.tags || [],
-      joinedAt: Date.now()
+      joinedAt: Date.now(),
+      ip: user.data.ip,
+      country: getUserCountry(user.data.ip)
     });
   }
   
   const roomTags = [...new Set(allTags)];
   
-  state.rooms.set(roomId, {
+  const room = {
     id: roomId,
     mode: mode,
     users: new Set(allUsers.map(u => u.socketId)),
@@ -549,11 +748,14 @@ function createRoom(mode, creatorSocketId, creatorData, ...otherUsers) {
     lastActivity: Date.now(),
     status: "active",
     isBanned: false,
+    messages: [], // Store message history
     timeout: setTimeout(() => {
-      // Auto-end room after timeout
       endRoom(roomId, "timeout");
     }, ROOM_TIMEOUTS[mode] || 3600000)
-  });
+  };
+  
+  state.rooms.set(roomId, room);
+  state.messageHistory.set(roomId, []);
   
   return roomId;
 }
@@ -574,7 +776,9 @@ function addUserToRoom(socketId, roomId, userData) {
     userId: userData.id,
     name: userData.name || 'Anonymous',
     tags: userData.tags || [],
-    joinedAt: Date.now()
+    joinedAt: Date.now(),
+    ip: userData.ip,
+    country: getUserCountry(userData.ip)
   });
   
   if (userData.token) room.tokens.push(userData.token);
@@ -588,16 +792,29 @@ function addUserToRoom(socketId, roomId, userData) {
 function removeUserFromRoom(socketId, roomId, reason = "left") {
   const room = state.rooms.get(roomId);
   if (!room) return false;
-  
+
   room.users.delete(socketId);
-  
+
   // Remove participant
   const participantIndex = room.participants.findIndex(p => p.id === socketId);
   if (participantIndex !== -1) {
     room.participants.splice(participantIndex, 1);
   }
-  
-  // Update room status based on remaining users
+
+  // Notify all remaining users about disconnection
+  const remainingUsers = Array.from(room.users);
+  if (remainingUsers.length > 0) {
+    remainingUsers.forEach(remainingSocketId => {
+      io.to(remainingSocketId).emit("peer-disconnected", {
+        peerId: socketId,
+        roomId,
+        reason,
+        remainingCount: remainingUsers.length
+      });
+    });
+  }
+
+  // Update room status
   if (room.users.size === 0) {
     endRoom(roomId, reason);
   } else if (room.mode.startsWith('group_') && room.users.size === 1) {
@@ -608,43 +825,70 @@ function removeUserFromRoom(socketId, roomId, reason = "left") {
       remainingSocket.emit("group-emptying", { roomId });
     }
   }
-  
+
   // Update last activity
   room.lastActivity = Date.now();
-  
+
   return true;
 }
 
 function endRoom(roomId, reason = "ended") {
   const room = state.rooms.get(roomId);
   if (!room) return;
-  
+
   // Clear timeout
   if (room.timeout) {
     clearTimeout(room.timeout);
   }
-  
+
   room.status = 'ended';
   room.endedAt = Date.now();
   room.endReason = reason;
+  
+  // Save message history before deleting
+  backupRoomHistory(roomId);
+  
   setTimeout(() => {
     state.rooms.delete(roomId);
-  }, 1000);
-  
+    state.messageHistory.delete(roomId);
+  }, 10000); // Keep for 10 seconds after ending
+
   // Notify all users in room
   const roomSockets = io.in(roomId);
   roomSockets.emit("room-ended", { reason, roomId });
   
   // Force disconnect all sockets from room
   roomSockets.socketsLeave(roomId);
-  
+
   logSecurityEvent('ROOM_ENDED', {
     roomId,
     mode: room.mode,
     reason,
     participantCount: room.participants.length,
-    duration: room.endedAt - room.createdAt
+    duration: room.endedAt - room.createdAt,
+    messageCount: room.messages?.length || 0
   });
+}
+
+async function backupRoomHistory(roomId) {
+  try {
+    const room = state.rooms.get(roomId);
+    if (!room || !room.messages) return;
+    
+    const history = {
+      roomId,
+      mode: room.mode,
+      participants: room.participants,
+      messages: room.messages,
+      createdAt: room.createdAt,
+      endedAt: room.endedAt,
+      duration: room.endedAt - room.createdAt
+    };
+    
+    await logToFile("room-history.log", history);
+  } catch (error) {
+    console.error("Failed to backup room history:", error);
+  }
 }
 
 function getRoomStats() {
@@ -697,11 +941,17 @@ function getPublicStateForAdmin() {
       endedAt: room.endedAt,
       duration: room.endedAt 
         ? room.endedAt - room.createdAt 
-        : Date.now() - room.createdAt
+        : Date.now() - room.createdAt,
+      messageCount: room.messages?.length || 0
     });
   }
   
   roomsArray.sort((a, b) => b.createdAt - a.createdAt);
+  
+  // Get blocked lists with details
+  const blockedUsers = Array.from(state.blockedUsers.entries()).map(([id, data]) => ({ id, ...data }));
+  const blockedIPs = Array.from(state.blockedIPs.entries()).map(([ip, data]) => ({ ip, ...data }));
+  const blockedTokens = Array.from(state.blockedTokens.entries()).map(([token, data]) => ({ token, ...data }));
   
   return {
     serverInfo: {
@@ -709,33 +959,39 @@ function getPublicStateForAdmin() {
       environment: NODE_ENV,
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      nodeVersion: process.version
+      nodeVersion: process.version,
+      timestamp: Date.now()
     },
     rooms: roomsArray.slice(0, 100),
     reports: state.reports.slice(0, 50),
     online: state.users.size,
     stats: getRoomStats(),
-    blockedCounts: {
-      users: state.blockedUsers.size,
-      ips: state.blockedIPs.size,
-      tokens: state.blockedTokens.size
+    blocked: {
+      users: blockedUsers,
+      ips: blockedIPs,
+      tokens: blockedTokens
     },
     waiting: getRoomStats().waiting,
-    securityLogs: state.securityLogs.slice(0, 50)
+    securityLogs: state.securityLogs.slice(0, 50),
+    queue: {
+      size: state.connectionQueue.length,
+      users: state.connectionQueue.map(s => ({ 
+        id: s.id, 
+        connected: s.connected 
+      }))
+    }
   };
 }
 
 /* ================= QUEUE MANAGEMENT ================= */
 function processQueue() {
   // Process queue when space becomes available
-  while (state.connectionQueue.length > 0 && state.users.size < MAX_USERS)
-    {
+  while (state.connectionQueue.length > 0 && state.users.size < MAX_USERS) {
     const queuedSocket = state.connectionQueue.shift();
     
     if (queuedSocket && queuedSocket.connected && !state.users.has(queuedSocket.id)) {
       acceptConnection(queuedSocket);
     }
-    
   }
   
   // Update queue positions
@@ -754,7 +1010,6 @@ function acceptConnection(socket) {
   state.connectionQueue = state.connectionQueue.filter(s => s.id !== socket.id);
 
   const wasQueued = Boolean(socket.queued);
-
   socket.queued = false;
   socket.queuedAt = null;
 
@@ -772,12 +1027,15 @@ function acceptConnection(socket) {
     rooms: new Set(),
     connectedAt: Date.now(),
     userAgent: socket.handshake.headers['user-agent'],
-    queuedAt: null
+    queuedAt: null,
+    country: getUserCountry(userIP),
+    lastActivity: Date.now()
   });
 
   socket.emit("queue-accepted", {
     message: "You're now connected!",
-    userId
+    userId,
+    iceServers: ICE_SERVERS
   });
 
   io.emit("online_count", { count: state.users.size });
@@ -786,17 +1044,18 @@ function acceptConnection(socket) {
     socketId: socket.id, 
     userId, 
     ip: userIP,
+    country: getUserCountry(userIP),
     userAgent: socket.handshake.headers['user-agent'],
     wasQueued
   });
 }
 
-
 /* ================= SOCKET.IO EVENT HANDLERS ================= */
 io.on('connection', (socket) => {
+  console.log(`New connection: ${socket.id}`);
+  
   // 🚦 USER LIMIT ENFORCEMENT WITH QUEUE
   if (state.users.size >= MAX_USERS) {
-
     // Queue full → reject
     if (state.connectionQueue.length >= MAX_QUEUE_SIZE) {
       socket.emit("server-full", {
@@ -812,8 +1071,8 @@ io.on('connection', (socket) => {
     const queuePosition = state.connectionQueue.length + 1;
     
     socket.queued = true;
-socket.queuedAt = Date.now();
- state.connectionQueue.push(socket);
+    socket.queuedAt = Date.now();
+    state.connectionQueue.push(socket);
   
     socket.emit("server-full", {
       max: MAX_USERS,
@@ -838,36 +1097,32 @@ socket.queuedAt = Date.now();
     return;
   }
   
-  socket.queued = false;
-socket.queuedAt = null;
-
   // Server has space, accept connection immediately
   acceptConnection(socket);
   state.connectionQueue = state.connectionQueue.filter(s => s.id !== socket.id);
 
-
   /* ===== JOIN CHAT EVENT ===== */
   socket.on("join_chat", (data) => {
     const userData = state.users.get(socket.id);
-    if (!userData) return;
-    if (userData.mode) return;
-  
-    
-    const { mode = 'text', nickname, tags = [], token, userAgent } = data;
-    
-    
     if (!userData) {
       socket.emit('error', { message: 'User session not found' });
       return;
     }
+    
+    if (userData.mode) {
+      // User already in a chat, skip
+      return;
+    }
+    
+    const { mode = 'text', nickname, tags = [], token, userAgent } = data;
     
     // Validate mode
     const validModes = ['text', 'video', 'audio', 'group_text', 'group_video'];
     const validMode = validModes.includes(mode) ? mode : 'text';
     
     // Get user IP and ID
-    const userIP = getUserIP(socket);
-    const userId = userData?.id || generateUserId();
+    const userIP = userData.ip;
+    const userId = userData.id;
     
     // Check if user is blocked
     if (isUserBlocked(userId, userIP, token)) {
@@ -895,6 +1150,7 @@ socket.queuedAt = null;
     userData.token = token;
     userData.mode = validMode;
     userData.userAgent = userAgent;
+    userData.lastActivity = Date.now();
     
     // Remove from any existing waiting queue
     for (const m of validModes) {
@@ -904,8 +1160,7 @@ socket.queuedAt = null;
     // Find or create match/group
     if (validMode.startsWith('group_')) {
       handleGroupJoin(socket, validMode, userData);
-    }
-     else {
+    } else {
       handleOneOnOneJoin(socket, validMode, userData);
     }
     
@@ -946,16 +1201,9 @@ socket.queuedAt = null;
         matchedSocket.join(roomId);
       }
   
-      // Country flags (client-side detection preferred)
-      const userCountry = getUserCountry(socket);
-      const partnerCountry = getUserCountry(matchedSocket);
-  
-      // =========================
-      // 🔥 INITIATOR ASSIGNMENT
-      // =========================
-      // Rule:
-      // - socket (current joiner) → INITIATOR
-      // - matchedSocket → RECEIVER
+      // Get user countries
+      const userCountry = userData.country;
+      const partnerCountry = matchedUserData.country;
   
       // Send to initiator
       socket.emit("matched", {
@@ -969,7 +1217,8 @@ socket.queuedAt = null;
         matchType: isInterestMatch ? "interest" : "random",
         partnerCountry,
         commonTags,
-        isInitiator: true
+        isInitiator: true,
+        iceServers: ICE_SERVERS
       });
   
       // Send to receiver
@@ -985,7 +1234,8 @@ socket.queuedAt = null;
           matchType: isInterestMatch ? "interest" : "random",
           partnerCountry: userCountry,
           commonTags,
-          isInitiator: false
+          isInitiator: false,
+          iceServers: ICE_SERVERS
         });
       }
   
@@ -1004,7 +1254,8 @@ socket.queuedAt = null;
   
       socket.emit("waiting", {
         mode,
-        estimatedWait: Math.max(2, state.waiting[mode].size * 1)
+        estimatedWait: Math.max(2, state.waiting[mode].size * 1),
+        iceServers: ICE_SERVERS
       });
   
       logSecurityEvent("USER_WAITING", {
@@ -1016,20 +1267,6 @@ socket.queuedAt = null;
     }
   }
   
-  
-  function getUserCountry(socket) {
-    if (!socket) return null;
-    try {
-      // Try to get country from IP (simplified - in production use proper geolocation)
-      const forwardedFor = socket.handshake.headers['x-forwarded-for'];
-      const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : socket.handshake.address;
-      // For now, return null - client will detect their own country
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-  
   function handleGroupJoin(socket, mode, userData) {
     const group = findGroupForUser(socket.id, mode, userData.tags);
     let roomId;
@@ -1037,38 +1274,57 @@ socket.queuedAt = null;
     if (group?.roomId) {
       // Join existing group
       roomId = group.roomId;
-      addUserToRoom(socket.id, roomId, userData);
+      const success = addUserToRoom(socket.id, roomId, userData);
+      if (!success) {
+        socket.emit('error', { message: 'Room is full' });
+        return;
+      }
     } else if (group?.newGroup) {
       // Create new group with single user
       roomId = createRoom(mode, socket.id, userData);
     } else {
-      // Should never happen now, but keep fallback
+      // Should never happen, but keep fallback
       state.waiting[mode].set(socket.id, userData);
-      socket.emit("waiting", { mode });
+      socket.emit("waiting", { mode, iceServers: ICE_SERVERS });
       return;
     }
   
-    // ✅ SINGLE join + SINGLE room add
+    // Remove from waiting
     state.waiting[mode].delete(socket.id);
     userData.rooms.add(roomId);
     socket.join(roomId);
   
     const room = state.rooms.get(roomId);
-  
+    
+    // Get list of existing peers in room (excluding current user)
+    const existingPeers = Array.from(room.users).filter(id => id !== socket.id);
+    
+    // Get message history if any
+    const messageHistory = state.messageHistory.get(roomId) || [];
+    
+    // Emit to new joiner
     socket.emit("group-joined", {
       roomId,
       mode,
       participants: room.participants.map(p => p.name),
       participantCount: room.users.size,
-      maxSize: ROOM_MAX_SIZE[mode]
+      maxSize: ROOM_MAX_SIZE[mode],
+      existingPeers: existingPeers,
+      isNewGroup: group?.newGroup || false,
+      messageHistory: messageHistory.slice(-MESSAGE_HISTORY_SIZE),
+      iceServers: ICE_SERVERS
     });
   
-    socket.to(roomId).emit("user-joined", {
-      userId: userData.id,
-      nickname: userData.name,
-      userName: userData.name,
-      participantCount: room.users.size
-    });
+    // Notify existing peers about new joiner
+    if (existingPeers.length > 0) {
+      socket.to(roomId).emit("new-peer", {
+        peerId: socket.id,
+        peerName: userData.name,
+        peerUserId: userData.id,
+        roomId,
+        totalParticipants: room.users.size
+      });
+    }
   
     logSecurityEvent('GROUP_JOINED', {
       roomId,
@@ -1078,7 +1334,6 @@ socket.queuedAt = null;
       groupSize: room.users.size
     });
   }
-  
   
   /* ===== MESSAGE HANDLING ===== */
   socket.on("send_message", (data) => {
@@ -1111,26 +1366,38 @@ socket.queuedAt = null;
     // Update room activity
     roomData.lastActivity = Date.now();
     
-    // Broadcast message
+    // Create message object
     const messageData = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       message: cleanMessage,
       sender: userData.name,
       senderId: userData.id,
-      senderNickname: userData.name,
-      nickname: userData.name,
+      senderSocketId: socket.id,
       type: type,
       timestamp: Date.now(),
-      roomId: targetRoomId,
-      room: targetRoomId
+      roomId: targetRoomId
     };
     
-    // Send to all in room except sender
+    // Store message in history
+    if (!roomData.messages) roomData.messages = [];
+    roomData.messages.push(messageData);
+    
+    // Store in global message history
+    const roomHistory = state.messageHistory.get(targetRoomId) || [];
+    roomHistory.push(messageData);
+    if (roomHistory.length > MESSAGE_HISTORY_SIZE) {
+      roomHistory.shift();
+    }
+    state.messageHistory.set(targetRoomId, roomHistory);
+    
+    // Broadcast message to all in room except sender
     socket.to(targetRoomId).emit("receive_message", messageData);
-
     
-    // Also send to sender for consistency (optional)
-    
-    
+    // Also send to sender for consistency
+    socket.emit("receive_message", {
+      ...messageData,
+      self: true
+    });
     
     logSecurityEvent('MESSAGE_SENT', {
       roomId: targetRoomId,
@@ -1140,45 +1407,111 @@ socket.queuedAt = null;
     });
   });
   
-
   /* ===== WEBRTC SIGNALING ===== */
   socket.on("signal", (data) => {
-    if (isRateLimited(socket.id, "signal")) return;
-  
-    const { room, to, sdp, candidate } = data;
-    const userData = state.users.get(socket.id);
-    if (!userData) return;
-  
-    if (room) {
-      const roomData = state.rooms.get(room);
-      if (!roomData || !roomData.users.has(socket.id)) return;
-      roomData.lastActivity = Date.now();
-    }
-  
-    // P2P
-    if (to) {
-      io.to(to).emit("signal", {
-        from: socket.id,
-        fromUser: userData.name,
-        sdp,
-        candidate
-      });
+    if (isRateLimited(socket.id, "signal")) {
+      console.warn(`Signal rate limited: ${socket.id}`);
       return;
     }
   
-    // GROUP MESH
-    if (room) {
-      socket.to(room).emit("signal", {
-        from: socket.id,
-        fromUser: userData.name,
-        sdp,
-        candidate
-      });
+    // Normalize payload
+    const { room, roomId, to, sdp, candidate, type } = data;
+    const targetRoom = room || roomId;
+  
+    const userData = state.users.get(socket.id);
+    if (!userData) return;
+  
+    // Validate SDP type
+    if (sdp && !["offer", "answer"].includes(sdp.type)) {
+      console.warn(`Invalid SDP type: ${sdp.type}`);
+      return;
+    }
+  
+    // Validate room membership if room-based signaling
+    if (targetRoom) {
+      const roomData = state.rooms.get(targetRoom);
+      if (!roomData || !roomData.users.has(socket.id)) {
+        console.warn(`User ${socket.id} not in room ${targetRoom}`);
+        return;
+      }
+      roomData.lastActivity = Date.now();
+    }
+  
+    /* =======================
+       🔹 DIRECT PEER SIGNALING
+       ======================= */
+    if (to) {
+      // Send to specific peer
+      const targetSocket = io.sockets.sockets.get(to);
+      if (targetSocket && targetSocket.connected) {
+        targetSocket.emit("signal", {
+          from: socket.id,
+          roomId: targetRoom,
+          sdp,
+          candidate,
+          type: type || "webrtc",
+          timestamp: Date.now()
+        });
+      }
+      return;
+    }
+  
+    /* =======================
+       🔹 GROUP MESH SIGNALING
+       ======================= */
+    if (targetRoom) {
+      const roomData = state.rooms.get(targetRoom);
+      if (!roomData) return;
+  
+      // Send to ALL other peers in the room (mesh networking)
+      for (const peerSocketId of roomData.users) {
+        if (peerSocketId !== socket.id) {
+          const peerSocket = io.sockets.sockets.get(peerSocketId);
+          if (peerSocket && peerSocket.connected) {
+            peerSocket.emit("signal", {
+              from: socket.id,
+              roomId: targetRoom,
+              sdp,
+              candidate,
+              type: type || "webrtc",
+              timestamp: Date.now()
+            });
+          }
+        }
+      }
     }
   });
   
-  
-  
+  /* ===== REQUEST PEER LIST ===== */
+  socket.on("request-peers", (data) => {
+    const { roomId } = data;
+    const userData = state.users.get(socket.id);
+    
+    if (!userData || !roomId) return;
+    
+    const room = state.rooms.get(roomId);
+    if (!room || !room.users.has(socket.id)) return;
+    
+    // Get all other peers in the room
+    const peers = Array.from(room.users)
+      .filter(id => id !== socket.id)
+      .map(peerId => {
+        const peerData = state.users.get(peerId);
+        return {
+          socketId: peerId,
+          userId: peerData?.id,
+          name: peerData?.name,
+          country: peerData?.country
+        };
+      });
+    
+    socket.emit("peer-list", {
+      roomId,
+      peers,
+      total: peers.length,
+      iceServers: ICE_SERVERS
+    });
+  });
   
   /* ===== SKIP/LEAVE ===== */
   socket.on("skip", (data) => {
@@ -1205,12 +1538,6 @@ socket.queuedAt = null;
           partnerName: userData.name,
           roomId: roomId
         });
-        socket.to(roomId).emit("user-left", {
-          userId: userData.id,
-          nickname: userData.name,
-          userName: userData.name,
-          roomId: roomId
-        });
         
         // Remove from room
         removeUserFromRoom(socket.id, roomId, "skipped");
@@ -1230,6 +1557,7 @@ socket.queuedAt = null;
     if (mode && userData) {
       userData.mode = mode;
       userData.tags = tags;
+      userData.lastActivity = Date.now();
       
       if (mode.startsWith('group_')) {
         handleGroupJoin(socket, mode, userData);
@@ -1253,7 +1581,7 @@ socket.queuedAt = null;
   
   /* ===== REPORT USER ===== */
   socket.on("report", (data) => {
-    const { room, reason, partnerId, partnerName } = data;
+    const { room, reason, partnerId, partnerName, evidence } = data;
     const userData = state.users.get(socket.id);
     
     if (!userData) return;
@@ -1265,6 +1593,7 @@ socket.queuedAt = null;
       reportedId: partnerId,
       reportedName: partnerName,
       reason: (reason || 'No reason provided').slice(0, 500),
+      evidence: evidence || null,
       roomId: room,
       reporterIP: userData.ip,
       reporterToken: userData.token,
@@ -1284,9 +1613,6 @@ socket.queuedAt = null;
       reportId: report.id 
     });
     
-    // Auto-skip after reporting (optional)
-    socket.emit("skip");
-    
     logSecurityEvent('USER_REPORTED', report);
     
     // Log to file
@@ -1295,7 +1621,7 @@ socket.queuedAt = null;
   
   /* ===== GROUP CHAT EVENTS ===== */
   socket.on("create-group", (data) => {
-    const { mode = 'group_text', nickname = 'Anonymous' } = data;
+    const { mode = 'group_text', nickname = 'Anonymous', tags = [] } = data;
     const userData = state.users.get(socket.id);
     
     if (!userData) {
@@ -1304,7 +1630,9 @@ socket.queuedAt = null;
     }
     
     userData.name = nickname;
+    userData.tags = tags;
     userData.mode = mode;
+    userData.lastActivity = Date.now();
     
     handleGroupJoin(socket, mode, userData);
   });
@@ -1320,6 +1648,7 @@ socket.queuedAt = null;
     
     userData.name = nickname;
     userData.mode = mode;
+    userData.lastActivity = Date.now();
     
     const room = state.rooms.get(roomId);
     if (room && room.status === 'active' && room.users.size < ROOM_MAX_SIZE[room.mode]) {
@@ -1327,8 +1656,19 @@ socket.queuedAt = null;
         userData.rooms.add(roomId);
         socket.join(roomId);
         
-        socket.emit("joined-room", { roomId, mode: room.mode });
+        // Get message history
+        const messageHistory = state.messageHistory.get(roomId) || [];
         
+        socket.emit("joined-room", { 
+          roomId, 
+          mode: room.mode,
+          participants: room.participants.map(p => p.name),
+          participantCount: room.users.size,
+          messageHistory: messageHistory.slice(-MESSAGE_HISTORY_SIZE),
+          iceServers: ICE_SERVERS
+        });
+        
+        // Notify others
         socket.to(roomId).emit("user-joined", {
           userId: userData.id,
           nickname: userData.name,
@@ -1344,6 +1684,8 @@ socket.queuedAt = null;
   
   /* ===== TYPING INDICATOR ===== */
   socket.on("typing", (data) => {
+    if (isRateLimited(socket.id, "typing")) return;
+    
     const { room, isTyping } = data;
     const roomId = room;
     const userData = state.users.get(socket.id);
@@ -1360,6 +1702,24 @@ socket.queuedAt = null;
     });
   });
   
+  /* ===== REQUEST MESSAGE HISTORY ===== */
+  socket.on("request-history", (data) => {
+    const { roomId, limit = MESSAGE_HISTORY_SIZE } = data;
+    const userData = state.users.get(socket.id);
+    
+    if (!userData || !roomId) return;
+    
+    const room = state.rooms.get(roomId);
+    if (!room || !room.users.has(socket.id)) return;
+    
+    const history = state.messageHistory.get(roomId) || [];
+    socket.emit("message-history", {
+      roomId,
+      messages: history.slice(-limit),
+      total: history.length
+    });
+  });
+  
   /* ===== ADMIN EVENTS ===== */
   socket.on("admin-auth", (data) => {
     const { username, password, adminKey } = data;
@@ -1373,13 +1733,17 @@ socket.queuedAt = null;
       
       socket.emit("admin-auth-success", {
         message: "Admin authentication successful",
-        permissions: ["view", "ban", "unban", "view_logs", "view_reports"]
+        permissions: ["view", "ban", "unban", "view_logs", "view_reports", "end_rooms"],
+        iceServers: ICE_SERVERS
       });
       
       // Send current state
       socket.emit("admin-state", getPublicStateForAdmin());
       
-      logAdminAction(socket.id, "ADMIN_LOGIN", { ip: getUserIP(socket) });
+      logAdminAction(socket.id, "ADMIN_LOGIN", { 
+        ip: getUserIP(socket),
+        userAgent: socket.handshake.headers['user-agent'] 
+      });
       
     } else {
       socket.emit("admin-auth-failed", {
@@ -1388,7 +1752,8 @@ socket.queuedAt = null;
       
       logSecurityEvent('FAILED_ADMIN_LOGIN', {
         socketId: socket.id,
-        ip: getUserIP(socket)
+        ip: getUserIP(socket),
+        attemptedUsername: username
       });
     }
   });
@@ -1408,7 +1773,16 @@ socket.queuedAt = null;
         
       case "ban-user":
         if (params.userId) {
-          state.blockedUsers.add(params.userId);
+          const banData = {
+            type: "user",
+            value: params.userId,
+            reason: params.reason || "Admin action",
+            bannedAt: Date.now(),
+            bannedBy: socket.id,
+            duration: params.duration || null,
+            expiresAt: params.duration ? Date.now() + (params.duration * 1000) : null
+          };
+          state.blockedUsers.set(params.userId, banData);
           logAdminAction(socket.id, "BAN_USER", params);
           socket.emit("command-success", { command, ...params });
         }
@@ -1416,15 +1790,20 @@ socket.queuedAt = null;
         
       case "unban-user":
         if (params.userId) {
-          state.blockedUsers.delete(params.userId);
-          logAdminAction(socket.id, "UNBAN_USER", params);
-          socket.emit("command-success", { command, ...params });
+          const success = state.blockedUsers.delete(params.userId);
+          if (success) {
+            logAdminAction(socket.id, "UNBAN_USER", params);
+            socket.emit("command-success", { command, ...params });
+          } else {
+            socket.emit("error", { message: "User not found in ban list" });
+          }
         }
         break;
         
       case "get-logs":
+        const limit = params.limit || 100;
         socket.emit("admin-logs", {
-          security: state.securityLogs.slice(0, 100),
+          security: state.securityLogs.slice(0, limit),
           totalLogs: state.securityLogs.length
         });
         break;
@@ -1436,6 +1815,36 @@ socket.queuedAt = null;
             endRoom(params.roomId, "admin_terminated");
             logAdminAction(socket.id, "END_ROOM", params);
             socket.emit("command-success", { command, ...params });
+          } else {
+            socket.emit("error", { message: "Room not found" });
+          }
+        }
+        break;
+        
+      case "kick-user":
+        if (params.roomId && params.userId) {
+          const room = state.rooms.get(params.roomId);
+          if (room) {
+            const userSocket = Array.from(room.users).find(socketId => {
+              const user = state.users.get(socketId);
+              return user && user.id === params.userId;
+            });
+            
+            if (userSocket) {
+              const userSocketObj = io.sockets.sockets.get(userSocket);
+              if (userSocketObj) {
+                userSocketObj.emit("kicked", { reason: params.reason || "Admin action" });
+                userSocketObj.leave(params.roomId);
+              }
+              
+              removeUserFromRoom(userSocket, params.roomId, "kicked_by_admin");
+              logAdminAction(socket.id, "KICK_USER", params);
+              socket.emit("command-success", { command, ...params });
+            } else {
+              socket.emit("error", { message: "User not found in room" });
+            }
+          } else {
+            socket.emit("error", { message: "Room not found" });
           }
         }
         break;
@@ -1448,8 +1857,17 @@ socket.queuedAt = null;
     io.to('admins').emit('admin-state', getPublicStateForAdmin());
   });
   
+  /* ===== PING/PONG ===== */
+  socket.on("ping", () => {
+    const userData = state.users.get(socket.id);
+    if (userData) {
+      userData.lastActivity = Date.now();
+    }
+    socket.emit("pong", { timestamp: Date.now() });
+  });
+  
   /* ===== DISCONNECT HANDLER ===== */
-  socket.on("disconnect", () => {
+  socket.on("disconnect", (reason) => {
     const userData = state.users.get(socket.id);
     
     if (userData) {
@@ -1461,7 +1879,8 @@ socket.queuedAt = null;
           socket.to(roomId).emit("partner-disconnected", {
             partnerId: userData.id,
             partnerName: userData.name,
-            roomId: roomId
+            roomId: roomId,
+            reason: reason
           });
           
           // Remove from room
@@ -1478,7 +1897,7 @@ socket.queuedAt = null;
       if (state.admins.has(socket.id)) {
         state.admins.delete(socket.id);
         socket.leave('admins');
-        logAdminAction(socket.id, "ADMIN_LOGOUT");
+        logAdminAction(socket.id, "ADMIN_LOGOUT", { reason });
       }
       
       // Remove rate limit tracking
@@ -1491,21 +1910,23 @@ socket.queuedAt = null;
         userId: userData.id,
         socketId: socket.id,
         ip: userData.ip,
+        reason: reason,
         duration: Date.now() - userData.connectedAt,
         rooms: Array.from(userData.rooms)
       });
     }
     
+    // Remove from queue if present
+    state.connectionQueue = state.connectionQueue.filter(s => s.id !== socket.id);
+    
     // Update online count and admin panel
     io.emit("online_count", { count: state.users.size });
-
-
     io.to('admins').emit('admin-state', getPublicStateForAdmin());
     
     // Process queue if space is available
     if (state.users.size < MAX_USERS) {
       processQueue();
-  }
+    }
   });
 });
 
@@ -1515,11 +1936,13 @@ setInterval(() => {
   const oneHourAgo = now - (60 * 60 * 1000);
   const fiveMinutesAgo = now - (5 * 60 * 1000);
   const thirtyMinutesAgo = now - (30 * 60 * 1000);
+  const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
   
   // Clean up old rooms
   for (const [roomId, room] of state.rooms) {
     if (room.status === 'ended' && room.endedAt < oneHourAgo) {
       state.rooms.delete(roomId);
+      state.messageHistory.delete(roomId);
     }
     
     // Clean up inactive rooms (no activity for 30 minutes)
@@ -1539,7 +1962,6 @@ setInterval(() => {
           socket.emit('waiting-timeout');
         }
       }
-      
     }
   }
   
@@ -1555,13 +1977,55 @@ setInterval(() => {
     }
   }
   
+  // Clean up expired bans
+  for (const [userId, banData] of state.blockedUsers.entries()) {
+    if (banData.expiresAt && now > banData.expiresAt) {
+      state.blockedUsers.delete(userId);
+    }
+  }
+  
+  for (const [ip, banData] of state.blockedIPs.entries()) {
+    if (banData.expiresAt && now > banData.expiresAt) {
+      state.blockedIPs.delete(ip);
+    }
+  }
+  
+  for (const [token, banData] of state.blockedTokens.entries()) {
+    if (banData.expiresAt && now > banData.expiresAt) {
+      state.blockedTokens.delete(token);
+    }
+  }
+  
   // Clean up old reports and logs
   if (state.reports.length > 1000) {
     state.reports = state.reports.slice(0, 1000);
   }
   
   if (state.securityLogs.length > 2000) {
+    // Archive old logs before removing
+    const logsToArchive = state.securityLogs.slice(1000);
     state.securityLogs = state.securityLogs.slice(0, 2000);
+    
+    // Async archive
+    logToFile("security-archive.log", {
+      archivedAt: now,
+      logs: logsToArchive
+    });
+  }
+  
+  // Clean up inactive users (no activity for 1 hour but still connected)
+  for (const [socketId, userData] of state.users.entries()) {
+    if (userData.lastActivity && (now - userData.lastActivity) > 3600000) {
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket) {
+        socket.disconnect(true);
+      }
+    }
+  }
+  
+  // Backup state every hour
+  if (now % (60 * 60 * 1000) < 5000) { // Roughly every hour
+    backupState();
   }
   
   // Update admin panel
@@ -1571,9 +2035,19 @@ setInterval(() => {
   const memoryUsage = process.memoryUsage();
   if (memoryUsage.heapUsed > 500 * 1024 * 1024) { // 500MB threshold
     console.warn(`⚠️  High memory usage: ${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`);
+    logSecurityEvent('HIGH_MEMORY_USAGE', {
+      heapUsed: memoryUsage.heapUsed,
+      heapTotal: memoryUsage.heapTotal,
+      rss: memoryUsage.rss
+    });
   }
   
-}, 5 * 60 * 1000); // Run every 5 minutes
+  // Log server stats every 5 minutes
+  if (now % (5 * 60 * 1000) < 5000) {
+    console.log(`📊 Server Stats: Users=${state.users.size}, Rooms=${state.rooms.size}, Queue=${state.connectionQueue.length}`);
+  }
+  
+}, 30 * 1000); // Run every 30 seconds
 
 /* ================= START SERVER ================= */
 async function startServer() {
@@ -1588,6 +2062,7 @@ async function startServer() {
     👉 Main URL: http://${HOST}:${PORT}
     👉 Admin Panel: http://${HOST}:${PORT}/admin
     👉 Health Check: http://${HOST}:${PORT}/health
+    👉 ICE Servers: http://${HOST}:${PORT}/ice-servers
     
     📊 Room Limits:
     • 1-on-1 Text/Video/Audio: 2 users
@@ -1596,6 +2071,11 @@ async function startServer() {
     
     ⚠️  ${NODE_ENV === 'production' ? 'PRODUCTION MODE' : 'DEVELOPMENT MODE'}
     ⚠️  ${ADMIN_CREDENTIALS.password === 'ChangeMe123!' ? 'CHANGE DEFAULT ADMIN CREDENTIALS!' : 'Admin credentials set'}
+    
+    📈 Starting with:
+    • Max Users: ${MAX_USERS}
+    • Queue Size: ${MAX_QUEUE_SIZE}
+    • Rate Limit: ${RATE_LIMIT_MAX} req/${RATE_LIMIT_WINDOW/1000}s
     `);
   });
 }
@@ -1639,7 +2119,8 @@ function gracefulShutdown() {
   // Notify all users
   io.emit('server-shutdown', { 
     message: 'Server is restarting. Please reconnect in a moment.',
-    timestamp: Date.now() 
+    timestamp: Date.now(),
+    reconnectDelay: 5000
   });
   
   // Close all rooms
@@ -1649,18 +2130,28 @@ function gracefulShutdown() {
     }
   }
   
-  // Save state (optional)
+  // Save final backup
+  backupState();
+  
   logToFile("shutdown.log", {
     timestamp: Date.now(),
     rooms: state.rooms.size,
     users: state.users.size,
-    reports: state.reports.length
+    reports: state.reports.length,
+    reason: "graceful_shutdown"
   });
   
+  // Give time for cleanup
   setTimeout(() => {
+    io.close(() => {
+      console.log('✅ Socket.IO closed');
+    });
+    
     server.close(() => {
-      console.log('✅ Server closed gracefully');
+      console.log('✅ HTTP server closed gracefully');
       process.exit(0);
     });
-  }, 5000); // Give 5 seconds for cleanup
+  }, 5000);
 }
+
+module.exports = { server, io, state };
