@@ -8,21 +8,21 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#04060a">
 
-<!-- FIXED CSP Meta Tag -->
+<!-- Improved CSP -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self' https://cdn.socket.io https://fonts.googleapis.com https://ipapi.co;
-  script-src 'self' 'unsafe-inline' https://cdn.socket.io;
+  script-src 'self' 'unsafe-inline' https://cdn.socket.io https://unpkg.com https://cdnjs.cloudflare.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com;
-  connect-src *;
+  connect-src 'self' ws: wss: https://cdn.socket.io;
   img-src 'self' data: blob: https:;
-  media-src 'self' blob:;
+  media-src 'self' blob: mediastream:;
   object-src 'none';
 ">
 
-
-<link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Tamma+2:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
@@ -31,21 +31,77 @@
   --accent:#00c6ff;
   --green:#00d19a;
   --danger:#ff7675;
+  --orange:#ff9f43;
+  --vip:#ffd700;
   --border:rgba(255,255,255,0.15);
 }
 
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 
 body{
   font-family:'Baloo Tamma 2',cursive;
-  background:radial-gradient(circle at 20% 20%,rgba(0,198,255,.12),transparent 30%),var(--bg);
+  background:var(--bg);
   color:#fff;
   min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:10px;
+  padding:0;
   overflow:hidden;
+  position:relative;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* 3D Background Animation */
+.background-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.animation-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent), transparent 70%);
+  animation: float 15s infinite linear;
+  opacity: 0.2;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(100vw, 100vh) rotate(360deg);
+  }
+}
+
+/* Watermark */
+.watermark {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.7rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.video-watermark {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.6rem;
+  background: rgba(0,0,0,0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 5;
+  pointer-events: none;
 }
 
 /* ===== START CARD ===== */
@@ -59,6 +115,7 @@ body{
   z-index:999;
   animation:fadeIn .5s ease;
   padding:20px;
+  touch-action:manipulation;
 }
 
 .start-card{
@@ -71,42 +128,73 @@ body{
   box-shadow:0 0 40px rgba(0,198,255,.25);
   animation:popIn .5s ease;
   border:1px solid var(--border);
+  position:relative;
+  z-index:2;
 }
 
 .start-card h1{
   margin-bottom:20px;
   font-size:1.8rem;
+  background: linear-gradient(45deg, #00c6ff, #00d19a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height:1.3;
 }
 
 .start-card button{
   width:100%;
   margin-top:12px;
-  padding:14px;
+  padding:16px;
   border:none;
   border-radius:14px;
   font-size:1rem;
   cursor:pointer;
   color:white;
   background:linear-gradient(135deg,#00c6ff,#0072ff);
-  transition:transform 0.2s ease;
+  transition:all 0.3s ease;
   font-family:'Baloo Tamma 2',cursive;
   font-weight:600;
   border:1px solid rgba(0,198,255,0.3);
+  position:relative;
+  overflow:hidden;
+  touch-action:manipulation;
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
 }
 
-.start-card button:hover{
-  transform:scale(1.03);
-  box-shadow:0 4px 20px rgba(0,198,255,0.3);
+.start-card button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
 }
+
+.start-card button:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+.start-card button:active{
+  transform:scale(0.98);
+}
+
 .home-btn {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
   margin-top: 18px;
 }
 
-.home-btn:hover {
-  background: rgba(255,255,255,0.15);
-  transform: scale(1.02);
+.home-btn:active {
+  background: rgba(255,255,255,0.15) !important;
 }
 
 @keyframes popIn{
@@ -118,20 +206,28 @@ body{
   to{opacity:1}
 }
 
+/* Button animations */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
 /* ===== MAIN APP CONTAINER ===== */
 .app{
   width:100%;
-  max-width:1000px;
-  height:95vh;
-  max-height:95vh;
+  height:100vh;
   background:rgba(255,255,255,.04);
-  border-radius:16px;
-  border:1px solid var(--border);
   display:flex;
   flex-direction:column;
   overflow:hidden;
-  box-shadow:0 20px 50px rgba(0,0,0,0.5);
-  display:none; /* Hidden initially */
+  display:none;
+  position:relative;
+  z-index:2;
 }
 
 /* ===== HEADER ===== */
@@ -143,6 +239,7 @@ body{
   border-bottom:1px solid var(--border);
   background:rgba(0,0,0,0.3);
   flex-shrink:0;
+  min-height:60px;
 }
 
 .header h1{
@@ -151,29 +248,27 @@ body{
   overflow:hidden;
   text-overflow:ellipsis;
   margin-right:10px;
+  flex:1;
 }
 
-/* ===== INVITE BAR (RESPONSIVE) ===== */
+/* VIP Badge */
+.vip-badge {
+  background: linear-gradient(45deg, #ffd700, #ff9900);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+/* ===== INVITE BAR ===== */
 .invite-bar{
   display:flex;
   align-items:center;
   gap:8px;
-  flex:1;
-  min-width:0;
   justify-content:flex-end;
-}
-
-.invite-label{
-  font-size:0.75rem;
-  opacity:.7;
-  white-space:nowrap;
-  display:none;
-}
-
-@media (min-width: 480px) {
-  .invite-label{
-    display:block;
-  }
 }
 
 .invite-bar input{
@@ -188,19 +283,13 @@ body{
   outline:none;
   font-family:'Baloo Tamma 2',cursive;
   max-width:200px;
-}
-
-@media (min-width: 640px) {
-  .invite-bar input{
-    max-width:260px;
-    font-size:0.85rem;
-  }
+  display:none;
 }
 
 .invite-bar button{
   border:none;
   border-radius:10px;
-  padding:8px 12px;
+  padding:10px 14px;
   cursor:pointer;
   background:linear-gradient(135deg,#00c6ff,#0072ff);
   color:white;
@@ -210,32 +299,38 @@ body{
   font-family:'Baloo Tamma 2',cursive;
   transition:transform 0.2s ease;
   border:1px solid rgba(0,198,255,0.3);
+  min-height:44px;
+  min-width:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
-.invite-bar button:hover{
-  transform:scale(1.05);
+.invite-bar button:active{
+  transform:scale(0.95);
 }
 
-/* ===== BACK BUTTON (SMALL) ===== */
+/* ===== BACK BUTTON ===== */
 .back-btn{
   background:rgba(0,0,0,.55);
   border:1px solid var(--border);
   color:white;
-  padding:6px 12px;
+  padding:10px 14px;
   border-radius:10px;
   cursor:pointer;
   font-size:0.8rem;
   font-family:'Baloo Tamma 2',cursive;
   transition:all 0.2s ease;
-  display:inline-flex;
+  display:flex;
   align-items:center;
   gap:4px;
   flex-shrink:0;
+  min-height:44px;
+  min-width:44px;
 }
 
-.back-btn:hover{
+.back-btn:active{
   background:rgba(255,118,117,.85);
-  transform:translateX(-2px);
 }
 
 /* ===== MODE SELECTION ===== */
@@ -252,22 +347,47 @@ body{
 .mode-btn{
   width:100%;
   max-width:280px;
-  padding:16px;
+  padding:18px;
   border-radius:16px;
   border:none;
   cursor:pointer;
   font-size:1rem;
   color:white;
   background:linear-gradient(135deg,#00c6ff,#0072ff);
-  transition:transform 0.2s ease;
+  transition:all 0.3s ease;
   font-family:'Baloo Tamma 2',cursive;
   font-weight:600;
   border:1px solid rgba(0,198,255,0.3);
+  position:relative;
+  overflow:hidden;
+  min-height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  touch-action:manipulation;
 }
 
-.mode-btn:hover{
-  transform:scale(1.03);
-  box-shadow:0 4px 20px rgba(0,198,255,0.3);
+.mode-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.mode-btn:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+.mode-btn:active{
+  transform:scale(0.98);
 }
 
 /* ===== TEXT CHAT ===== */
@@ -296,11 +416,8 @@ body{
   word-wrap:break-word;
   line-height:1.4;
   animation:fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(10px)}
-  to{opacity:1;transform:translateY(0)}
+  position:relative;
+  font-size:0.95rem;
 }
 
 .me{
@@ -321,11 +438,12 @@ body{
   border-top:1px solid var(--border);
   background:rgba(0,0,0,0.2);
   flex-shrink:0;
+  align-items:center;
 }
 
 .chat-input input{
   flex:1;
-  padding:10px 14px;
+  padding:12px 16px;
   border-radius:12px;
   border:1px solid var(--border);
   background:rgba(255,255,255,0.08);
@@ -333,6 +451,7 @@ body{
   font-size:1rem;
   font-family:'Baloo Tamma 2',cursive;
   outline:none;
+  min-height:44px;
 }
 
 .chat-input input:focus{
@@ -341,7 +460,7 @@ body{
 }
 
 .chat-input button{
-  padding:10px 20px;
+  padding:12px 20px;
   border:none;
   border-radius:12px;
   background:var(--green);
@@ -352,11 +471,15 @@ body{
   transition:transform 0.2s ease;
   flex-shrink:0;
   border:1px solid rgba(0,209,154,0.3);
+  min-height:44px;
+  min-width:60px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
-.chat-input button:hover{
-  transform:scale(1.05);
-  box-shadow:0 4px 20px rgba(0,209,154,0.3);
+.chat-input button:active{
+  transform:scale(0.95);
 }
 
 /* ===== VIDEO CHAT ===== */
@@ -367,7 +490,7 @@ body{
   min-height:0;
 }
 
-/* Video Grid - Responsive */
+/* Video Grid */
 .video-grid{
   flex:1;
   padding:12px;
@@ -375,37 +498,8 @@ body{
   gap:12px;
   min-height:0;
   min-width:0;
-}
-
-/* Mobile: Stack all videos vertically */
-.video-grid.mobile-stack{
-  grid-template-columns:1fr;
-  grid-auto-rows:1fr;
-}
-
-/* Tablet: 2x2 grid */
-.video-grid.tablet-grid{
-  grid-template-columns:repeat(2,1fr);
-  grid-auto-rows:1fr;
-}
-
-/* Desktop: 2x2 grid with larger gaps */
-.video-grid.desktop-grid{
-  grid-template-columns:repeat(2,1fr);
-  grid-auto-rows:1fr;
-  gap:16px;
-  padding:16px;
-}
-
-/* For 1-2 participants, show larger videos */
-.video-grid.grid-1{
-  grid-template-columns:1fr;
-  grid-template-rows:1fr;
-}
-
-.video-grid.grid-2{
-  grid-template-columns:repeat(2,1fr);
-  grid-template-rows:1fr;
+  position:relative;
+  background: rgba(0,0,0,0.2);
 }
 
 /* Video Card */
@@ -415,27 +509,51 @@ body{
   border-radius:14px;
   overflow:hidden;
   border:1px solid var(--border);
-  min-height:180px;
   display:flex;
   flex-direction:column;
+  min-height:0;
+  min-width:0;
+  background: #000;
+  aspect-ratio: 4/3;
 }
 
 .video-card video{
   width:100%;
   height:100%;
   object-fit:cover;
-  flex:1;
   background:#000;
   min-height:0;
-  display:block !important;
-  visibility:visible !important;
-  opacity:1 !important;
-  position:relative;
-  z-index:1;
+  min-width:0;
+  flex:1;
+  display:block;
+  transform: scaleX(1);
 }
 
 .video-card.me video{
-  transform:scaleX(-1);
+  transform: scaleX(-1);
+}
+
+/* Video placeholder */
+.video-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0c1220, #060a14);
+  color: rgba(255,255,255,0.5);
+  font-size: 1rem;
+  z-index: 1;
+}
+
+.video-placeholder i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: var(--accent);
 }
 
 /* Speaking indicator */
@@ -445,34 +563,41 @@ body{
 }
 
 /* Video Controls */
-.controls{
+.video-controls{
   position:absolute;
-  bottom:8px;
-  left:8px;
+  bottom:12px;
+  left:50%;
+  transform:translateX(-50%);
   display:flex;
-  gap:6px;
-  background:rgba(0,0,0,0.5);
-  padding:4px 8px;
-  border-radius:10px;
-  backdrop-filter:blur(5px);
+  gap:8px;
+  background:rgba(0,0,0,0.7);
+  padding:8px 12px;
+  border-radius:12px;
+  backdrop-filter:blur(10px);
   z-index:10;
+  border:1px solid var(--border);
 }
 
 .ctrl-btn{
   background:rgba(255,255,255,0.1);
   border:1px solid rgba(255,255,255,0.2);
   color:white;
-  padding:6px 10px;
+  padding:10px;
   border-radius:8px;
   cursor:pointer;
-  font-size:0.9rem;
+  font-size:1rem;
   transition:all 0.2s ease;
-  min-width:36px;
-  min-height:36px;
+  min-width:44px;
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action:manipulation;
 }
 
-.ctrl-btn:hover{
+.ctrl-btn:active{
   background:rgba(255,255,255,0.2);
+  transform:scale(0.95);
 }
 
 .ctrl-btn.off{
@@ -480,14 +605,35 @@ body{
   border-color:var(--danger);
 }
 
-/* Video header with back button */
 .video-header{
   padding:12px 16px;
   display:flex;
-  justify-content:flex-end;
+  justify-content:center;
   border-bottom:1px solid var(--border);
   background:rgba(0,0,0,0.2);
   flex-shrink:0;
+  min-height:60px;
+  align-items:center;
+}
+
+/* Video label */
+.video-label{
+  position:absolute;
+  top:8px;
+  left:8px;
+  background:rgba(0,0,0,0.5);
+  color:white;
+  padding:4px 10px;
+  border-radius:8px;
+  font-size:0.8rem;
+  z-index:5;
+  max-width:80%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  display:flex;
+  align-items:center;
+  gap:5px;
 }
 
 /* ===== MODAL ===== */
@@ -501,6 +647,7 @@ body{
   z-index:1000;
   padding:20px;
   backdrop-filter:blur(5px);
+  touch-action:manipulation;
 }
 
 .modal-box{
@@ -511,6 +658,7 @@ body{
   max-width:320px;
   border:1px solid var(--border);
   box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  animation:popIn 0.3s ease;
 }
 
 .modal-box h3{
@@ -521,7 +669,7 @@ body{
 
 .modal-box input{
   width:100%;
-  padding:12px 16px;
+  padding:14px 16px;
   margin-top:8px;
   border-radius:12px;
   border:1px solid var(--border);
@@ -530,6 +678,7 @@ body{
   font-size:1rem;
   font-family:'Baloo Tamma 2',cursive;
   outline:none;
+  min-height:44px;
 }
 
 .modal-box input:focus{
@@ -540,7 +689,7 @@ body{
 .modal-box button{
   width:100%;
   margin-top:20px;
-  padding:12px;
+  padding:14px;
   border:none;
   border-radius:12px;
   background:var(--accent);
@@ -551,55 +700,177 @@ body{
   font-weight:600;
   transition:transform 0.2s ease;
   border:1px solid rgba(0,198,255,0.3);
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
-.modal-box button:hover{
-  transform:scale(1.02);
-  box-shadow:0 4px 20px rgba(0,198,255,0.3);
+.modal-box button:active{
+  transform:scale(0.98);
 }
 
-/* ===== RESPONSIVE ADJUSTMENTS ===== */
+/* Payment Modal */
+.payment-modal .modal-box {
+  max-width: 380px;
+}
 
-/* Mobile (portrait) */
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.payment-option {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payment-option:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--accent);
+}
+
+.payment-option.selected {
+  background: rgba(0,198,255,0.1);
+  border-color: var(--accent);
+}
+
+.payment-icon {
+  font-size: 1.5rem;
+  margin-right: 10px;
+}
+
+.payment-details {
+  flex: 1;
+}
+
+.payment-details h4 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+}
+
+.payment-details p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+}
+
+.upi-id-input {
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+}
+
+.upi-id-input label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.upi-id-input input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.08);
+  color: white;
+}
+
+.card-details {
+  margin: 15px 0;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* VIP Modal */
+.vip-modal .modal-box {
+  max-width: 380px;
+}
+
+.vip-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.vip-price {
+  text-align: center;
+  font-size: 1.5rem;
+  color: var(--vip);
+  margin: 15px 0;
+}
+
+.vip-btn {
+  background: linear-gradient(45deg, #ffd700, #ff9900) !important;
+  color: #000 !important;
+  font-weight: bold !important;
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 480px) {
-  .app{
-    height:100vh;
-    max-height:100vh;
-    border-radius:0;
-    border:none;
+  .start-card{
+    padding:25px 20px;
+    max-width:90%;
+    border-radius:16px;
+  }
+  
+  .start-card h1{
+    font-size:1.5rem;
+  }
+  
+  .start-card button{
+    padding:14px;
+    font-size:0.95rem;
+    min-height:52px;
   }
   
   .header{
     padding:10px 12px;
-    flex-wrap: wrap;
-    gap: 8px;
-    min-height: auto;
+    min-height:56px;
   }
   
   .header h1{
     font-size:1.1rem;
-    flex: 1;
-    min-width: 0;
+    flex:1;
+    min-width:0;
   }
   
   .invite-bar{
-    width: 100%;
-    order: 3;
-    margin-top: 4px;
-  }
-  
-  .invite-bar input{
-    max-width:none;
-    flex: 1;
-    padding:6px 10px;
-    font-size:0.75rem;
+    flex:0 0 auto;
   }
   
   .invite-bar button{
-    padding:6px 10px;
+    padding:8px;
+    min-width:40px;
+    min-height:40px;
     font-size:0.8rem;
-    min-width: 44px;
-    min-height: 44px;
+  }
+  
+  .back-btn{
+    padding:8px;
+    min-width:40px;
+    min-height:40px;
+    font-size:0.8rem;
   }
   
   .video-grid{
@@ -607,126 +878,120 @@ body{
     gap:8px;
   }
   
-  .video-card{
-    border-radius:12px;
-    min-height:150px;
+  .video-controls{
+    bottom:8px;
+    padding:6px 10px;
+    gap:6px;
   }
   
-  .back-btn{
-    padding:5px 10px;
-    font-size:0.75rem;
-    min-width: 44px;
-    min-height: 44px;
+  .ctrl-btn{
+    padding:8px;
+    min-width:40px;
+    min-height:40px;
+    font-size:0.9rem;
   }
   
   .chat-input{
-    padding: 10px 12px;
-    gap: 8px;
+    padding:10px 12px;
+    gap:8px;
   }
   
   .chat-input input{
-    padding: 8px 12px;
-    font-size: 16px !important;
-    min-height: 44px;
+    padding:10px 14px;
+    font-size:16px;
+    min-height:44px;
   }
   
   .chat-input button{
-    padding: 8px 16px;
-    min-width: 60px;
-    min-height: 44px;
+    padding:10px 16px;
+    min-width:60px;
+    min-height:44px;
   }
   
   .msg{
-    max-width: 90%;
-    padding: 10px 14px;
-    font-size: 0.9rem;
+    max-width:90%;
+    padding:10px 14px;
+    font-size:0.9rem;
+  }
+  
+  .modal-box{
+    padding:20px;
+    max-width:90%;
+  }
+  
+  .video-card {
+    aspect-ratio: 1/1;
   }
 }
 
-/* Mobile (landscape) */
-@media (max-height: 500px) and (orientation: landscape) {
+@media (max-width: 360px) {
+  .start-card{
+    padding:20px 16px;
+  }
+  
+  .start-card h1{
+    font-size:1.3rem;
+  }
+  
+  .header h1{
+    font-size:1rem;
+  }
+  
+  .video-controls{
+    gap:4px;
+  }
+  
+  .ctrl-btn{
+    min-width:36px;
+    min-height:36px;
+    padding:6px;
+  }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
   .app{
     height:100vh;
   }
   
   .header{
-    padding:8px 12px;
+    padding:6px 12px;
+    min-height:50px;
   }
   
-  .header h1{
-    font-size:1.1rem;
-  }
-  
-  .video-card{
-    min-height:120px;
-  }
-  
-  .controls{
-    bottom:4px;
-    left:4px;
-    padding:3px 6px;
+  .video-controls{
+    bottom:6px;
+    padding:4px 8px;
   }
   
   .ctrl-btn{
-    padding:4px 8px;
-    font-size:0.8rem;
+    padding:6px;
+    min-width:36px;
+    min-height:36px;
+  }
+  
+  .chat-messages{
+    padding:10px;
+  }
+  
+  button {
+    touch-action: manipulation;
+  }
+  
+  .msg{
+    padding:8px 12px;
+    font-size:0.85rem;
   }
 }
 
-/* Tablet */
-@media (min-width: 768px) and (max-width: 1024px) {
-  .app{
-    height:90vh;
-  }
-  
-  .header h1{
-    font-size:1.5rem;
-  }
-  
-  .invite-bar input{
-    max-width:300px;
-  }
-  
-  .video-grid{
-    padding:16px;
-    gap:16px;
-  }
-  
-  .video-card{
-    min-height:200px;
-  }
-}
+/* Dynamic grid layout */
+.video-grid.grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.video-grid.grid-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: 1fr; }
+.video-grid.grid-3 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+.video-grid.grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+.video-grid.grid-5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.video-grid.grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 
-/* Desktop */
-@media (min-width: 1025px) {
-  .app{
-    height:85vh;
-  }
-  
-  .video-grid{
-    padding:20px;
-    gap:20px;
-  }
-  
-  .video-card{
-    min-height:250px;
-  }
-}
-
-/* Adjust grid layout based on participant count */
-@media (max-width: 767px) {
-  .video-grid:not(.grid-1):not(.grid-2) {
-    grid-template-columns:1fr !important;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1024px) {
-  .video-grid:not(.grid-1):not(.grid-2) {
-    grid-template-columns:repeat(2,1fr) !important;
-  }
-}
-
-/* Notification for copy */
+/* Notification */
 .copy-notification{
   position:fixed;
   top:20px;
@@ -734,12 +999,15 @@ body{
   transform:translateX(-50%);
   background:rgba(0,0,0,0.85);
   color:white;
-  padding:10px 20px;
+  padding:12px 20px;
   border-radius:10px;
   border:1px solid var(--accent);
   z-index:1000;
   animation:slideDown 0.3s ease;
   backdrop-filter:blur(10px);
+  font-size:0.9rem;
+  text-align:center;
+  max-width:90%;
 }
 
 @keyframes slideDown{
@@ -779,1075 +1047,2747 @@ body{
   text-align: center;
   font-size: 0.9rem;
 }
-/* ===== Network Quality Indicator ===== */
-.net-quality {
-  position: absolute;
-  top: 8px;
-  left: 8px;
+
+/* Interests Tags */
+.interest-tags {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
-  background: rgba(0,0,0,0.55);
-  padding: 4px 8px;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
   border-radius: 10px;
-  font-size: 0.75rem;
-  backdrop-filter: blur(6px);
-  z-index: 10;
+  justify-content: center;
 }
 
-.net-dot {
+.interest-tag {
+  background: rgba(0, 198, 255, 0.2);
+  border: 1px solid rgba(0, 198, 255, 0.4);
+  color: #00c6ff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.common-interest-tag {
+  background: rgba(0, 209, 154, 0.2);
+  border: 1px solid rgba(0, 209, 154, 0.4);
+  color: #00d19a;
+}
+
+/* Full Room Notification */
+.full-room-notification {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.85);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid var(--danger);
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  max-width: 300px;
+  width: 90%;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  display: none;
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--accent);
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+/* File Upload Button */
+.file-upload-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.file-upload-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
+}
+
+/* Connection Status */
+.connection-status {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.8);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+
+.status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  display: inline-block;
 }
 
-.net-excellent { background:#00d19a; box-shadow:0 0 6px #00d19a; }
-.net-good { background:#00c6ff; box-shadow:0 0 6px #00c6ff; }
-.net-fair { background:#ff9f43; box-shadow:0 0 6px #ff9f43; }
-.net-poor { background:#ff7675; box-shadow:0 0 6px #ff7675; }
+.status-connected { background: var(--green); }
+.status-connecting { background: var(--orange); }
+.status-disconnected { background: var(--danger); }
 
+/* Mobile Home Button */
+.mobile-home-btn {
+  position: fixed;
+  top: env(safe-area-inset-top, 10px);
+  left: env(safe-area-inset-left, 10px);
+  background: rgba(0,0,0,0.9);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  z-index: 20000;
+  font-size: 0.9rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-home-btn {
+    display: flex;
+  }
+  
+  .home-btn {
+    display: none;
+  }
+}
+
+/* Room Info */
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.participant-count {
+  background: rgba(0, 198, 255, 0.2);
+  border: 1px solid rgba(0, 198, 255, 0.4);
+  color: #00c6ff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* Input placeholder styling */
+::placeholder {
+  color: rgba(255,255,255,0.5);
+  opacity: 1;
+}
+
+:-ms-input-placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+::-ms-input-placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+/* Improve scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,198,255,0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,198,255,0.7);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(0,198,255,0.3);
+  color: white;
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .chat-input input {
+    font-size: 16px !important;
+  }
+  
+  .modal-box input {
+    font-size: 16px !important;
+  }
+}
+
+/* Payment Status */
+.payment-status {
+  text-align: center;
+  padding: 20px;
+}
+
+.payment-success {
+  color: var(--green);
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.payment-error {
+  color: var(--danger);
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+/* Test Payment Notice */
+.test-notice {
+  background: rgba(255, 159, 67, 0.1);
+  border: 1px solid var(--orange);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 15px 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* VIP History */
+.vip-history {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 15px 0;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.vip-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.vip-history-item:last-child {
+  border-bottom: none;
+}
+
+.vip-history-status {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+.vip-history-status.active {
+  background: rgba(0, 209, 154, 0.2);
+  color: var(--green);
+}
+
+.vip-history-status.expired {
+  background: rgba(255, 118, 117, 0.2);
+  color: var(--danger);
+}
+
+/* FIX: Mobile responsive text input fix */
+.mobile-text-input-fix {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.9);
+  padding: 10px;
+  z-index: 10000;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.mobile-text-input-fix.active {
+  transform: translateY(0);
+}
 </style>
-<!-- Standard favicon -->
-<link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/favicon-16x16.png">
 
-<!-- Apple devices -->
-<link rel="apple-touch-icon" sizes="180x180" href="/images/favicons/apple-touch-icon.png">
+<!-- Three.js for 3D Background -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-<!-- Android / PWA -->
-<link rel="manifest" href="/images/favicons/site.webmanifest">
-
-
-<!-- Fallback -->
-<link rel="shortcut icon" href="/images/favicons/favicon.ico">
 </head>
 
 <body>
+<!-- 3D Background -->
+<div class="background-animation" id="threeContainer"></div>
+
+<!-- Watermark -->
+<div class="watermark">manamingle.site</div>
+
+<!-- Mobile Home Button -->
+<button class="mobile-home-btn" id="mobileHomeBtn" title="Home">🏠</button>
 
 <!-- ===== START CARD ===== -->
 <div class="start-overlay" id="startOverlay">
   <div class="start-card">
     <h1>ManaMingle Group Chat</h1>
-
-    <button onclick="startTextMode()">💬 Group Text Chat</button>
-    <button onclick="startVideoMode()">🎥 Group Video Chat</button>
-
-    <button class="home-btn" onclick="goHome()">🏠 Home</button>
+    <div class="interest-tags" id="interestTags"></div>
+    <button id="startTextBtn" class="pulse-animation">
+      <span>💬</span>
+      <span>Group Text Chat</span>
+    </button>
+    <button id="startVideoBtn" class="pulse-animation">
+      <span>🎥</span>
+      <span>Group Video Chat</span>
+    </button>
+    <button id="viewVIPBtn" class="vip-btn">
+      <span>💎</span>
+      <span>View VIP Status</span>
+    </button>
+    <button id="homeBtn" class="home-btn">
+      <span>🏠</span>
+      <span>Home</span>
+    </button>
   </div>
 </div>
-
-
 
 <div class="app" id="appContainer">
   <!-- Header with invite link -->
   <div class="header">
-    <h1 id="roomTitle">Group Chat</h1>
+    <div class="room-info">
+      <h1 id="roomTitle">Group Chat</h1>
+      <span class="participant-count" id="participantCount">0 online</span>
+      <span class="vip-badge" id="myVipBadge" style="display:none;">VIP</span>
+    </div>
     <div class="invite-bar">
-      <span class="invite-label">Invite</span>
-      <input id="inviteLink" readonly value="Waiting for room…">
-      <button onclick="copyInvite()">📋</button>
+      <button id="copyInviteBtn" title="Copy Invite Link">📋</button>
+      <button class="back-btn" id="backBtn">⬅</button>
     </div>
   </div>
 
   <!-- Mode selection (hidden when chat starts) -->
   <div class="mode-select" id="modeSelect">
-    <button class="mode-btn" onclick="startTextMode()">💬 Group Text Chat</button>
-    <button class="mode-btn" onclick="startVideoMode()">🎥 Group Video Chat</button>
+    <button id="modeTextBtn" class="mode-btn">
+      <span>💬</span>
+      <span>Group Text Chat</span>
+    </button>
+    <button id="modeVideoBtn" class="mode-btn">
+      <span>🎥</span>
+      <span>Group Video Chat</span>
+    </button>
   </div>
 
   <!-- Text Chat -->
   <div class="text-chat" id="textChat">
-    <div class="video-header">
-      <button class="back-btn" onclick="goBack()">⬅ Back</button>
-    </div>
-    
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
+      <div class="file-upload-btn" id="fileUploadBtn" title="Upload file (max 5MB)">
+        📎
+      </div>
       <input id="msgInput" placeholder="Type a message…" autocomplete="off">
-      <button onclick="sendMessage()">Send</button>
+      <button id="sendMessageBtn">Send</button>
     </div>
+    <div class="typing-indicator" id="typingIndicator"></div>
   </div>
 
   <!-- Video Chat -->
   <div class="video-chat" id="videoChat">
-    <div class="video-header">
-      <button class="back-btn" onclick="goBack()">⬅ Back</button>
-    </div>
-    
     <div class="video-grid" id="videoGrid"></div>
+    <div class="video-header">
+      <div class="video-controls" id="globalControls">
+        <button class="ctrl-btn" data-action="toggleMic" title="Toggle Mic (M)">🔇</button>
+        <button class="ctrl-btn" data-action="toggleCam" title="Toggle Camera (C)">📷</button>
+        <button class="ctrl-btn" data-action="toggleScreenShare" title="Share Screen (S - VIP Only)">🖥️</button>
+        <button class="ctrl-btn" data-action="recordScreen" title="Record Screen (R - VIP Only)" style="display:none;">🎬</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- Nickname Modal -->
-<div class="modal" id="nickModal">
+<div class="modal" id="nickModal" style="display:none;">
   <div class="modal-box">
-    <h3>Enter Nickname</h3>
+    <h3>Enter Nickname for Text Chat</h3>
     <div class="error-message" id="nickError" style="display:none;"></div>
     <input id="nickname" placeholder="Your nickname" autocomplete="off">
-    <button onclick="saveNickname()">Continue</button>
+    <div class="interest-tags" id="modalInterestTags"></div>
+    <button id="saveNicknameBtn">Join Chat</button>
+  </div>
+</div>
+
+<!-- VIP Modal -->
+<div class="modal vip-modal" id="vipModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="color:var(--vip);">⭐ VIP ACCESS</h3>
+    <p style="text-align:center; margin:10px 0;" id="vipMessage">Upgrade to VIP for exclusive features!</p>
+    
+    <div class="vip-feature">
+      <span>✅</span>
+      <span>Screen Sharing</span>
+    </div>
+    <div class="vip-feature">
+      <span>✅</span>
+      <span>Screen Recording</span>
+    </div>
+    <div class="vip-feature">
+      <span>✅</span>
+      <span>Skip the queue</span>
+    </div>
+    <div class="vip-feature">
+      <span>✅</span>
+      <span>Priority matching</span>
+    </div>
+    <div class="vip-feature">
+      <span>✅</span>
+      <span>VIP Badge visible to all</span>
+    </div>
+    
+    <div class="vip-price" id="vipPrice">$9.99 / month</div>
+    
+    <button id="buyVIPBtn" class="vip-btn">💎 UPGRADE TO VIP</button>
+    <button id="vipHistoryBtn" style="margin-top:10px; background:rgba(255,255,255,0.1); border:1px solid var(--border);">View Purchase History</button>
+    <button id="cancelVIPBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
+  </div>
+</div>
+
+<!-- VIP History Modal -->
+<div class="modal vip-modal" id="vipHistoryModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="color:var(--vip);">⭐ VIP PURCHASE HISTORY</h3>
+    
+    <div class="vip-history" id="vipHistoryList">
+      <!-- History items will be added here -->
+    </div>
+    
+    <div id="noVipHistory" style="text-align:center; padding:20px; color:rgba(255,255,255,0.5);">
+      No VIP purchase history found.
+    </div>
+    
+    <button id="backToVIPBtn" style="margin-top:20px;">Back to VIP</button>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal payment-modal" id="paymentModal" style="display:none;">
+  <div class="modal-box">
+    <h3 style="color:var(--vip);">💳 PAYMENT OPTIONS</h3>
+    
+    <div class="test-notice">
+      <strong>TEST MODE:</strong> This is a demonstration. No real payments are processed.
+    </div>
+    
+    <div class="payment-options">
+      <div class="payment-option" data-method="upi">
+        <div style="display:flex; align-items:center;">
+          <div class="payment-icon">📱</div>
+          <div class="payment-details">
+            <h4>UPI Payment</h4>
+            <p>Pay using PhonePe, Google Pay, Paytm, etc.</p>
+          </div>
+        </div>
+        <div>▶</div>
+      </div>
+      
+      <div class="payment-option" data-method="card">
+        <div style="display:flex; align-items:center;">
+          <div class="payment-icon">💳</div>
+          <div class="payment-details">
+            <h4>Credit/Debit Card</h4>
+            <p>Visa, MasterCard, RuPay, American Express</p>
+          </div>
+        </div>
+        <div>▶</div>
+      </div>
+      
+      <div class="payment-option" data-method="netbanking">
+        <div style="display:flex; align-items:center;">
+          <div class="payment-icon">🏦</div>
+          <div class="payment-details">
+            <h4>Net Banking</h4>
+            <p>All major Indian banks supported</p>
+          </div>
+        </div>
+        <div>▶</div>
+      </div>
+    </div>
+    
+    <div id="paymentDetails" style="display:none;">
+      <!-- Payment details will be shown here -->
+    </div>
+    
+    <button id="processPaymentBtn" class="vip-btn" style="display:none;">💳 PROCESS PAYMENT</button>
+    <button id="cancelPaymentBtn" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Cancel</button>
+  </div>
+</div>
+
+<!-- UPI Payment Modal -->
+<div class="modal" id="upiModal" style="display:none;">
+  <div class="modal-box">
+    <h3>📱 UPI PAYMENT</h3>
+    
+    <div class="test-notice">
+      <strong>TEST MODE:</strong> Use any UPI ID for testing.
+    </div>
+    
+    <div style="text-align:center; margin:20px 0;">
+      <div style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:10px;">Scan QR Code or Pay to:</div>
+      <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:10px; border:1px solid var(--border); margin-bottom:20px;">
+        <div style="font-size:1.2rem; font-weight:bold; color:var(--vip);">manamingle.site@okhdfcbank</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:5px;">ManaMingle VIP Subscription</div>
+      </div>
+      
+      <div style="margin:20px 0;">
+        <div style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:10px;">Or enter your UPI ID:</div>
+        <input type="text" id="upiIdInput" placeholder="yourname@upi" style="width:100%;">
+        <button id="simulateUPIPaymentBtn" class="vip-btn" style="margin-top:15px;">Simulate UPI Payment</button>
+      </div>
+    </div>
+    
+    <button id="backToPaymentBtn">Back to Payment Options</button>
+  </div>
+</div>
+
+<!-- Card Payment Modal -->
+<div class="modal" id="cardModal" style="display:none;">
+  <div class="modal-box">
+    <h3>💳 CARD PAYMENT</h3>
+    
+    <div class="test-notice">
+      <strong>TEST MODE:</strong> Use test card: 4111 1111 1111 1111
+    </div>
+    
+    <div class="card-details">
+      <input type="text" id="cardNumber" placeholder="Card Number" style="width:100%; margin-bottom:10px;">
+      <div class="card-row">
+        <input type="text" id="cardExpiry" placeholder="MM/YY">
+        <input type="text" id="cardCvv" placeholder="CVV">
+      </div>
+      <input type="text" id="cardName" placeholder="Cardholder Name" style="width:100%; margin-bottom:10px;">
+    </div>
+    
+    <button id="simulateCardPaymentBtn" class="vip-btn">Simulate Card Payment</button>
+    <button id="backToPaymentBtn2" style="margin-top:10px; background:transparent; border:1px solid var(--border);">Back to Payment Options</button>
+  </div>
+</div>
+
+<!-- Payment Processing Modal -->
+<div class="modal" id="paymentProcessingModal" style="display:none;">
+  <div class="modal-box payment-status">
+    <div class="loading-spinner" style="width:40px; height:40px; margin:0 auto 20px;"></div>
+    <h3>Processing Payment...</h3>
+    <p id="paymentStatusText">Please wait while we process your payment</p>
+  </div>
+</div>
+
+<!-- Payment Success Modal -->
+<div class="modal" id="paymentSuccessModal" style="display:none;">
+  <div class="modal-box payment-status">
+    <div class="payment-success">✅</div>
+    <h3>Payment Successful!</h3>
+    <p>Your VIP membership has been activated.</p>
+    <p style="font-size:0.9rem; color:rgba(255,255,255,0.7); margin-top:10px;">Valid until: <span id="vipExpiryDate"></span></p>
+    <button id="closeSuccessBtn" class="vip-btn" style="margin-top:20px;">Continue</button>
   </div>
 </div>
 
 <!-- Server Full Modal -->
-<div class="modal" id="serverFullModal">
+<div class="modal" id="serverFullModal" style="display:none;">
   <div class="modal-box">
     <h3 style="color:var(--danger);">🚦 Server Full</h3>
-    <p style="margin:15px 0;">Server is currently at full capacity. Please try again later.</p>
-    <button onclick="location.reload()">Try Again</button>
+    <p id="serverFullMessage" style="margin:15px 0;"></p>
+    <button id="retryBtn">Try Again</button>
+    <button id="vipSkipBtn" class="vip-btn" style="margin-top:10px;">💎 Skip Queue with VIP</button>
   </div>
+</div>
+
+<!-- Connection Status -->
+<div class="connection-status" id="connectionStatus" style="display:none;">
+  <span class="status-dot" id="statusDot"></span>
+  <span id="statusText">Connecting...</span>
 </div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-  const params = new URLSearchParams(window.location.search);
-const tagsParam = params.get('tags');
-
-let userInterests = [];
-
-if (tagsParam) {
-  try {
-    userInterests = JSON.parse(decodeURIComponent(tagsParam));
-    console.log('Group chat interests:', userInterests);
-  } catch (e) {
-    console.warn('Invalid interests data');
-  }
+  /* ===== GLOBAL STATE ===== */
+  let socket = null;
+  let roomId = null;
+  let nickname = "Guest" + Math.floor(Math.random() * 1000);
+  let localStream = null;
+  let screenStream = null;
+  let mediaRecorder = null;
+  const peers = {};
+  const userData = new Map(); // Store user info (nickname, VIP status)
+  let speakerInterval = null;
+  let isTextMode = false;
+  let isVideoMode = false;
+  let inviteMode = 'group_video';
+  let userInterests = [];
+  let isVIP = false;
+  let threeScene = null;
+  let typingTimeout = null;
+  let fileInput = null;
+  let participantCount = 0;
+  let iceServers = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
+  ];
+  function shouldCreateOffer(myId, peerId) {
+  // Deterministic rule to avoid WebRTC offer collision
+  return myId > peerId;
 }
 
-  function goHome() {
-  window.location.href = 'index.html'; // change if needed
-}
-document.addEventListener('keydown', e => {
-  if (
-    e.key === 'Escape' &&
-    startOverlay &&
-    startOverlay.style.display !== 'none'
-  ) {
-    goHome();
+  // Payment tracking
+  let vipHistory = [];
+  let currentPaymentMethod = null;
+
+  /* ===== INITIALIZATION ===== */
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log('ManaMingle Group Chat - Initializing...');
+    
+    // Initialize VIP history from localStorage
+    loadVipHistory();
+    
+    // Parse URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const inviteRoom = params.get('room');
+    const tagsParam = params.get('tags');
+    
+    if (tagsParam) {
+      try {
+        userInterests = JSON.parse(decodeURIComponent(tagsParam));
+        console.log('User interests:', userInterests);
+        displayInterests(userInterests, 'interestTags');
+      } catch (e) {
+        console.warn('Invalid interests data');
+      }
+    }
+    
+    // Check for VIP in localStorage
+    checkVIPStatus();
+    
+    if (inviteRoom) {
+      roomId = inviteRoom;
+      inviteMode = params.get('mode') || 'group_video';
+      
+      if (inviteMode === 'group_text') {
+        startTextMode();
+      } else {
+        startVideoMode();
+      }
+    }
+    
+    // Create hidden file input
+    createFileInput();
+    
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Add mobile-specific handlers
+    setupMobileHandlers();
+    
+    // Initialize 3D background
+    init3DBackground();
+  });
+
+  function init3DBackground() {
+    try {
+      if (typeof THREE === 'undefined') {
+        console.log('Three.js not loaded, using CSS fallback');
+        createCSSParticles();
+        return;
+      }
+      
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x04060a, 0);
+      const container = document.getElementById('threeContainer');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(renderer.domElement);
+      }
+      
+      camera.position.z = 5;
+      
+      // Create particles
+      const particlesGeometry = new THREE.BufferGeometry();
+      const particlesCount = 150;
+      const posArray = new Float32Array(particlesCount * 3);
+      
+      for(let i = 0; i < particlesCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 10;
+      }
+      
+      particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      
+      const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.02,
+        color: 0x00c6ff,
+        transparent: true,
+        opacity: 0.3
+      });
+      
+      const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+      scene.add(particlesMesh);
+      
+      // Animation
+      function animate() {
+        requestAnimationFrame(animate);
+        if (particlesMesh) {
+          particlesMesh.rotation.x += 0.0005;
+          particlesMesh.rotation.y += 0.0005;
+        }
+        renderer.render(scene, camera);
+      }
+      
+      animate();
+      
+      // Handle resize
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        }, 250);
+      });
+      
+      threeScene = { scene, camera, renderer, particlesMesh };
+      
+    } catch (error) {
+      console.log('3D background error, using CSS fallback:', error);
+      createCSSParticles();
+    }
   }
-});
 
+  function createCSSParticles() {
+    const container = document.getElementById('threeContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    for (let i = 0; i < 20; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'animation-particle';
+      particle.style.width = Math.random() * 15 + 5 + 'px';
+      particle.style.height = particle.style.width;
+      particle.style.left = Math.random() * 100 + 'vw';
+      particle.style.top = Math.random() * 100 + 'vh';
+      particle.style.animationDuration = Math.random() * 20 + 10 + 's';
+      particle.style.animationDelay = Math.random() * 5 + 's';
+      container.appendChild(particle);
+    }
+  }
 
-/* ===== GLOBAL STATE ===== */
-let socket = null;
-let roomId = null;
-let nickname = "";
-let localStream = null;
-const peers = {};
-let speakerInterval = null;
+  function setupMobileHandlers() {
+    // Prevent double-tap zoom
+    document.addEventListener('dblclick', function(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        e.preventDefault();
+      }
+    });
+    
+    // Handle iOS viewport height issues
+    function setVH() {
+      let vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    
+    // Fix for mobile text input
+    const msgInput = document.getElementById('msgInput');
+    if (msgInput) {
+      msgInput.addEventListener('focus', function() {
+        // Ensure input is visible on mobile
+        setTimeout(() => {
+          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+    }
+  }
 
-let isTextMode = false;
-let isVideoMode = false;
-let inviteMode = 'group_video'; // ✅ ADD HERE
+  /* ===== VIP MANAGEMENT ===== */
+  function loadVipHistory() {
+    const history = localStorage.getItem('manamingle_vip_history');
+    if (history) {
+      try {
+        vipHistory = JSON.parse(history);
+        console.log('Loaded VIP history:', vipHistory);
+      } catch (e) {
+        console.warn('Invalid VIP history data');
+        vipHistory = [];
+      }
+    }
+  }
 
+  function saveVipHistory() {
+    localStorage.setItem('manamingle_vip_history', JSON.stringify(vipHistory));
+  }
 
-/* ===== DOM ELEMENTS ===== */
-const startOverlay = document.getElementById('startOverlay');
-const appContainer = document.getElementById('appContainer');
+  function checkVIPStatus() {
+    const vipData = localStorage.getItem('manamingle_vip');
+    if (vipData) {
+      try {
+        const { expiry, active, transactionId, purchased } = JSON.parse(vipData);
+        const now = new Date();
+        const expiryDate = new Date(expiry);
+        
+        if (active && expiryDate > now) {
+          isVIP = true;
+          console.log('✅ VIP user detected, expires:', expiryDate);
+          
+          // Show VIP badge
+          const vipBadge = document.getElementById('myVipBadge');
+          if (vipBadge) vipBadge.style.display = 'inline-block';
+          
+          // Show recording button for VIP users
+          const recordBtn = document.querySelector('[data-action="recordScreen"]');
+          if (recordBtn) recordBtn.style.display = 'flex';
+          
+          return true;
+        } else {
+          // VIP expired
+          isVIP = false;
+          localStorage.removeItem('manamingle_vip');
+          return false;
+        }
+      } catch (e) {
+        console.log('Invalid VIP data');
+        return false;
+      }
+    }
+    return false;
+  }
 
+  function updateVIPBadge() {
+    const vipBadge = document.getElementById('myVipBadge');
+    if (vipBadge) {
+      vipBadge.style.display = isVIP ? 'inline-block' : 'none';
+    }
+  }
 
-const modeSelect = document.getElementById('modeSelect');
-const textChat = document.getElementById('textChat');
-const videoChat = document.getElementById('videoChat');
-const videoGrid = document.getElementById('videoGrid');
-const messages = document.getElementById('messages');
-const nickModal = document.getElementById('nickModal');
-const serverFullModal = document.getElementById('serverFullModal');
-const msgInput = document.getElementById('msgInput');
-const nicknameInput = document.getElementById('nickname');
-
-/* ===== INITIALIZATION ===== */
-document.addEventListener('DOMContentLoaded', function () {
-  console.log('ManaMingle Group Chat - Initializing...');
-
-  const params = new URLSearchParams(window.location.search);
-  const inviteRoom = params.get('room');
-
-  if (inviteRoom) {
-    roomId = inviteRoom;
-    inviteMode = params.get('mode') || 'group_video';
-
-    startOverlay.style.display = 'none';
-    appContainer.style.display = 'flex';
-
-    if (inviteMode === 'group_text') {
-      startTextMode();
+  function showVipHistory() {
+    const historyList = document.getElementById('vipHistoryList');
+    const noHistory = document.getElementById('noVipHistory');
+    
+    if (vipHistory.length === 0) {
+      historyList.innerHTML = '';
+      noHistory.style.display = 'block';
     } else {
-      startVideoMode();
+      noHistory.style.display = 'none';
+      historyList.innerHTML = '';
+      
+      vipHistory.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'vip-history-item';
+        
+        const date = new Date(item.date);
+        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        
+        const status = item.active && new Date(item.expiry) > new Date() ? 'active' : 'expired';
+        
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:bold;">VIP Membership</div>
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.7);">${formattedDate}</div>
+            <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">ID: ${item.transactionId.substring(0, 8)}...</div>
+          </div>
+          <div class="vip-history-status ${status}">${status.toUpperCase()}</div>
+        `;
+        
+        historyList.appendChild(div);
+      });
+    }
+    
+    document.getElementById('vipModal').style.display = 'none';
+    document.getElementById('vipHistoryModal').style.display = 'flex';
+  }
+
+  /* ===== PAYMENT SYSTEM ===== */
+  function showPaymentModal() {
+    document.getElementById('vipModal').style.display = 'none';
+    document.getElementById('paymentModal').style.display = 'flex';
+  }
+
+  function showUPIModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('upiModal').style.display = 'flex';
+  }
+
+  function showCardModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('cardModal').style.display = 'flex';
+  }
+
+  function processPayment(method, details = {}) {
+    currentPaymentMethod = method;
+    
+    // Show processing modal
+    document.getElementById('cardModal').style.display = 'none';
+    document.getElementById('upiModal').style.display = 'none';
+    document.getElementById('paymentProcessingModal').style.display = 'flex';
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      // Generate fake transaction ID
+      const transactionId = 'TXN' + Date.now() + Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      // Calculate expiry date (30 days from now)
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 30);
+      
+      // Create VIP data
+      const vipData = {
+        active: true,
+        expiry: expiry.toISOString(),
+        purchased: new Date().toISOString(),
+        transactionId: transactionId,
+        paymentMethod: method,
+        amount: 9.99,
+        currency: 'USD'
+      };
+      
+      // Save VIP data
+      localStorage.setItem('manamingle_vip', JSON.stringify(vipData));
+      
+      // Add to history
+      vipHistory.push({
+        ...vipData,
+        date: new Date().toISOString(),
+        status: 'completed'
+      });
+      saveVipHistory();
+      
+      // Update VIP status
+      isVIP = true;
+      updateVIPBadge();
+      
+      // Show recording button
+      const recordBtn = document.querySelector('[data-action="recordScreen"]');
+      if (recordBtn) recordBtn.style.display = 'flex';
+      
+      // Notify server
+      if (socket) {
+        socket.emit('vip-upgraded', vipData);
+      }
+      if (socket && roomId) {
+  socket.emit('vip-status-update', {
+    roomId: roomId,
+    userId: socket.id,
+    nickname: nickname,
+    isVIP: true
+  });
+}
+
+      
+      // Show success modal
+      document.getElementById('paymentProcessingModal').style.display = 'none';
+      document.getElementById('vipExpiryDate').textContent = expiry.toLocaleDateString();
+      document.getElementById('paymentSuccessModal').style.display = 'flex';
+      
+      showNotification('🎉 VIP Activated! Your VIP badge is now visible to everyone.', 'success');
+      
+    }, 2000); // Simulate 2 second payment processing
+  }
+
+  /* ===== DISPLAY FUNCTIONS ===== */
+  function displayInterests(interests, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || !interests.length) return;
+    
+    container.innerHTML = '';
+    interests.forEach(tag => {
+      const span = document.createElement('span');
+      span.className = 'interest-tag';
+      span.textContent = tag;
+      container.appendChild(span);
+    });
+  }
+
+  /* ===== SOCKET.IO INITIALIZATION ===== */
+  function initSocket() {
+    if (socket && socket.connected) return;
+    
+    updateConnectionStatus('connecting');
+    
+    try {
+      const serverUrl = window.location.origin;
+      console.log('Connecting to server:', serverUrl);
+      
+      socket = io(serverUrl, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 15000,
+        query: {
+          isVIP: isVIP,
+          interests: JSON.stringify(userInterests),
+          nickname: nickname,
+          platform: /Mobile|Android|iPhone|iPad|iPod/.test(navigator.userAgent) ? 'mobile' : 'desktop'
+        }
+      });
+      
+      // Core Socket Event Handlers
+      socket.on('connect', handleConnect);
+      socket.on('disconnect', handleDisconnect);
+      socket.on('connect_error', handleConnectError);
+      socket.on('error', handleSocketError);
+      socket.on('server-full', handleServerFull);
+      socket.on('queue-accepted', handleQueueAccepted);
+      socket.on('queue-position', handleQueuePosition);
+      
+      // Group Chat Events
+      socket.on('group-joined', handleGroupJoined);
+      socket.on('user-joined', handleUserJoined);
+      socket.on('user-left', handleUserLeft);
+      socket.on('vip-joined', handleVIPJoined);
+      socket.on('room-full', handleRoomFull);
+      socket.on('group-emptying', handleGroupEmptying);
+      
+      // Messaging Events
+      socket.on('receive_message', handleReceiveMessage);
+      socket.on('user-typing', handleUserTyping);
+      
+      // File Events
+      socket.on('file_received', handleFileReceived);
+      
+      // WebRTC Events - FIXED: Handle group video connections properly
+      socket.on('signal', handleWebRTCSignal);
+      socket.on('existing-users', handleExistingUsers);
+      socket.on('user-ready', handleUserReady);
+      socket.on('user-data', handleUserData);
+      
+      // VIP Events
+      socket.on('vip-activated', handleVIPActivated);
+      socket.on('vip-removed', handleVIPRemoved);
+      socket.on('vip-expired', handleVIPExpired);
+      socket.on('feature-restricted', handleFeatureRestricted);
+      socket.on('vip-status', handleVIPStatus);
+      
+      // System Events
+      socket.on('room-ended', handleRoomEnded);
+      socket.on('partner_disconnected', handlePartnerDisconnected);
+      socket.on('kicked-for-vip', handleKickedForVIP);
+      socket.on('waiting-timeout', handleWaitingTimeout);
+      socket.on('server-shutdown', handleServerShutdown);
+      
+    } catch (error) {
+      console.error('❌ Failed to initialize socket:', error);
+      showNotification('Failed to connect to server', 'error');
+      updateConnectionStatus('disconnected');
     }
   }
 
-  // Setup event listeners
-  setupEventListeners();
+  /* ===== SOCKET EVENT HANDLERS ===== */
+  function handleConnect() {
+    console.log('✅ Connected to server with ID:', socket.id);
+    updateConnectionStatus('connected');
+    showNotification('Connected to server', 'success');
+  }
+
+  function handleDisconnect() {
+    console.log('🔌 Disconnected from server');
+    updateConnectionStatus('disconnected');
+    showNotification('Disconnected from server', 'warning');
+  }
+
+  function handleConnectError(error) {
+    console.error('❌ Connection error:', error);
+    updateConnectionStatus('disconnected');
+    showNotification('Connection error. Please check your internet.', 'error');
+  }
+
+  function handleSocketError(error) {
+    console.error('❌ Socket error:', error);
+    showNotification('Connection error: ' + (error.message || 'Unknown error'), 'error');
+  }
+
+  function handleServerFull(data) {
+    console.log('🚫 Server full:', data);
+    document.getElementById('serverFullMessage').textContent = 
+      data.message || `Server is currently at full capacity.`;
+    document.getElementById('serverFullModal').style.display = 'flex';
+  }
+
+  function handleQueueAccepted(data) {
+    console.log('✅ Queue accepted:', data);
+    showNotification('You are now connected!', 'success');
+  }
+
+  function handleQueuePosition(data) {
+    console.log('Queue position:', data.position);
+    showNotification(`Position in queue: ${data.position}`, 'info');
+  }
+
+  function handleGroupJoined(data) {
+    console.log('✅ Joined group:', data);
+    roomId = data.roomId;
+    nickname = data.nickname || nickname;
+    participantCount = data.participantCount || 1;
+    updateParticipantCount();
+    
+    // Store our own data
+    userData.set(socket.id, {
+      nickname: nickname,
+      isVIP: isVIP,
+      userId: socket.id
+    });
+    socket.emit('broadcast-user-data', {
+  roomId: roomId,
+  userId: socket.id,
+  nickname: nickname,
+  isVIP: isVIP
 });
 
-
-function setupEventListeners() {
-  // Enter key in nickname input
-  if (nicknameInput) {
-  nicknameInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter') saveNickname();
-  });
-}
-
-  
-  // Enter key in message input
-  if (msgInput) {
-  msgInput.addEventListener('keypress', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+    
+    // Update room title
+    const title = document.getElementById('roomTitle');
+    if (title) {
+      title.textContent = `${isVideoMode ? 'Video' : 'Text'} Chat`;
     }
-  });
-}
-
-  
-  // Click outside modals to close (optional)
-  document.addEventListener('click', function(e) {
-    if (e.target === nickModal) {
-      nickModal.style.display = 'none';
+    
+    // Show common interests if any
+    if (data.commonInterests && data.commonInterests.length > 0) {
+      showNotification(`Common interests: ${data.commonInterests.join(', ')}`, 'info');
     }
-    if (e.target === serverFullModal) {
-      serverFullModal.style.display = 'none';
+    
+    showNotification(`Joined ${data.mode} group with ${participantCount} participants`, 'success');
+    
+    // For video chat, request existing users
+    if (isVideoMode && socket) {
+      socket.emit('get-existing-users', { roomId: roomId });
     }
-  });
-  
-  // Escape key to go back
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && (isTextMode || isVideoMode)) {
-      goBack();
+  }
+
+  function handleUserData(data) {
+    console.log('📊 User data received:', data);
+    // Store user information
+    userData.set(data.userId, {
+      nickname: data.nickname,
+      isVIP: data.isVIP,
+      userId: data.userId
+    });
+    
+    // Update video label if exists
+    const videoCard = document.getElementById('video-' + data.userId);
+    if (videoCard) {
+      const label = videoCard.querySelector('.video-label');
+      if (label) {
+        updateVideoLabel(label, data.userId);
+      }
     }
-  });
-}
+  }
 
-/* ===== SOCKET.IO ===== */
-function initSocket(joiningExistingRoom = false) {
-  if (socket && socket.connected) return;
-  
-  try {
-    socket = io(window.location.origin, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 1000
-    });
-    
-    socket.on('connect', function() {
-      console.log('✅ Connected to server with ID:', socket.id);
-      
-      if (joiningExistingRoom) {
-        // Joining existing room
-        socket.emit('join-group', {
-  roomId,
-  mode: inviteMode,
-  nickname: nickname || 'Guest' + Math.floor(Math.random() * 1000)
-});
+  function handleExistingUsers(data) {
+    console.log('👥 Existing users:', data.users);
+    if (isVideoMode && data.users) {
+      data.users.forEach(userId => {
+        // Skip self
+        if (userId === socket.id) return;
+        
+        // Check if peer already exists
+        if (!peers[userId]) {
+          console.log('Creating connection for existing user:', userId);
+          setTimeout(() => {
+            createPeerConnection(userId);
+          }, 500 + Math.random() * 1000); // Stagger connections
+        }
+      });
+    }
+  }
 
-}    
+  function handleUserReady(data) {
+    console.log('👤 User ready:', data.userId);
+    if (isVideoMode && data.userId !== socket.id && !peers[data.userId]) {
+      console.log('Creating connection for newly ready user:', data.userId);
+      setTimeout(() => {
+        createPeerConnection(data.userId);
+      }, 500);
+    }
+  }
+
+  function handleUserJoined(data) {
+    console.log('👤 User joined:', data);
+    participantCount = data.participantCount || participantCount + 1;
+    updateParticipantCount();
+    
+    const userName = data.nickname || 'Someone';
+    const isVIPUser = data.isVIP || false;
+    
+    // Store user data
+    userData.set(data.userId, {
+      nickname: data.nickname,
+      isVIP: data.isVIP,
+      userId: data.userId
     });
     
-    socket.on('connect_error', function(error) {
-      console.error('❌ Connection error:', error);
-      showNotification('Failed to connect to server', 'error');
-    });
+    showNotification(`${userName} ${isVIPUser ? '⭐ ' : ''}joined the group`, 'info');
     
-    socket.on('joined-room', function(data) {
-      console.log('✅ Joined room:', data.roomId);
-      roomId = data.roomId;
-      updateInviteLink();
-      showNotification(`Joined room: ${data.roomId}`, 'success');
-    });
+    // Create peer connection for new user in video chat
+    if (isVideoMode && data.userId !== socket.id && localStream) {
+      setTimeout(() => {
+        if (!peers[data.userId]) {
+          createPeerConnection(data.userId);
+        }
+      }, 1000);
+    }
+  }
+
+  function handleUserLeft(data) {
+    console.log('👋 User left:', data);
+    participantCount = data.participantCount || Math.max(1, participantCount - 1);
+    updateParticipantCount();
     
-    socket.on('room-created', function(data) {
-      console.log('✅ Room created:', data.roomId);
-      roomId = data.roomId;
-      updateInviteLink();
-      showNotification(`Room created: ${data.roomId}`, 'success');
-    });
-    
-    socket.on('user-joined', function(data) {
-      console.log('👤 User joined:', data.userId);
-      
-      updateParticipantCount();
-      showNotification(`${data.nickname || 'Someone'} joined`, 'info');
-    });
-    
-    socket.on('user-left', function(data) {
-      console.log('👋 User left:', data.userId);
-      
-      updateParticipantCount();
-      
+    if (isVideoMode) {
       // Remove their video
       if (peers[data.userId]) {
-        peers[data.userId].close();
+        try {
+          peers[data.userId].close();
+        } catch (e) {
+          console.error('Error closing peer connection:', e);
+        }
         delete peers[data.userId];
       }
-      const videoCard = document.getElementById(data.userId);
-      if (videoCard) videoCard.remove();
-      updateGridLayout();
-      
-      showNotification(`${data.nickname || 'Someone'} left`, 'info');
-    });
-    
-    socket.on('receive-message', function(data) {
-      console.log('💬 Message received:', data);
-      addMessage(data.message, data.senderId === socket.id ? 'me' : 'other', data.nickname);
-    });
-    
-    socket.on('signal', async function(data) {
-      console.log('📡 Signal received from:', data.from);
-      
-      let pc = peers[data.from];
-      if (!pc) {
-        pc = createPeerConnection(data.from);
-        peers[data.from] = pc;
+      const videoCard = document.getElementById('video-' + data.userId);
+      if (videoCard) {
+        videoCard.remove();
+        updateGridLayout();
       }
-      
+    }
+    
+    // Remove from user data
+    userData.delete(data.userId);
+    
+    showNotification(`${data.nickname || 'Someone'} left`, 'info');
+  }
+
+  function handleVIPJoined(data) {
+    console.log('⭐ VIP joined:', data);
+    showNotification(`⭐ ${data.nickname} (VIP) joined the group`, 'info');
+  }
+
+  function handleVIPStatus(data) {
+    console.log('⭐ VIP status update:', data);
+    // Update user data with VIP status
+    if (userData.has(data.userId)) {
+      const user = userData.get(data.userId);
+      user.isVIP = data.isVIP;
+      userData.set(data.userId, user);
+    } else {
+      userData.set(data.userId, {
+        nickname: data.nickname || 'User',
+        isVIP: data.isVIP,
+        userId: data.userId
+      });
+    }
+    
+    // Update UI to show VIP status
+    const videoCard = document.getElementById('video-' + data.userId);
+    if (videoCard) {
+      const label = videoCard.querySelector('.video-label');
+      if (label) {
+        updateVideoLabel(label, data.userId);
+      }
+    }
+  }
+
+  function handleRoomFull(data) {
+    console.log('🚫 Room full:', data);
+    showVIPModal(data.message || 'This group is full. Upgrade to VIP for instant access.');
+  }
+
+  function handleGroupEmptying(data) {
+    console.log('⚠️ Group emptying:', data);
+    showNotification('Group is emptying. You might want to leave and find another group.', 'warning');
+  }
+
+  function handleReceiveMessage(data) {
+    console.log('💬 Message received:', data);
+    addMessage(data.message, data.senderId === socket.id ? 'me' : 'other', 
+               data.senderNickname || data.nickname || data.sender, data.isVIP);
+  }
+
+  function handleUserTyping(data) {
+    if (isTextMode && data.userId !== socket.id) {
+      showTypingIndicator(data.userName || data.userId, data.isTyping);
+    }
+  }
+
+  function handleFileReceived(data) {
+    console.log('📁 File received:', data);
+    displayFile(data);
+  }
+
+  async function handleWebRTCSignal(data) {
+    console.log('📡 Signal received from:', data.from, 'type:', data.type);
+    
+    if (data.from === socket.id) return; // Ignore self
+    
+    let pc = peers[data.from];
+    if (!pc) {
+      pc = createPeerConnection(data.from);
+      peers[data.from] = pc;
+    }
+    
+    try {
       if (data.sdp) {
-        try {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-          if (data.sdp.type === 'offer') {
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            socket.emit('signal', {
-              to: data.from,
-              sdp: pc.localDescription
-            });
-          }
-        } catch (error) {
-          console.error('Error handling SDP:', error);
+        console.log('Setting remote SDP:', data.sdp.type);
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        if (data.sdp.type === 'offer') {
+          console.log('Creating answer for offer from', data.from);
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          socket.emit('signal', {
+            to: data.from,
+            roomId: roomId,
+            sdp: pc.localDescription,
+            type: 'video'
+          });
         }
       }
       
       if (data.candidate) {
+        console.log('Adding ICE candidate from', data.from);
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      }
+    } catch (error) {
+      console.error('Error handling WebRTC signal:', error);
+    }
+  }
+
+  function handleVIPActivated(data) {
+    console.log('⭐ VIP activated:', data);
+    isVIP = true;
+    updateVIPBadge();
+    showNotification('🎉 VIP Activated! Your VIP badge is now visible to everyone.', 'success');
+    
+    // Show recording button
+    const recordBtn = document.querySelector('[data-action="recordScreen"]');
+    if (recordBtn) recordBtn.style.display = 'flex';
+    
+    // Notify others in the room
+    
+  }
+
+  function handleVIPRemoved(data) {
+    console.log('❌ VIP removed:', data);
+    isVIP = false;
+    updateVIPBadge();
+    showNotification('Your VIP status has been removed', 'warning');
+    
+    // Hide recording button
+    const recordBtn = document.querySelector('[data-action="recordScreen"]');
+    if (recordBtn) recordBtn.style.display = 'none';
+  }
+
+  function handleVIPExpired(data) {
+    console.log('⏰ VIP expired:', data);
+    isVIP = false;
+    updateVIPBadge();
+    showNotification('Your VIP subscription has expired', 'warning');
+    
+    // Hide recording button
+    const recordBtn = document.querySelector('[data-action="recordScreen"]');
+    if (recordBtn) recordBtn.style.display = 'none';
+  }
+
+  function handleFeatureRestricted(data) {
+    console.log('🚫 Feature restricted:', data);
+    showVIPModal(data.message || 'This feature is restricted to VIP users');
+  }
+
+  function handleRoomEnded(data) {
+    console.log('🏁 Room ended:', data);
+    showNotification(`Room ended: ${data.reason}`, 'info');
+    goBack();
+  }
+
+  function handlePartnerDisconnected(data) {
+    console.log('👋 Partner disconnected:', data);
+    showNotification(`${data.partnerName || 'Partner'} disconnected`, 'info');
+  }
+
+  function handleKickedForVIP(data) {
+    console.log('👢 Kicked for VIP:', data);
+    showNotification(data.message || 'You were replaced by a VIP user', 'warning');
+    goBack();
+  }
+
+  function handleWaitingTimeout(data) {
+    console.log('⏰ Waiting timeout:', data);
+    showNotification('Waiting timeout. Please try again.', 'warning');
+    goBack();
+  }
+
+  function handleServerShutdown(data) {
+    console.log('🛑 Server shutdown:', data);
+    showNotification(data.message || 'Server is restarting. Please reconnect.', 'warning');
+    setTimeout(() => {
+      location.reload();
+    }, 3000);
+  }
+
+  /* ===== CHAT MODE FUNCTIONS ===== */
+  function startTextMode() {
+    console.log('Starting TEXT mode');
+    isTextMode = true;
+    isVideoMode = false;
+    inviteMode = 'group_text';
+    
+    document.getElementById('startOverlay').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    document.getElementById('modeSelect').style.display = 'none';
+    document.getElementById('videoChat').style.display = 'none';
+    document.getElementById('textChat').style.display = 'flex';
+    
+    // Show nickname modal for text chat only
+    document.getElementById('nickModal').style.display = 'flex';
+    document.getElementById('nickname').focus();
+    displayInterests(userInterests, 'modalInterestTags');
+    
+    // Initialize socket
+    initSocket();
+  }
+
+  function startVideoMode() {
+    console.log('Starting VIDEO mode');
+    isVideoMode = true;
+    isTextMode = false;
+    inviteMode = 'group_video';
+    
+    document.getElementById('startOverlay').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    document.getElementById('modeSelect').style.display = 'none';
+    document.getElementById('textChat').style.display = 'none';
+    document.getElementById('videoChat').style.display = 'flex';
+    
+    // Initialize socket
+    initSocket();
+    
+    // Start camera
+    startCamera()
+      .then(() => {
+        // Generate random nickname for video chat
+        nickname = "Guest" + Math.floor(Math.random() * 1000);
+        
+        // Join or create group
+        if (roomId) {
+          // Join existing room
+          socket.emit('join-group', {
+            roomId,
+            mode: inviteMode,
+            nickname,
+            interests: userInterests,
+            isVIP: isVIP
+          });
+        } else {
+          // Create new room
+          socket.emit('create-group', {
+            mode: inviteMode,
+            nickname,
+            interests: userInterests,
+            isVIP: isVIP
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Camera error:', error);
+        showNotification('Camera permission required for video chat', 'error');
+        goBack();
+      });
+  }
+
+  function saveNickname() {
+    if (!socket || !socket.connected) {
+      showNotification('Connecting to server, please wait…', 'warning');
+      return;
+    }
+
+    const nick = document.getElementById('nickname').value.trim();
+    if (!nick) {
+      document.getElementById('nickError').textContent = 'Please enter a nickname';
+      document.getElementById('nickError').style.display = 'block';
+      return;
+    }
+
+    if (nick.length > 20) {
+      document.getElementById('nickError').textContent = 'Nickname must be less than 20 characters';
+      document.getElementById('nickError').style.display = 'block';
+      return;
+    }
+
+    nickname = nick;
+    document.getElementById('nickModal').style.display = 'none';
+
+    socket.emit(roomId ? 'join-group' : 'create-group', {
+      roomId,
+      mode: inviteMode,
+      nickname,
+      interests: userInterests,
+      isVIP
+    });
+  }
+
+  function goBack() {
+    console.log('Going back...');
+    
+    // Leave room
+    if (socket && roomId) {
+      socket.emit('leave-group', { roomId });
+    }
+    
+    // Close all peer connections
+    Object.values(peers).forEach(pc => {
+      if (pc && typeof pc.close === 'function') {
         try {
-          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-        } catch (error) {
-          console.error('Error adding ICE candidate:', error);
+          pc.close();
+        } catch (e) {
+          console.error('Error closing peer connection:', e);
         }
       }
     });
+    for (const id in peers) delete peers[id];
     
-    socket.on('server-full', function(data) {
-      console.log('🚫 Server full:', data);
-      if (data.queued) {
-        // Show queue modal
-        showQueueModal(data);
-      } else {
-        if (serverFullModal) {
-  serverFullModal.style.display = 'flex';
-}
-
-        showNotification(`Server is full (${data.max} users max)`, 'error');
-      }
-    });
+    // Clear user data
+    userData.clear();
     
-    socket.on('queue-position', function(data) {
-      updateQueuePosition(data);
-    });
-    
-    socket.on('queue-accepted', function(data) {
-      console.log('✅ Queue accepted');
-      hideQueueModal();
-      showNotification('You\'re now connected!', 'success');
-    });
-    
-    function showQueueModal(data) {
-  if (!serverFullModal) return;
-
-  serverFullModal.style.display = 'flex';
-  const modalContent = serverFullModal.querySelector('.modal-box');
-  if (!modalContent) return; {
-        modalContent.innerHTML = `
-          <h3 style="color:var(--orange);">🚦 Server Full - In Queue</h3>
-          <div style="margin:20px 0; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px;">
-            <div style="display:flex; justify-content:space-between; margin:10px 0;">
-              <span>Your Position:</span>
-              <strong style="color:var(--accent); font-size:1.2rem;" id="queuePos">${data.position || 1}</strong>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin:10px 0;">
-              <span>Est. Wait:</span>
-              <strong style="color:var(--orange);" id="queueWait">${data.estimatedWait || 0}</strong> <span>sec</span>
-            </div>
-          </div>
-          <div class="loading-spinner" style="margin:20px auto;"></div>
-          <p style="color:var(--muted); font-size:0.9rem; margin-top:15px;">
-            You'll be connected automatically when space becomes available.
-          </p>
-        `;
-      }
-    }
-    
-    function updateQueuePosition(data) {
-      const posEl = document.getElementById('queuePos');
-      const waitEl = document.getElementById('queueWait');
-      if (posEl) posEl.textContent = data.position || 1;
-      if (waitEl) waitEl.textContent = data.estimatedWait || 0;
-    }
-    
-    function hideQueueModal() {
-      serverFullModal.style.display = 'none';
-    }
-    
-    socket.on('error', function(error) {
-      console.error('❌ Socket error:', error);
-      showNotification('Error: ' + error.message, 'error');
-    });
-    
-    socket.on('disconnect', function() {
-      console.log('🔌 Disconnected from server');
-      showNotification('Disconnected from server', 'warning');
-    });
-    
-  } catch (error) {
-    console.error('❌ Failed to initialize socket:', error);
-    showNotification('Failed to initialize connection', 'error');
-  }
-}
-
-/* ===== CHAT MODE FUNCTIONS ===== */
-function startTextMode() {
-  console.log('Starting TEXT mode');
-
-  isTextMode = true;
-  isVideoMode = false;
-  inviteMode = 'group_text';
-
-  startOverlay.style.display = 'none';
-  appContainer.style.display = 'flex';
-  modeSelect.style.display = 'none';
-  videoChat.style.display = 'none';
-
-  nickModal.style.display = 'flex';
-  nicknameInput.focus();
-}
-
-
-function startVideoMode() {
-  console.log('Starting VIDEO mode');
-
-  isVideoMode = true;
-  isTextMode = false;
-  inviteMode = 'group_video';
-
-  startOverlay.style.display = 'none';
-  appContainer.style.display = 'flex';
-  modeSelect.style.display = 'none';
-  textChat.style.display = 'none';
-  videoChat.style.display = 'flex';
-
-  startCamera()
-    .then(() => {
-      if (!socket) initSocket();
-
-      if (!roomId) {
-  socket.emit('create-group', {
-    mode: 'group_video',
-    nickname: 'Guest' + Math.floor(Math.random() * 1000)
-  });
-} else {
-  socket.emit('join-group', {
-    roomId,
-    mode: 'group_video',
-    nickname: nickname || 'Guest' + Math.floor(Math.random() * 1000)
-  });
-}
-
-    })
-    .catch(() => {
-      showNotification('Camera permission required', 'error');
-      goBack();
-      inviteMode = 'group_video';
-      roomId = null;
-nickname = "";
-
-    });
-}
-
-
-
-function saveNickname() {
-  const nick = nicknameInput.value.trim();
-  const nickError = document.getElementById('nickError');
-
-  if (!nick) {
-    nickError.textContent = 'Please enter a nickname';
-    nickError.style.display = 'block';
-    return;
-  }
-
-  nickname = nick;
-  nickModal.style.display = 'none';
-  textChat.style.display = 'flex';
-
-  if (!socket) initSocket();
-
-  if (roomId) {
-    // ✅ JOIN existing room
-    socket.emit('join-group', {
-      roomId,
-      mode: 'group_text',
-      nickname
-    });
-  } else {
-    // ✅ CREATE new room
-    socket.emit('create-group', {
-      mode: 'group_text',
-      nickname
-    });
-  }
-}
-
-
-function goBack() {
-  console.log('Going back...');
-  if (socket && roomId) {
-  socket.emit('leave-group', { roomId });
-}
-
-  // Close all peer connections
-  Object.values(peers).forEach(pc => {
-  if (pc && typeof pc.close === 'function') {
-    pc.close();
-  }
-});
-
-for (const id in peers) {
-  delete peers[id];
-}
-
-if (speakerInterval) {
-  clearInterval(speakerInterval);
-  speakerInterval = null;
-}
-if (audioContext) {
-  audioContext.close();
-  audioContext = null;
-  analyser = null;
-}
-
-  // Stop local media
-  if (localStream) {
-    localStream.getTracks().forEach(track => track.stop());
-    localStream = null;
-  }
-  
-  // Clear video grid
-  videoGrid.innerHTML = '';
-  
-  // Clear messages
-  messages.innerHTML = '';
-  
-  // Reset UI
-  textChat.style.display = 'none';
-  videoChat.style.display = 'none';
-  modeSelect.style.display = 'flex';
-  
-  // Reset states
-  isTextMode = false;
-  isVideoMode = false;
-  
-  
-  // Show start overlay
-  if (new URLSearchParams(window.location.search).has('room')) {
-  modeSelect.style.display = 'flex';
-  appContainer.style.display = 'flex';
-  startOverlay.style.display = 'none';
-} else {
-  startOverlay.style.display = 'flex';
-  appContainer.style.display = 'none';
-}
-
-  
-  // Disconnect socket if connected
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-  
-  showNotification('Left the group chat', 'info');
-}
-
-/* ===== MESSAGING ===== */
-function sendMessage() {
-  const text = msgInput.value.trim();
-  if (!text) return;
-  
-  if (!socket || !roomId) {
-    showNotification('Not connected to room', 'error');
-    return;
-  }
-  
-  // Add message locally
-  addMessage(text, 'me', nickname);
-  
-  // Send to server
-  socket.emit('send_message', {
-    room: roomId,
-    roomId: roomId,
-    message: text,
-    nickname: nickname,
-    type: 'text'
-  });
-  
-  // Clear input
-  msgInput.value = '';
-  msgInput.focus();
-}
-
-function addMessage(text, type, sender) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + type;
-  
-  // Format message
-  if (type === 'me') {
-    div.textContent = text;
-  } else {
-    div.textContent = sender + ': ' + text;
-  }
-  
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-}
-
-/* ===== VIDEO FUNCTIONS ===== */
-async function startCamera() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 640 },
-        height: { ideal: 480 },
-        facingMode: 'user'
-      },
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
-    });
-    
-    addVideo('me', localStream, true);
-    setTimeout(() => {
-  const meCard = document.getElementById('me');
-  if (meCard) {
-    const dot = meCard.querySelector('.net-dot');
-    const text = meCard.querySelector('.net-quality span:last-child');
-    dot.className = 'net-dot net-excellent';
-    text.textContent = 'Local';
-  }
-}, 300);
-    initActiveSpeaker();
-    return localStream;
-    
-  } catch (error) {
-    console.error('Error accessing media devices:', error);
-    
-    // Try without video
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false
+    // Stop media streams
+    if (localStream) {
+      localStream.getTracks().forEach(track => {
+        track.stop();
       });
+      localStream = null;
+    }
+    
+    if (screenStream) {
+      screenStream.getTracks().forEach(track => track.stop());
+      screenStream = null;
+    }
+    
+    // Stop recording
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    
+    // Stop active speaker detection
+    if (speakerInterval) {
+      clearInterval(speakerInterval);
+      speakerInterval = null;
+    }
+    
+    // Clear UI
+    const videoGrid = document.getElementById('videoGrid');
+    if (videoGrid) videoGrid.innerHTML = '';
+    
+    const messages = document.getElementById('messages');
+    if (messages) messages.innerHTML = '';
+    
+    // Reset UI
+    document.getElementById('textChat').style.display = 'none';
+    document.getElementById('videoChat').style.display = 'none';
+    document.getElementById('modeSelect').style.display = 'flex';
+    isTextMode = false;
+    isVideoMode = false;
+    roomId = null;
+    participantCount = 0;
+    updateParticipantCount();
+    updateConnectionStatus('disconnected');
+    
+    // Show start overlay or stay in app
+    if (new URLSearchParams(window.location.search).has('room')) {
+      document.getElementById('startOverlay').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'flex';
+    } else {
+      document.getElementById('startOverlay').style.display = 'flex';
+      document.getElementById('appContainer').style.display = 'none';
+    }
+    
+    showNotification('Left the group chat', 'info');
+  }
+
+  function goHome() {
+    window.location.href = '/';
+  }
+
+  /* ===== MESSAGING FUNCTIONS ===== */
+  function sendMessage() {
+    const msgInput = document.getElementById('msgInput');
+    const text = msgInput.value.trim();
+    if (!text || !socket || !roomId) return;
+    
+    // Add message locally
+    addMessage(text, 'me', nickname, isVIP);
+    
+    // Send to server
+    socket.emit('send_message', {
+      roomId: roomId,
+      message: text,
+      nickname: nickname,
+      isVIP: isVIP,
+      type: 'text'
+    });
+    
+    // Clear input
+    msgInput.value = '';
+    msgInput.focus();
+    
+    // Stop typing indicator
+    sendTypingIndicator(false);
+  }
+
+  function addMessage(text, type, sender, isVIPUser = false) {
+    const messages = document.getElementById('messages');
+    if (!messages) return;
+    
+    const div = document.createElement('div');
+    div.className = 'msg ' + type;
+    
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.gap = '8px';
+    header.style.marginBottom = '4px';
+    header.style.flexWrap = 'wrap';
+    
+    const senderSpan = document.createElement('span');
+    senderSpan.textContent = sender;
+    senderSpan.style.fontWeight = 'bold';
+    senderSpan.style.color = type === 'me' ? '#00d19a' : '#00c6ff';
+    senderSpan.style.fontSize = '0.9rem';
+    header.appendChild(senderSpan);
+    
+    if (isVIPUser) {
+      const vipBadge = document.createElement('span');
+      vipBadge.textContent = 'VIP';
+      vipBadge.style.background = 'linear-gradient(45deg, #ffd700, #ff9900)';
+      vipBadge.style.color = '#000';
+      vipBadge.style.padding = '1px 6px';
+      vipBadge.style.borderRadius = '8px';
+      vipBadge.style.fontSize = '0.6rem';
+      vipBadge.style.fontWeight = 'bold';
+      header.appendChild(vipBadge);
+    }
+    
+    const textSpan = document.createElement('div');
+    textSpan.textContent = text;
+    textSpan.style.marginTop = '4px';
+    textSpan.style.wordBreak = 'break-word';
+    textSpan.style.whiteSpace = 'pre-wrap';
+    
+    div.appendChild(header);
+    div.appendChild(textSpan);
+    
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    
+    // Auto scroll to bottom
+    setTimeout(() => {
+      messages.scrollTop = messages.scrollHeight;
+    }, 100);
+  }
+
+  function sendTypingIndicator(isTyping) {
+    if (!roomId || !socket || !isTextMode) return;
+    
+    socket.emit('typing', {
+      room: roomId,
+      isTyping: isTyping
+    });
+    
+    clearTimeout(typingTimeout);
+    if (isTyping) {
+      typingTimeout = setTimeout(() => {
+        sendTypingIndicator(false);
+      }, 2000);
+    }
+  }
+
+  function showTypingIndicator(userName, isTyping) {
+    const indicator = document.getElementById('typingIndicator');
+    if (!indicator) return;
+    
+    if (isTyping) {
+      indicator.textContent = `${userName} is typing...`;
+      indicator.style.display = 'block';
+      setTimeout(() => {
+        indicator.style.display = 'none';
+      }, 2000);
+    } else {
+      indicator.style.display = 'none';
+    }
+  }
+
+  /* ===== FILE UPLOAD FUNCTIONS ===== */
+  function createFileInput() {
+    fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.style.display = 'none';
+    fileInput.accept = 'image/*,.pdf,.txt,.doc,.docx';
+    fileInput.onchange = handleFileSelect;
+    document.body.appendChild(fileInput);
+  }
+
+  function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file || !socket || !roomId) return;
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification('File too large. Max 5MB.', 'error');
+      return;
+    }
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        socket.emit('file_upload', {
+          roomId: roomId,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          dataUrl: e.target.result,
+          sender: nickname,
+          isVIP: isVIP
+        });
+        
+        showNotification('File uploaded successfully', 'success');
+      };
+      reader.onerror = function() {
+        showNotification('Error reading file', 'error');
+      };
+      reader.readAsDataURL(file);
       
+    } catch (error) {
+      console.error('File upload error:', error);
+      showNotification('File upload failed', 'error');
+    }
+    
+    // Reset file input
+    event.target.value = '';
+  }
+
+  function displayFile(data) {
+    const messages = document.getElementById('messages');
+    if (!messages) return;
+    
+    const div = document.createElement('div');
+    div.className = 'msg ' + (data.senderId === socket.id ? 'me' : 'other');
+    
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+    header.style.gap = '8px';
+    header.style.marginBottom = '4px';
+    header.style.flexWrap = 'wrap';
+    
+    const senderSpan = document.createElement('span');
+    senderSpan.textContent = data.senderName || data.sender;
+    senderSpan.style.fontWeight = 'bold';
+    senderSpan.style.color = data.senderId === socket.id ? '#00d19a' : '#00c6ff';
+    senderSpan.style.fontSize = '0.9rem';
+    header.appendChild(senderSpan);
+    
+    if (data.isVIP) {
+      const vipBadge = document.createElement('span');
+      vipBadge.textContent = 'VIP';
+      vipBadge.style.background = 'linear-gradient(45deg, #ffd700, #ff9900)';
+      vipBadge.style.color = '#000';
+      vipBadge.style.padding = '1px 6px';
+      vipBadge.style.borderRadius = '8px';
+      vipBadge.style.fontSize = '0.6rem';
+      vipBadge.style.fontWeight = 'bold';
+      header.appendChild(vipBadge);
+    }
+    
+    const fileContent = document.createElement('div');
+    fileContent.style.marginTop = '8px';
+    
+    if (data.fileType && data.fileType.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = data.dataUrl;
+      img.alt = data.fileName;
+      img.style.maxWidth = '200px';
+      img.style.maxHeight = '200px';
+      img.style.borderRadius = '8px';
+      img.style.border = '1px solid var(--border)';
+      img.style.cursor = 'pointer';
+      img.onclick = () => {
+        const win = window.open();
+        const img = win.document.createElement('img');
+        img.src = data.dataUrl;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        win.document.body.appendChild(img);
+      };
+      fileContent.appendChild(img);
+    } else {
+      const link = document.createElement('a');
+      link.href = data.dataUrl;
+      link.download = data.fileName;
+      link.textContent = `📎 ${data.fileName} (${formatFileSize(data.fileSize)})`;
+      link.style.color = 'var(--accent)';
+      link.style.textDecoration = 'none';
+      link.style.display = 'flex';
+      link.style.alignItems = 'center';
+      link.style.gap = '5px';
+      link.style.fontSize = '0.9rem';
+      fileContent.appendChild(link);
+    }
+    
+    div.appendChild(header);
+    div.appendChild(fileContent);
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  /* ===== VIDEO FUNCTIONS - FIXED ===== */
+  async function startCamera() {
+    try {
+      const constraints = {
+        video: {
+          width: { ideal: 640, min: 320, max: 1280 },
+          height: { ideal: 480, min: 240, max: 720 },
+          frameRate: { ideal: 24, min: 15 },
+          facingMode: 'user'
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      };
+      
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('Camera started successfully');
       addVideo('me', localStream, true);
-      showNotification('Audio-only mode (camera not available)', 'warning');
+      initActiveSpeaker();
+      
+      // Notify server we're ready
+      if (socket && roomId) {
+        socket.emit('user-ready', { roomId: roomId });
+      }
+      
       return localStream;
       
-    } catch (audioError) {
-      console.error('Error accessing audio:', audioError);
-      throw new Error('Media access denied');
-    }
-  }
-}
-
-function addVideo(id, stream, isLocal = false) {
-  // Don't add duplicate videos
-  if (document.getElementById(id)) return;
-  
-  const card = document.createElement('div');
-  card.className = 'video-card' + (isLocal ? ' me' : '');
-  card.id = id;
-  
-  // Create video element
-  const video = document.createElement('video');
-  video.autoplay = true;
-  video.playsInline = true;
-  video.muted = isLocal;
-  video.srcObject = stream;
-  video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block !important; visibility: visible !important; opacity: 1 !important; position: relative; z-index: 1;';
-  
-  // Ensure video plays
-  video.addEventListener('loadedmetadata', () => {
-    video.play().catch(e => console.log('Video play error:', e));
-  });
-  setTimeout(() => {
-    video.play().catch(e => console.log('Video play error:', e));
-  }, 100);
-  
-  // Create label
-  const label = document.createElement('div');
-  label.className = 'video-label';
-  label.textContent = isLocal ? 'You' : (id.length > 10 ? id.substring(0, 10) + '...' : id);
-  label.style.cssText = `
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    z-index: 5;
-  `;
-  
-  // Create controls for local video
-  if (isLocal) {
-    const controls = document.createElement('div');
-    controls.className = 'controls';
-    controls.innerHTML = `
-      <button class="ctrl-btn" onclick="toggleMic(this)">🔇</button>
-      <button class="ctrl-btn" onclick="toggleCam(this)">📷</button>
-    `;
-    card.appendChild(controls);
-  }
-  
-  // Network quality UI
-const net = document.createElement('div');
-net.className = 'net-quality';
-net.innerHTML = `
-  <span class="net-dot net-good"></span>
-  <span>Good</span>
-`;
-net.dataset.peer = id;
-card.appendChild(net);
-
-card.appendChild(video);
-card.appendChild(label);
-videoGrid.appendChild(card);
-
-  
-  updateGridLayout();
-  updateParticipantCount();
-}
-
-function toggleMic(button) {
-  if (!localStream) return;
-  
-  const audioTracks = localStream.getAudioTracks();
-  if (audioTracks.length > 0) {
-    const track = audioTracks[0];
-    track.enabled = !track.enabled;
-    
-    button.classList.toggle('off', !track.enabled);
-    button.textContent = track.enabled ? '🔇' : '🎤';
-    
-    showNotification(track.enabled ? 'Microphone unmuted' : 'Microphone muted', 'info');
-  }
-}
-
-function toggleCam(button) {
-  if (!localStream) return;
-  
-  const videoTracks = localStream.getVideoTracks();
-  if (videoTracks.length > 0) {
-    const track = videoTracks[0];
-    track.enabled = !track.enabled;
-    
-    button.classList.toggle('off', !track.enabled);
-    button.textContent = track.enabled ? '📷' : '📹';
-    
-    showNotification(track.enabled ? 'Camera shown' : 'Camera hidden', 'info');
-  }
-}
-
-/* ===== ACTIVE SPEAKER DETECTION ===== */
-let audioContext = null;
-let analyser = null;
-
-function initActiveSpeaker() {
-  try {
-    if (!localStream) return;
-    
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = 256;
-    
-    const source = audioContext.createMediaStreamSource(localStream);
-    source.connect(analyser);
-    
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    
-    // Check for speaking activity periodically
-    speakerInterval = setInterval(() => {
-
-      if (!analyser) return;
+    } catch (error) {
+      console.error('Error accessing camera:', error);
       
-      analyser.getByteFrequencyData(dataArray);
-      const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-      const meCard = document.getElementById('me');
-      
-      if (meCard) {
-        meCard.classList.toggle('speaking', average > 30);
+      let errorMessage = 'Failed to access camera';
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.';
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage = 'No camera found on your device';
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        errorMessage = 'Camera is already in use by another application';
       }
-    }, 200);
+      
+      showNotification(errorMessage, 'error');
+      throw error;
+    }
+  }
+
+  function addVideo(userId, stream, isLocal = false) {
+  let existing = document.getElementById('video-' + userId);
+  if (existing) return existing;
+
     
-  } catch (error) {
-    console.error('Error initializing audio analysis:', error);
-  }
-}
-function shouldCreateOffer(peerId) {
-  return socket.id < peerId; // deterministic rule
-}
-
-/* ===== PEER CONNECTION ===== */
-function createPeerConnection(peerId) {
-  console.log('Creating peer connection for:', peerId);
-  
-  const pc = new RTCPeerConnection({
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' }
-    ]
-  });
-  
-  // Add local tracks if available
-  if (localStream) {
-    localStream.getTracks().forEach(track => {
-      pc.addTrack(track, localStream);
-    });
-  }
-  
-  // Handle remote stream
-  pc.ontrack = event => {
-    console.log('Received remote stream from:', peerId);
-    if (event.streams && event.streams[0]) {
-      addVideo(peerId, event.streams[0]);
-    } else if (event.track) {
-      // Create a stream from the track
-      const stream = new MediaStream([event.track]);
-      addVideo(peerId, stream);
+    const card = document.createElement('div');
+    card.className = 'video-card' + (isLocal ? ' me' : '');
+    card.id = 'video-' + userId;
+    
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = isLocal;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    
+    // Handle stream
+    if (stream) {
+      video.srcObject = stream;
     }
-  };
-  
-  // Handle ICE candidates
-  pc.onicecandidate = event => {
-    if (event.candidate && socket) {
-      socket.emit('signal', {
-        to: peerId,
-        candidate: event.candidate
+    
+    video.onloadedmetadata = () => {
+      video.play().catch(e => console.log('Video play error:', e));
+    };
+    
+    // Add placeholder
+    const placeholder = document.createElement('div');
+    placeholder.className = 'video-placeholder';
+    placeholder.innerHTML = `<i>${isLocal ? '📷' : '👤'}</i><span>${isLocal ? 'You' : 'User'}</span>`;
+    
+    const label = document.createElement('div');
+    label.className = 'video-label';
+    updateVideoLabel(label, userId);
+    
+    const watermark = document.createElement('div');
+    watermark.className = 'video-watermark';
+    watermark.textContent = 'manamingle.site';
+    
+    card.appendChild(video);
+    card.appendChild(placeholder);
+    card.appendChild(label);
+    card.appendChild(watermark);
+    
+    const videoGrid = document.getElementById('videoGrid');
+    if (videoGrid) {
+      videoGrid.appendChild(card);
+    }
+    
+    updateGridLayout();
+    
+    // Hide placeholder when video starts playing
+    video.onplaying = () => {
+      placeholder.style.display = 'none';
+    };
+    
+    // Show placeholder if video errors
+    video.onerror = () => {
+      placeholder.style.display = 'flex';
+    };
+    
+    return card;
+  }
+
+  function updateVideoLabel(label, userId) {
+    // Clear existing content
+    label.innerHTML = '';
+    
+    // Get user data
+    const user = userData.get(userId);
+    const displayName = user ? user.nickname : (userId === socket.id ? 'You' : userId.substring(0, 8) + '...');
+    const isVIPUser = user ? user.isVIP : false;
+    
+    // Create name span
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = displayName;
+    label.appendChild(nameSpan);
+    
+    // Add VIP badge if applicable
+    if (isVIPUser) {
+      const vipBadge = document.createElement('span');
+      vipBadge.textContent = '⭐';
+      vipBadge.style.color = 'var(--vip)';
+      vipBadge.style.marginLeft = '5px';
+      vipBadge.style.fontSize = '0.9em';
+      label.appendChild(vipBadge);
+    }
+  }
+
+  function createPeerConnection(peerId) {
+    console.log('Creating peer connection for:', peerId);
+    
+    if (peerId === socket.id || peers[peerId]) {
+      console.log('Peer connection already exists or is self');
+      return peers[peerId];
+    }
+    
+    try {
+      const pc = new RTCPeerConnection({
+        iceServers: iceServers,
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require'
       });
+      
+      // Add local stream tracks
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          try {
+            pc.addTrack(track, localStream);
+            console.log('Added local track:', track.kind);
+          } catch (e) {
+            console.error('Error adding track:', e);
+          }
+        });
+      }
+      
+      pc.ontrack = (event) => {
+  const stream = event.streams[0];
+  if (!stream) return;
+
+  let card = document.getElementById('video-' + peerId);
+
+  // ✅ Create panel only once
+  if (!card) {
+    card = addVideo(peerId, stream, false);
+  } else {
+    const video = card.querySelector('video');
+    if (!video.srcObject) {
+      video.srcObject = stream;
     }
-  };
-  const statsTimer = setInterval(async () => {
+  }
+};
 
-if (pc.connectionState !== 'connected') return;
+      
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socket) {
+          socket.emit('signal', {
+            to: peerId,
+            roomId: roomId,
+            candidate: event.candidate,
+            type: 'video'
+          });
+        }
+      };
+      
+      pc.oniceconnectionstatechange = () => {
+  console.log(`ICE state for ${peerId}:`, pc.iceConnectionState);
 
-const stats = await pc.getStats();
-const quality = evaluateQuality(stats, peerId);
-
-
-const card = document.getElementById(peerId);
-if (!card) return;
-
-const dot = card.querySelector('.net-dot');
-const text = card.querySelector('.net-quality span:last-child');
-
-dot.className = 'net-dot net-' + quality;
-text.textContent =
-  quality === 'excellent' ? 'Excellent' :
-  quality === 'good' ? 'Good' :
-  quality === 'fair' ? 'Fair' : 'Poor';
-}, 3000);
-  // Handle connection state
-  pc.onconnectionstatechange = () => {
-  console.log(`Connection with ${peerId}: ${pc.connectionState}`);
-
-  if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-    clearInterval(statsTimer);
-
-    const videoCard = document.getElementById(peerId);
-    if (videoCard) videoCard.remove();
-
+  if (pc.iceConnectionState === 'failed') {
+    console.warn(`ICE failed for ${peerId}, closing connection`);
+    pc.close();
     delete peers[peerId];
+
+    const card = document.getElementById('video-' + peerId);
+    if (card) card.remove();
+
     updateGridLayout();
   }
 };
 
-  
-
-  // Create offer if we're initiating
-  // Create offer ONLY if we are the initiator (prevents glare)
-if (shouldCreateOffer(peerId)) {
-  setTimeout(async () => {
+      
+      pc.onconnectionstatechange = () => {
+        console.log(`Connection state with ${peerId}: ${pc.connectionState}`);
+        if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+          const videoCard = document.getElementById('video-' + peerId);
+          if (videoCard) videoCard.remove();
+          delete peers[peerId];
+          updateGridLayout();
+        }
+      };
+      
+      // Request user data
+      if (socket) {
+        socket.emit('request-user-data', { userId: peerId, roomId: roomId });
+      }
+      
+      // ✅ Create offer ONLY if we are the initiator (collision-free)
+      if (shouldCreateOffer(socket.id, peerId)) {
+  Promise.resolve().then(async () => {
     try {
-      const offer = await pc.createOffer();
+      if (!pc.getSenders().length) {
+        console.warn('No senders yet, skipping offer for', peerId);
+        return;
+      }
+
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
+
       await pc.setLocalDescription(offer);
 
       socket.emit('signal', {
         to: peerId,
-        sdp: pc.localDescription
+        roomId: roomId,
+        sdp: pc.localDescription,
+        type: 'video'
       });
-    } catch (e) {
-      console.error(e);
-    }
-  }, 800);
-}
 
-}
-const lastStats = {};
-
-function evaluateQuality(stats, peerId) {
-  let rtt = 0;
-  let packetsLost = 0;
-  let packetsReceived = 0;
-
-  stats.forEach(report => {
-    if (report.type === 'candidate-pair' && report.state === 'succeeded') {
-      rtt = report.currentRoundTripTime * 1000;
-    }
-
-    if (report.type === 'inbound-rtp' && report.kind === 'video') {
-      packetsLost = report.packetsLost || 0;
-      packetsReceived = report.packetsReceived || 0;
+      console.log('📤 Offer sent to:', peerId);
+    } catch (err) {
+      console.error('❌ Offer creation failed:', err);
     }
   });
-
-  const prev = lastStats[peerId] || { lost: 0, received: 0 };
-  lastStats[peerId] = { lost: packetsLost, received: packetsReceived };
-
-  const lostDelta = packetsLost - prev.lost;
-  const recvDelta = packetsReceived - prev.received;
-  const lossRate = recvDelta > 0 ? (lostDelta / recvDelta) * 100 : 0;
-
-  if (lossRate < 2 && rtt < 150) return 'excellent';
-  if (lossRate < 5 && rtt < 300) return 'good';
-  if (lossRate < 10 && rtt < 600) return 'fair';
-  return 'poor';
 }
 
 
-/* ===== UI UPDATES ===== */
-function updateInviteLink() {
-  if (!roomId) return;
-  
-  const inviteUrl =
-  `${window.location.origin}${window.location.pathname}?room=${roomId}&mode=${inviteMode}`;
-
-  const inviteInput = document.getElementById('inviteLink');
-  inviteInput.value = inviteUrl;
-  inviteInput.title = inviteUrl;
-}
-
-function updateParticipantCount() {
-  const count = videoGrid.querySelectorAll('.video-card').length;
-  const title = document.getElementById('roomTitle');
-  title.textContent = `Group Chat (${count} online)`;
-}
-
-function updateGridLayout() {
-  const cards = videoGrid.querySelectorAll('.video-card');
-  const count = cards.length;
-  
-  // Remove all grid classes
-  videoGrid.classList.remove('grid-1', 'grid-2', 'mobile-stack', 'tablet-grid', 'desktop-grid');
-  
-  // Apply appropriate grid class
-  if (count <= 1) {
-    videoGrid.classList.add('grid-1');
-  } else if (count === 2) {
-    videoGrid.classList.add('grid-2');
-  } else {
-    // For 3+ participants, use responsive grid
-    const width = window.innerWidth;
-    if (width < 768) {
-      videoGrid.classList.add('mobile-stack');
-    } else if (width < 1025) {
-      videoGrid.classList.add('tablet-grid');
-    } else {
-      videoGrid.classList.add('desktop-grid');
+      
+      peers[peerId] = pc;
+      return pc;
+      
+    } catch (error) {
+      console.error('Error creating peer connection:', error);
+      return null;
     }
   }
-}
 
-// Update grid on window resize
-window.addEventListener('resize', updateGridLayout);
-
-/* ===== UTILITY FUNCTIONS ===== */
-function copyInvite() {
-  const inviteInput = document.getElementById('inviteLink');
-  inviteInput.select();
-  inviteInput.setSelectionRange(0, 99999);
-  
-  try {
-    navigator.clipboard.writeText(inviteInput.value)
-      .then(() => {
-        showNotification('Invite link copied!', 'success');
-      })
-      .catch(() => {
-        // Fallback
-        document.execCommand('copy');
-        showNotification('Invite link copied!', 'success');
+  /* ===== CONTROL FUNCTIONS ===== */
+  function toggleMic(button) {
+    if (!localStream) return;
+    
+    const audioTrack = localStream.getAudioTracks()[0];
+    if (audioTrack) {
+      audioTrack.enabled = !audioTrack.enabled;
+      button.classList.toggle('off', !audioTrack.enabled);
+      button.innerHTML = audioTrack.enabled ? '🎤' : '🔇';
+      showNotification(audioTrack.enabled ? 'Microphone unmuted' : 'Microphone muted', 'info');
+      
+      // Update all peer connections
+      Object.values(peers).forEach(pc => {
+        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+        if (sender) {
+          sender.replaceTrack(audioTrack);
+        }
       });
-  } catch (error) {
-    // Final fallback
-    document.execCommand('copy');
-    showNotification('Invite link copied!', 'success');
+    }
   }
-}
 
-function showNotification(message, type = 'info') {
-  // Remove existing notifications
-  document.querySelectorAll('.copy-notification').forEach(el => el.remove());
-  
-  const notification = document.createElement('div');
-  notification.className = 'copy-notification';
-  notification.textContent = message;
-  
-  // Style based on type
-  switch (type) {
-    case 'error':
-      notification.style.borderColor = 'var(--danger)';
-      notification.style.background = 'rgba(255, 118, 117, 0.15)';
-      break;
-    case 'success':
-      notification.style.borderColor = 'var(--green)';
-      notification.style.background = 'rgba(0, 209, 154, 0.15)';
-      break;
-    case 'warning':
-      notification.style.borderColor = 'var(--orange)';
-      notification.style.background = 'rgba(255, 159, 67, 0.15)';
-      break;
-    default:
-      notification.style.borderColor = 'var(--accent)';
-      notification.style.background = 'rgba(0, 198, 255, 0.15)';
+  function toggleCam(button) {
+    if (!localStream) return;
+    
+    const videoTrack = localStream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
+      button.classList.toggle('off', !videoTrack.enabled);
+      button.innerHTML = videoTrack.enabled ? '📷' : '📹';
+      showNotification(videoTrack.enabled ? 'Camera shown' : 'Camera hidden', 'info');
+      
+      // Update all peer connections
+      Object.values(peers).forEach(pc => {
+        const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) {
+          sender.replaceTrack(videoTrack);
+        }
+      });
+      
+      // Update local video placeholder
+      const videoCard = document.getElementById('video-me');
+      if (videoCard) {
+        const placeholder = videoCard.querySelector('.video-placeholder');
+        if (placeholder) {
+          placeholder.style.display = videoTrack.enabled ? 'none' : 'flex';
+        }
+      }
+    }
   }
-  
-  document.body.appendChild(notification);
-  
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    if (notification.parentNode) {
-      notification.style.opacity = '0';
-      notification.style.transform = 'translateX(-50%) translateY(-20px)';
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.remove();
+
+  async function toggleScreenShare(button) {
+    if (!isVIP) {
+      showVIPModal('Screen sharing is a VIP-only feature. Upgrade to VIP to share your screen.');
+      return;
+    }
+    
+    try {
+      if (!screenStream) {
+        // Start screen sharing
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            cursor: "always",
+            frameRate: { ideal: 15 },
+            width: { max: 1280 },
+            height: { max: 720 }
+          },
+          audio: false
+        });
+        
+        const videoTrack = screenStream.getVideoTracks()[0];
+        if (videoTrack) {
+          // Replace video track in all peer connections
+          Object.values(peers).forEach(pc => {
+            const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (sender) {
+              sender.replaceTrack(videoTrack);
+            }
+          });
+          
+          // Update local video display
+          const meVideo = document.querySelector('#video-me video');
+          if (meVideo && localStream) {
+            const newStream = new MediaStream([videoTrack, ...localStream.getAudioTracks()]);
+            meVideo.srcObject = newStream;
+          }
+          
+          button.classList.add('off');
+          button.innerHTML = '🛑';
+          showNotification('Screen sharing started (VIP)', 'success');
+          
+          // Handle when user stops sharing via browser UI
+          videoTrack.onended = () => {
+            toggleScreenShare(button);
+          };
+        }
+      } else {
+        // Stop screen sharing
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+        
+        // Switch back to camera
+        try {
+          const cameraStream = await navigator.mediaDevices.getUserMedia({ 
+            video: true,
+            audio: false 
+          });
+          const cameraTrack = cameraStream.getVideoTracks()[0];
+          
+          if (cameraTrack && localStream) {
+            // Replace video track in all peer connections
+            Object.values(peers).forEach(pc => {
+              const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video');
+              if (sender) {
+                sender.replaceTrack(cameraTrack);
+              }
+            });
+            
+            // Update local stream
+            const oldVideoTrack = localStream.getVideoTracks()[0];
+            if (oldVideoTrack) {
+              localStream.removeTrack(oldVideoTrack);
+              oldVideoTrack.stop();
+            }
+            localStream.addTrack(cameraTrack);
+            
+            // Update local video display
+            const meVideo = document.querySelector('#video-me video');
+            if (meVideo) {
+              meVideo.srcObject = localStream;
+            }
+          }
+          
+          cameraStream.getTracks().forEach(track => {
+            if (track.kind === 'audio') track.stop();
+          });
+        } catch (error) {
+          console.error('Error switching back to camera:', error);
+        }
+        
+        button.classList.remove('off');
+        button.innerHTML = '🖥️';
+        showNotification('Screen sharing stopped', 'info');
+      }
+    } catch (error) {
+      console.error('Screen share error:', error);
+      if (error.name !== 'NotAllowedError') {
+        showNotification('Screen share cancelled', 'info');
+      }
+    }
+  }
+
+  async function recordScreen(button) {
+    if (!isVIP) {
+      showVIPModal('Screen recording is a VIP-only feature. Upgrade to VIP to record your screen.');
+      return;
+    }
+    
+    try {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        button.innerHTML = '🎬';
+        showNotification('Recording stopped', 'info');
+      } else {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { 
+            frameRate: { ideal: 15 }
+          },
+          audio: false
+        });
+        
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: 'video/webm;codecs=vp9',
+          videoBitsPerSecond: 1000000
+        });
+        
+        const recordedChunks = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `manamingle-recording-${Date.now()}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showNotification('Recording saved (VIP)', 'success');
+          
+          stream.getTracks().forEach(track => track.stop());
+        };
+        
+        mediaRecorder.start();
+        button.innerHTML = '⏹️';
+        showNotification('Recording started (VIP)', 'success');
+        
+        // Auto-stop after 10 minutes
+        setTimeout(() => {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            button.innerHTML = '🎬';
+          }
+        }, 10 * 60 * 1000);
+      }
+    } catch (error) {
+      console.error('Recording error:', error);
+      if (error.name !== 'NotAllowedError') {
+        showNotification('Recording cancelled', 'info');
+      }
+    }
+  }
+
+  /* ===== UI UPDATE FUNCTIONS ===== */
+  function updateParticipantCount() {
+    const countEl = document.getElementById('participantCount');
+    if (countEl) {
+      countEl.textContent = `${participantCount} online`;
+    }
+  }
+
+  function updateGridLayout() {
+    const videoGrid = document.getElementById('videoGrid');
+    if (!videoGrid) return;
+    
+    const cards = videoGrid.querySelectorAll('.video-card');
+    const count = cards.length;
+    
+    // Reset grid classes
+    videoGrid.className = 'video-grid';
+    
+    // Set grid layout based on number of participants
+    if (count <= 1) {
+      videoGrid.classList.add('grid-1');
+    } else if (count === 2) {
+      videoGrid.classList.add('grid-2');
+    } else if (count === 3) {
+      videoGrid.classList.add('grid-3');
+    } else if (count === 4) {
+      videoGrid.classList.add('grid-4');
+    } else if (count <= 6) {
+      videoGrid.classList.add('grid-6');
+    } else {
+      // For more than 6, use 3xN grid
+      const rows = Math.ceil(count / 3);
+      videoGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+      videoGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    }
+  }
+
+  function initActiveSpeaker() {
+    if (!localStream || speakerInterval) return;
+    
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(localStream);
+      source.connect(analyser);
+      analyser.fftSize = 128;
+      analyser.smoothingTimeConstant = 0.8;
+      
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      speakerInterval = setInterval(() => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        const meCard = document.getElementById('video-me');
+        if (meCard) {
+          meCard.classList.toggle('speaking', average > 10);
         }
       }, 300);
+    } catch (error) {
+      console.error('Error initializing audio analysis:', error);
     }
-  }, 3000);
-}
+  }
 
-/* ===== ERROR HANDLING ===== */
-window.addEventListener('error', function(e) {
-  console.error('Global error:', e.error);
-  showNotification('An error occurred: ' + e.message, 'error');
-});
+  /* ===== UTILITY FUNCTIONS ===== */
+  function copyInvite() {
+    const inviteUrl = roomId ? 
+      `${window.location.origin}${window.location.pathname}?room=${roomId}&mode=${inviteMode}` :
+      `${window.location.origin}${window.location.pathname}`;
+    
+    navigator.clipboard.writeText(inviteUrl)
+      .then(() => showNotification('Invite link copied!', 'success'))
+      .catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = inviteUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showNotification('Invite link copied!', 'success');
+        } catch (err) {
+          showNotification('Failed to copy invite link', 'error');
+        }
+        document.body.removeChild(textArea);
+      });
+  }
 
-window.addEventListener('unhandledrejection', function(e) {
-  console.error('Unhandled promise rejection:', e.reason);
-  showNotification('An error occurred', 'error');
-});
+  function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.copy-notification').forEach(el => el.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = 'copy-notification';
+    notification.textContent = message;
+    
+    switch (type) {
+      case 'error':
+        notification.style.borderColor = 'var(--danger)';
+        notification.style.background = 'rgba(255, 118, 117, 0.15)';
+        break;
+      case 'success':
+        notification.style.borderColor = 'var(--green)';
+        notification.style.background = 'rgba(0, 209, 154, 0.15)';
+        break;
+      case 'warning':
+        notification.style.borderColor = 'var(--orange)';
+        notification.style.background = 'rgba(255, 159, 67, 0.15)';
+        break;
+      default:
+        notification.style.borderColor = 'var(--accent)';
+        notification.style.background = 'rgba(0, 198, 255, 0.15)';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(-50%) translateY(-20px)';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+
+  function updateConnectionStatus(status) {
+    const statusEl = document.getElementById('connectionStatus');
+    const dotEl = document.getElementById('statusDot');
+    const textEl = document.getElementById('statusText');
+    
+    if (!statusEl || !dotEl || !textEl) return;
+    
+    statusEl.style.display = 'flex';
+    
+    switch(status) {
+      case 'connected':
+        dotEl.className = 'status-dot status-connected';
+        textEl.textContent = 'Connected';
+        break;
+      case 'connecting':
+        dotEl.className = 'status-dot status-connecting';
+        textEl.textContent = 'Connecting...';
+        break;
+      case 'disconnected':
+        dotEl.className = 'status-dot status-disconnected';
+        textEl.textContent = 'Disconnected';
+        break;
+    }
+  }
+
+  function showVIPModal(message) {
+    const vipMessage = document.getElementById('vipMessage');
+    if (vipMessage) {
+      vipMessage.textContent = message;
+    }
+    document.getElementById('vipModal').style.display = 'flex';
+  }
+
+  /* ===== EVENT LISTENERS ===== */
+  function setupEventListeners() {
+    // Button event listeners
+    document.getElementById('startTextBtn').addEventListener('click', startTextMode);
+    document.getElementById('startVideoBtn').addEventListener('click', startVideoMode);
+    document.getElementById('viewVIPBtn').addEventListener('click', () => {
+      document.getElementById('vipModal').style.display = 'flex';
+    });
+    document.getElementById('homeBtn').addEventListener('click', goHome);
+    document.getElementById('mobileHomeBtn').addEventListener('click', goHome);
+    document.getElementById('modeTextBtn').addEventListener('click', startTextMode);
+    document.getElementById('modeVideoBtn').addEventListener('click', startVideoMode);
+    document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+    document.getElementById('saveNicknameBtn').addEventListener('click', saveNickname);
+    document.getElementById('buyVIPBtn').addEventListener('click', showPaymentModal);
+    document.getElementById('vipHistoryBtn').addEventListener('click', showVipHistory);
+    document.getElementById('cancelVIPBtn').addEventListener('click', () => {
+      document.getElementById('vipModal').style.display = 'none';
+    });
+    document.getElementById('backToVIPBtn').addEventListener('click', () => {
+      document.getElementById('vipHistoryModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'flex';
+    });
+    document.getElementById('retryBtn').addEventListener('click', () => location.reload());
+    document.getElementById('vipSkipBtn').addEventListener('click', () => {
+      document.getElementById('serverFullModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'flex';
+    });
+    document.getElementById('copyInviteBtn').addEventListener('click', copyInvite);
+    document.getElementById('backBtn').addEventListener('click', goBack);
+    document.getElementById('fileUploadBtn').addEventListener('click', () => fileInput && fileInput.click());
+    
+    // Payment modal listeners
+    document.querySelectorAll('.payment-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+        this.classList.add('selected');
+        const method = this.dataset.method;
+        
+        if (method === 'upi') {
+          showUPIModal();
+        } else if (method === 'card') {
+          showCardModal();
+        } else if (method === 'netbanking') {
+          processPayment('netbanking');
+        }
+      });
+    });
+    
+    // UPI payment
+    document.getElementById('simulateUPIPaymentBtn').addEventListener('click', () => {
+      const upiId = document.getElementById('upiIdInput').value.trim();
+      if (!upiId) {
+        showNotification('Please enter your UPI ID', 'error');
+        return;
+      }
+      processPayment('upi', { upiId: upiId });
+    });
+    
+    // Card payment
+    document.getElementById('simulateCardPaymentBtn').addEventListener('click', () => {
+      const cardNumber = document.getElementById('cardNumber').value.trim();
+      const cardExpiry = document.getElementById('cardExpiry').value.trim();
+      const cardCvv = document.getElementById('cardCvv').value.trim();
+      const cardName = document.getElementById('cardName').value.trim();
+      
+      if (!cardNumber || !cardExpiry || !cardCvv || !cardName) {
+        showNotification('Please fill all card details', 'error');
+        return;
+      }
+      
+      processPayment('card', {
+        cardNumber: cardNumber,
+        cardExpiry: cardExpiry,
+        cardCvv: cardCvv,
+        cardName: cardName
+      });
+    });
+    
+    // Back buttons
+    document.getElementById('backToPaymentBtn').addEventListener('click', () => {
+      document.getElementById('upiModal').style.display = 'none';
+      document.getElementById('paymentModal').style.display = 'flex';
+    });
+    
+    document.getElementById('backToPaymentBtn2').addEventListener('click', () => {
+      document.getElementById('cardModal').style.display = 'none';
+      document.getElementById('paymentModal').style.display = 'flex';
+    });
+    
+    // Close success modal
+    document.getElementById('closeSuccessBtn').addEventListener('click', () => {
+      document.getElementById('paymentSuccessModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'none';
+    });
+    
+    // Cancel payment
+    document.getElementById('cancelPaymentBtn').addEventListener('click', () => {
+      document.getElementById('paymentModal').style.display = 'none';
+      document.getElementById('vipModal').style.display = 'flex';
+    });
+    
+    // Message input events
+    const msgInput = document.getElementById('msgInput');
+    if (msgInput) {
+      msgInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      
+      msgInput.addEventListener('input', () => {
+        if (msgInput.value.trim()) {
+          sendTypingIndicator(true);
+        } else {
+          sendTypingIndicator(false);
+        }
+      });
+      
+      // Prevent iOS zoom on focus
+      msgInput.addEventListener('focus', () => {
+        setTimeout(() => {
+          msgInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+    }
+    
+    // Nickname input
+    const nicknameInput = document.getElementById('nickname');
+    if (nicknameInput) {
+      nicknameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveNickname();
+      });
+      
+      nicknameInput.addEventListener('input', () => {
+        const errorEl = document.getElementById('nickError');
+        if (errorEl) errorEl.style.display = 'none';
+      });
+    }
+    
+    // Video controls delegation
+    const globalControls = document.getElementById('globalControls');
+    if (globalControls) {
+      globalControls.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-action]');
+        if (button) {
+          const action = button.dataset.action;
+          switch (action) {
+            case 'toggleMic':
+              toggleMic(button);
+              break;
+            case 'toggleCam':
+              toggleCam(button);
+              break;
+            case 'toggleScreenShare':
+              toggleScreenShare(button);
+              break;
+            case 'recordScreen':
+              recordScreen(button);
+              break;
+          }
+        }
+      });
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && (isTextMode || isVideoMode)) {
+        goBack();
+      }
+      
+      if (e.key === 'Enter' && isTextMode && !e.shiftKey && document.activeElement.id === 'msgInput') {
+        e.preventDefault();
+        sendMessage();
+      }
+      
+      // Video shortcuts (only when in video mode and not in input)
+      if (isVideoMode && !e.ctrlKey && !e.metaKey && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        switch(e.key.toLowerCase()) {
+          case 'm':
+            const micBtn = document.querySelector('[data-action="toggleMic"]');
+            if (micBtn) toggleMic(micBtn);
+            break;
+          case 'c':
+            const camBtn = document.querySelector('[data-action="toggleCam"]');
+            if (camBtn) toggleCam(camBtn);
+            break;
+          case 's':
+            if (isVIP) {
+              const screenBtn = document.querySelector('[data-action="toggleScreenShare"]');
+              if (screenBtn) toggleScreenShare(screenBtn);
+            }
+            break;
+          case 'r':
+            if (isVIP) {
+              const recordBtn = document.querySelector('[data-action="recordScreen"]');
+              if (recordBtn) recordScreen(recordBtn);
+            }
+            break;
+        }
+      }
+    });
+    
+    // Window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        updateGridLayout();
+      }, 250);
+    });
+    
+    // Modal clicks
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+      }
+    });
+    
+    // Before unload
+    window.addEventListener('beforeunload', (e) => {
+      if (socket && roomId) {
+        socket.emit('leave-group', { roomId });
+      }
+      return null;
+    });
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // Page is hidden - pause videos to save resources
+        document.querySelectorAll('video').forEach(video => {
+          if (!video.paused) video.pause();
+        });
+      } else {
+        // Page is visible - resume videos
+        document.querySelectorAll('video').forEach(video => {
+          if (video.paused && video.srcObject) {
+            video.play().catch(e => console.log('Video play error:', e));
+          }
+        });
+      }
+    });
+    
+    // Handle touch events for mobile
+    document.addEventListener('touchstart', function() {}, {passive: true});
+  }
+
+  // Global error handling
+  window.addEventListener('error', (e) => {
+    console.error('Global error:', e.error);
+    showNotification('An error occurred. Please refresh the page.', 'error');
+  });
+
+  window.addEventListener('unhandledrejection', (e) => {
+    console.error('Unhandled promise rejection:', e.reason);
+    showNotification('An error occurred. Please try again.', 'error');
+  });
 </script>
 </body>
 </html>
