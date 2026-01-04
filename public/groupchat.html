@@ -13,7 +13,7 @@
 <!-- Improved CSP -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self' https://cdn.socket.io https://fonts.googleapis.com https://ipapi.co;
-  script-src 'self' 'unsafe-inline' https://cdn.socket.io https://unpkg.com;
+  script-src 'self' 'unsafe-inline' https://cdn.socket.io https://unpkg.com https://cdnjs.cloudflare.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com;
   connect-src 'self' ws: wss: https://cdn.socket.io;
@@ -1328,6 +1328,23 @@ body{
   background: rgba(255, 118, 117, 0.2);
   color: var(--danger);
 }
+
+/* FIX: Mobile responsive text input fix */
+.mobile-text-input-fix {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.9);
+  padding: 10px;
+  z-index: 10000;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.mobile-text-input-fix.active {
+  transform: translateY(0);
+}
 </style>
 
 <!-- Three.js for 3D Background -->
@@ -1634,6 +1651,7 @@ body{
   let screenStream = null;
   let mediaRecorder = null;
   const peers = {};
+  const userData = new Map(); // Store user info (nickname, VIP status)
   let speakerInterval = null;
   let isTextMode = false;
   let isVideoMode = false;
@@ -1700,23 +1718,36 @@ body{
     
     // Add mobile-specific handlers
     setupMobileHandlers();
+    
+    // Initialize 3D background
+    init3DBackground();
   });
 
   function init3DBackground() {
     try {
+      if (typeof THREE === 'undefined') {
+        console.log('Three.js not loaded, using CSS fallback');
+        createCSSParticles();
+        return;
+      }
+      
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
       
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setClearColor(0x04060a, 0);
-      document.getElementById('threeContainer').appendChild(renderer.domElement);
+      const container = document.getElementById('threeContainer');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(renderer.domElement);
+      }
       
       camera.position.z = 5;
       
       // Create particles
       const particlesGeometry = new THREE.BufferGeometry();
-      const particlesCount = 300;
+      const particlesCount = 150;
       const posArray = new Float32Array(particlesCount * 3);
       
       for(let i = 0; i < particlesCount * 3; i++) {
@@ -1738,8 +1769,10 @@ body{
       // Animation
       function animate() {
         requestAnimationFrame(animate);
-        particlesMesh.rotation.x += 0.0005;
-        particlesMesh.rotation.y += 0.0005;
+        if (particlesMesh) {
+          particlesMesh.rotation.x += 0.0005;
+          particlesMesh.rotation.y += 0.0005;
+        }
         renderer.render(scene, camera);
       }
       
@@ -1759,14 +1792,17 @@ body{
       threeScene = { scene, camera, renderer, particlesMesh };
       
     } catch (error) {
-      console.log('3D background not supported, using CSS fallback');
+      console.log('3D background error, using CSS fallback:', error);
       createCSSParticles();
     }
   }
 
   function createCSSParticles() {
     const container = document.getElementById('threeContainer');
-    for (let i = 0; i < 30; i++) {
+    if (!container) return;
+    
+    container.innerHTML = '';
+    for (let i = 0; i < 20; i++) {
       const particle = document.createElement('div');
       particle.className = 'animation-particle';
       particle.style.width = Math.random() * 15 + 5 + 'px';
@@ -1796,6 +1832,17 @@ body{
     setVH();
     window.addEventListener('resize', setVH);
     window.addEventListener('orientationchange', setVH);
+    
+    // Fix for mobile text input
+    const msgInput = document.getElementById('msgInput');
+    if (msgInput) {
+      msgInput.addEventListener('focus', function() {
+        // Ensure input is visible on mobile
+        setTimeout(() => {
+          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+    }
   }
 
   /* ===== VIP MANAGEMENT ===== */
@@ -1994,7 +2041,10 @@ body{
     updateConnectionStatus('connecting');
     
     try {
-      socket = io(window.location.origin, {
+      const serverUrl = window.location.origin;
+      console.log('Connecting to server:', serverUrl);
+      
+      socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,
@@ -2037,6 +2087,7 @@ body{
       socket.on('signal', handleWebRTCSignal);
       socket.on('existing-users', handleExistingUsers);
       socket.on('user-ready', handleUserReady);
+      socket.on('user-data', handleUserData);
       
       // VIP Events
       socket.on('vip-activated', handleVIPActivated);
@@ -2107,6 +2158,13 @@ body{
     participantCount = data.participantCount || 1;
     updateParticipantCount();
     
+    // Store our own data
+    userData.set(socket.id, {
+      nickname: nickname,
+      isVIP: isVIP,
+      userId: socket.id
+    });
+    
     // Update room title
     const title = document.getElementById('roomTitle');
     if (title) {
@@ -2126,14 +2184,38 @@ body{
     }
   }
 
+  function handleUserData(data) {
+    console.log('📊 User data received:', data);
+    // Store user information
+    userData.set(data.userId, {
+      nickname: data.nickname,
+      isVIP: data.isVIP,
+      userId: data.userId
+    });
+    
+    // Update video label if exists
+    const videoCard = document.getElementById('video-' + data.userId);
+    if (videoCard) {
+      const label = videoCard.querySelector('.video-label');
+      if (label) {
+        updateVideoLabel(label, data.userId);
+      }
+    }
+  }
+
   function handleExistingUsers(data) {
     console.log('👥 Existing users:', data.users);
     if (isVideoMode && data.users) {
       data.users.forEach(userId => {
-        if (userId !== socket.id && !peers[userId]) {
+        // Skip self
+        if (userId === socket.id) return;
+        
+        // Check if peer already exists
+        if (!peers[userId]) {
+          console.log('Creating connection for existing user:', userId);
           setTimeout(() => {
             createPeerConnection(userId);
-          }, 1000);
+          }, 500 + Math.random() * 1000); // Stagger connections
         }
       });
     }
@@ -2142,7 +2224,10 @@ body{
   function handleUserReady(data) {
     console.log('👤 User ready:', data.userId);
     if (isVideoMode && data.userId !== socket.id && !peers[data.userId]) {
-      createPeerConnection(data.userId);
+      console.log('Creating connection for newly ready user:', data.userId);
+      setTimeout(() => {
+        createPeerConnection(data.userId);
+      }, 500);
     }
   }
 
@@ -2154,6 +2239,13 @@ body{
     const userName = data.nickname || 'Someone';
     const isVIPUser = data.isVIP || false;
     
+    // Store user data
+    userData.set(data.userId, {
+      nickname: data.nickname,
+      isVIP: data.isVIP,
+      userId: data.userId
+    });
+    
     showNotification(`${userName} ${isVIPUser ? '⭐ ' : ''}joined the group`, 'info');
     
     // Create peer connection for new user in video chat
@@ -2162,7 +2254,7 @@ body{
         if (!peers[data.userId]) {
           createPeerConnection(data.userId);
         }
-      }, 500);
+      }, 1000);
     }
   }
 
@@ -2188,6 +2280,9 @@ body{
       }
     }
     
+    // Remove from user data
+    userData.delete(data.userId);
+    
     showNotification(`${data.nickname || 'Someone'} left`, 'info');
   }
 
@@ -2198,14 +2293,25 @@ body{
 
   function handleVIPStatus(data) {
     console.log('⭐ VIP status update:', data);
-    // Update UI to show VIP status of other users
-    if (data.userId !== socket.id) {
-      const videoLabel = document.querySelector(`#video-${data.userId} .video-label`);
-      if (videoLabel && data.isVIP) {
-        const vipSpan = document.createElement('span');
-        vipSpan.textContent = '⭐';
-        vipSpan.style.color = 'var(--vip)';
-        videoLabel.appendChild(vipSpan);
+    // Update user data with VIP status
+    if (userData.has(data.userId)) {
+      const user = userData.get(data.userId);
+      user.isVIP = data.isVIP;
+      userData.set(data.userId, user);
+    } else {
+      userData.set(data.userId, {
+        nickname: data.nickname || 'User',
+        isVIP: data.isVIP,
+        userId: data.userId
+      });
+    }
+    
+    // Update UI to show VIP status
+    const videoCard = document.getElementById('video-' + data.userId);
+    if (videoCard) {
+      const label = videoCard.querySelector('.video-label');
+      if (label) {
+        updateVideoLabel(label, data.userId);
       }
     }
   }
@@ -2288,7 +2394,8 @@ body{
     if (socket && roomId) {
       socket.emit('vip-status-update', {
         roomId: roomId,
-        isVIP: true
+        isVIP: true,
+        nickname: nickname
       });
     }
   }
@@ -2471,6 +2578,9 @@ body{
       }
     });
     for (const id in peers) delete peers[id];
+    
+    // Clear user data
+    userData.clear();
     
     // Stop media streams
     if (localStream) {
@@ -2846,18 +2956,7 @@ body{
     
     const label = document.createElement('div');
     label.className = 'video-label';
-    
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = isLocal ? 'You' : (userId === socket.id ? 'You' : userId.substring(0, 8) + '...');
-    label.appendChild(nameSpan);
-    
-    // Add VIP badge if applicable
-    if (isLocal && isVIP) {
-      const vipBadge = document.createElement('span');
-      vipBadge.textContent = '⭐';
-      vipBadge.style.color = 'var(--vip)';
-      label.appendChild(vipBadge);
-    }
+    updateVideoLabel(label, userId);
     
     const watermark = document.createElement('div');
     watermark.className = 'video-watermark';
@@ -2886,6 +2985,31 @@ body{
     };
     
     return card;
+  }
+
+  function updateVideoLabel(label, userId) {
+    // Clear existing content
+    label.innerHTML = '';
+    
+    // Get user data
+    const user = userData.get(userId);
+    const displayName = user ? user.nickname : (userId === socket.id ? 'You' : userId.substring(0, 8) + '...');
+    const isVIPUser = user ? user.isVIP : false;
+    
+    // Create name span
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = displayName;
+    label.appendChild(nameSpan);
+    
+    // Add VIP badge if applicable
+    if (isVIPUser) {
+      const vipBadge = document.createElement('span');
+      vipBadge.textContent = '⭐';
+      vipBadge.style.color = 'var(--vip)';
+      vipBadge.style.marginLeft = '5px';
+      vipBadge.style.fontSize = '0.9em';
+      label.appendChild(vipBadge);
+    }
   }
 
   function createPeerConnection(peerId) {
@@ -2958,6 +3082,11 @@ body{
           updateGridLayout();
         }
       };
+      
+      // Request user data
+      if (socket) {
+        socket.emit('request-user-data', { userId: peerId, roomId: roomId });
+      }
       
       // Create offer if we're initiating the connection
       setTimeout(async () => {
@@ -3352,6 +3481,14 @@ body{
         textEl.textContent = 'Disconnected';
         break;
     }
+  }
+
+  function showVIPModal(message) {
+    const vipMessage = document.getElementById('vipMessage');
+    if (vipMessage) {
+      vipMessage.textContent = message;
+    }
+    document.getElementById('vipModal').style.display = 'flex';
   }
 
   /* ===== EVENT LISTENERS ===== */
