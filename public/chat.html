@@ -1692,19 +1692,25 @@
 
 <script>
   // =========== CONFIGURATION ===========
-  const socket = io({
+  // Configure Socket.IO with proper options
+  const socketConfig = {
     transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
-    forceNew: true,
+    forceNew: false,
     upgrade: true,
     rememberUpgrade: true,
     path: '/socket.io/',
-    withCredentials: false
-  });
+    withCredentials: false,
+    autoConnect: true
+  };
+
+  // Connect to your server - UPDATE THIS URL with your actual server URL
+  const SOCKET_SERVER_URL = window.location.origin; // Use current origin
+  const socket = io(SOCKET_SERVER_URL, socketConfig);
 
   // =========== STATE ===========
   let state = {
@@ -1755,7 +1761,9 @@
     // WebRTC
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' }
+      { urls: 'stun:global.stun.twilio.com:3478' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' }
     ],
     
     // Timeouts
@@ -1765,7 +1773,10 @@
     reconnectAttempts: 0,
     orientationTimeout: null,
     keyboardOpen: false,
-    videoRetryCount: 0
+    videoRetryCount: 0,
+    
+    // Server configuration
+    socketServerUrl: SOCKET_SERVER_URL
   };
 
   // =========== DOM ELEMENTS ===========
@@ -1830,6 +1841,7 @@
   // =========== INITIALIZATION ===========
   async function init() {
     console.log("Initializing chat...");
+    console.log("Server URL:", state.socketServerUrl);
     
     // Parse URL parameters
     const params = new URLSearchParams(window.location.search);
