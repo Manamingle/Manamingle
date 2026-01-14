@@ -719,8 +719,8 @@ button:active {
 .video-grid{
   flex:1;
   padding:20px;
-  display:flex;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap:16px;
   min-height:0;
   min-width:0;
@@ -745,8 +745,7 @@ button:active {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  flex: 1 1 calc(50% - 16px);
-  max-width: calc(50% - 16px);
+  aspect-ratio: 16/9;
 }
 
 .video-card:hover {
@@ -814,8 +813,7 @@ button:active {
 
 @media (max-width: 768px) {
   .video-card {
-    flex: 1 1 100%;
-    max-width: 100%;
+    aspect-ratio: 1/1;
   }
 }
 
@@ -2232,6 +2230,10 @@ button:disabled {
         <span>🪙</span>
         <span id="currentCoins">0</span>
       </div>
+      <div class="coin-display" id="turnStatusBadge" style="display:none;">
+        <span>🔁</span>
+        <span id="turnStatusText">Checking TURN…</span>
+      </div>
       <button class="header-home-btn" id="headerHomeBtn" title="Home">🏠</button>
     </div>
     <div class="invite-bar">
@@ -2557,9 +2559,24 @@ button:disabled {
 async function loadIceServers() {
   if (iceConfig) return iceConfig;
 
-  const res = await fetch("/api/turn");
-  if (!res.ok) throw new Error("TURN fetch failed");
-  iceConfig = await res.json();
+  try {
+    const res = await fetch("/api/turn", { cache: "no-store" });
+    if (res.ok) {
+      iceConfig = await res.json();
+    } else {
+      throw new Error("TURN fetch failed");
+    }
+  } catch (_) {
+    iceConfig = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" }
+      ]
+    };
+  }
   return iceConfig;
 }
 
@@ -2569,6 +2586,7 @@ let roomId = null;
 let nickname = null;
 let localStream = null;
 const peers = {};
+const socketToUser = new Map();
   const userData = new Map();
 let speakerInterval = null;
 let isTextMode = false;
@@ -2704,6 +2722,29 @@ function shouldCreateOffer(myId, otherId) {
     for (let i = 1; i <= 4; i++) {
       videoPanels[i].element = document.getElementById(`video-panel-${i}`);
     }
+
+    // TURN status badge
+    (async () => {
+      const badge = document.getElementById('turnStatusBadge');
+      const text = document.getElementById('turnStatusText');
+      try {
+        const res = await fetch('/api/turn', { cache: 'no-store' });
+        if (!res.ok) throw new Error('turn fetch failed');
+        const cfg = await res.json();
+        const servers = (cfg && cfg.iceServers) || [];
+        const hasTurn = servers.some(s => {
+          const u = Array.isArray(s.urls) ? s.urls : [s.urls];
+          return u && u.some(url => String(url).startsWith('turn:') || String(url).startsWith('turns:')) && s.username && s.credential;
+        });
+        badge.style.display = 'flex';
+        text.textContent = hasTurn ? 'TURN Active' : 'STUN Only';
+        badge.style.borderColor = hasTurn ? 'rgba(16,185,129,0.3)' : 'rgba(148,163,184,0.3)';
+      } catch {
+        badge.style.display = 'flex';
+        text.textContent = 'STUN Only';
+        badge.style.borderColor = 'rgba(148,163,184,0.3)';
+      }
+    })();
   });
 
   // Fallback for room-ended handler to avoid socket init errors
@@ -3405,6 +3446,7 @@ function shouldCreateOffer(myId, otherId) {
     const panelNum = findAvailablePanel();
     if (!panelNum) return;
 
+    socketToUser.set(peerData.socketId, peerData.userId);
     assignVideoPanel(peerData.userId, panelNum, false, peerData.socketId);
     createPeerConnection(peerData.socketId);
   });
@@ -3445,15 +3487,18 @@ function shouldCreateOffer(myId, otherId) {
     participantCount = data.participantCount || Math.max(1, participantCount - 1);
     updateParticipantCount();
     
-    if (isVideoMode) {
-      // Remove peer connection
-      if (peers[data.userId]) {
-        try {
-          peers[data.userId].close();
-        } catch (e) {
-          console.error('Error closing peer connection:', e);
+  if (isVideoMode) {
+    // Remove peer connection
+      let targetPeerId = null;
+      for (const [panelNum, panelData] of Object.entries(videoPanels)) {
+        if (panelData.userId === data.userId && panelData.peerId) {
+          targetPeerId = panelData.peerId;
+          break;
         }
-        delete peers[data.userId];
+      }
+      if (targetPeerId && peers[targetPeerId]) {
+        try { peers[targetPeerId].close(); } catch (e) { console.error('Error closing peer connection:', e); }
+        delete peers[targetPeerId];
       }
       
       // Clear video panel
@@ -3648,7 +3693,7 @@ function cleanupPeer(peerId) {
   delete peers[peerId];
 
   for (const [panelNum, panelData] of Object.entries(videoPanels)) {
-    if (panelData.userId === peerId) {
+    if (panelData.peerId === peerId) {
       panelData.userId = null;
       panelData.peerId = null;
       panelData.stream = null;
@@ -3818,7 +3863,8 @@ pc.getSenders().forEach(sender => {
   if (!panelFound) {
     const panelNum = findAvailablePanel();
     if (panelNum) {
-      assignVideoPanel(peerId, panelNum, false, peerId);
+      const mappedUserId = socketToUser.get(peerId) || `peer_${peerId}`;
+      assignVideoPanel(mappedUserId, panelNum, false, peerId);
       videoPanels[panelNum].peerId = peerId;
       videoPanels[panelNum].stream = pc.remoteStream;
       updateVideoPanel(panelNum);
