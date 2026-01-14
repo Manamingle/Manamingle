@@ -1469,16 +1469,22 @@
         
         if (elements.localVideo) {
           elements.localVideo.srcObject = state.localStream;
+          elements.localVideo.setAttribute('playsinline', '');
+          elements.localVideo.muted = true;
+          try { await elements.localVideo.play(); } catch (_) {}
         }
         state.hasMediaAccess = true;
         // Setup movable PiP with local stream
         try {
           const pipVideo = document.getElementById('pipVideo');
           const pipCam = document.getElementById('pipCam');
-          const isMobile = window.matchMedia('(max-width: 900px)').matches;
+          const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia('(max-width: 900px)').matches;
           if (pipVideo && pipCam) {
             pipVideo.srcObject = state.localStream;
             pipCam.style.display = isMobile ? 'block' : 'none';
+            pipVideo.setAttribute('playsinline', '');
+            pipVideo.muted = true;
+            try { await pipVideo.play(); } catch (_) {}
           }
         } catch (_) {}
         
@@ -1963,6 +1969,8 @@
           elements.remoteVideo.srcObject = event.streams[0];
           state.remoteStream = event.streams[0];
           console.log("🎥 Remote video stream received");
+          elements.remoteVideo.setAttribute('playsinline', '');
+          try { elements.remoteVideo.play(); } catch (_) {}
         }
       };
       
@@ -2129,6 +2137,25 @@
           pipCam.releasePointerCapture(e.pointerId);
           pipCam._drag = null;
         });
+        // Touch fallback for iOS Safari
+        pipCam.addEventListener('touchstart', (e) => {
+          const t = e.touches[0];
+          const rect = pipCam.getBoundingClientRect();
+          pipCam._drag = { dx: t.clientX - rect.left, dy: t.clientY - rect.top };
+        }, { passive: true });
+        pipCam.addEventListener('touchmove', (e) => {
+          if (!pipCam._drag) return;
+          const t = e.touches[0];
+          const x = t.clientX - pipCam._drag.dx;
+          const y = t.clientY - pipCam._drag.dy;
+          pipCam.style.left = Math.max(0, Math.min(window.innerWidth - pipCam.offsetWidth, x)) + 'px';
+          pipCam.style.top = Math.max(0, Math.min(window.innerHeight - pipCam.offsetHeight, y)) + 'px';
+          pipCam.style.right = 'auto';
+          pipCam.style.bottom = 'auto';
+        }, { passive: true });
+        pipCam.addEventListener('touchend', () => {
+          pipCam._drag = null;
+        });
       }
     }
 
@@ -2243,7 +2270,7 @@
       });
       
       addMessage(text, 'you');
-      const isMobile = window.matchMedia('(max-width: 900px)').matches;
+          const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia('(max-width: 900px)').matches;
       const localContainer = isMobile ? document.getElementById('pipCam') : document.getElementById('localVideoContainer');
       if (localContainer) {
         const bubble = document.createElement('div');
